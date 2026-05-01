@@ -1,1 +1,8 @@
+# Ignore build and VS artifacts
 .vs/
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.suo
