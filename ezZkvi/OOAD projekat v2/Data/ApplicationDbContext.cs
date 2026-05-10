@@ -18,6 +18,7 @@ namespace ezZkvi.Data
         public DbSet<Korisnik> Korisnici { get; set; }
         public DbSet<KvizSesija> KvizSesije { get; set; }
         public DbSet<Feedback> Feedback { get; set; }
+        public DbSet<KvizSesijaPitanje> KvizSesijaPitanja { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,6 +29,7 @@ namespace ezZkvi.Data
             modelBuilder.Entity<Korisnik>().ToTable("Korisnik");
             modelBuilder.Entity<KvizSesija>().ToTable("KvizSesija");
             modelBuilder.Entity<Feedback>().ToTable("Feedback");
+            modelBuilder.Entity<KvizSesijaPitanje>().ToTable("KvizSesijaPitanje");
 
             base.OnModelCreating(modelBuilder);
         }
