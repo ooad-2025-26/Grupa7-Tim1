@@ -33,6 +33,9 @@ namespace ezZkvi.Data
 
             base.OnModelCreating(modelBuilder);
         }
+        public DbSet<ezZkvi.Models.Administrator> Administrator { get; set; } = default!;
+        public DbSet<ezZkvi.Models.Moderator> Moderator { get; set; } = default!;
+        public DbSet<ezZkvi.Models.Student> Student { get; set; } = default!;
 
     }
 }

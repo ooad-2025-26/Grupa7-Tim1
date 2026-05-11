@@ -1,0 +1,36 @@
+﻿@model ezZkvi.Models.KvizSesijaPitanje
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>KvizSesijaPitanje</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.RedniBroj)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.RedniBroj)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.BrojBodova)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.BrojBodova)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Tacno)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Tacno)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.ID">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
