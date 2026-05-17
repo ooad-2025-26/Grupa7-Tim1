@@ -15,8 +15,8 @@ namespace ezZkvi.Models
         public bool IsTacan { get; set; }
 
         [ForeignKey(nameof(Pitanje))]
-        public int? PitanjeId { get; set; }
-        public Pitanje? Pitanje { get; set; }
+        public int PitanjeId { get; set; }
+        public Pitanje Pitanje { get; set; }
 
         public Odgovor() { }
     }

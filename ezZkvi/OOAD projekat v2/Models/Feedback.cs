@@ -14,6 +14,10 @@ namespace ezZkvi.Models
         public TipFeedbacka TipFeedbacka { get; set; }
 
         [Required]
-        public DateTime DatumSlanja { get; set; }
+        public DateTime DatumSlanja { get; set; } = DateTime.Now;
+
+        [Required(ErrorMessage = "Sadržaj feedbacka je obavezan.")]
+        [StringLength(1000, MinimumLength = 10)]
+        public string Sadrzaj { get; set; }
     }
 }
