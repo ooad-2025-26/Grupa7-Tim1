@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using ezZkvi.Data;
 using ezZkvi.Models;
 
-namespace OOAD_projekat_v2.Controllers
+namespace ezZkvi.Controllers
 {
     public class PredmetController : Controller
     {
