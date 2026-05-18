@@ -9,11 +9,11 @@ using ezZkvi.Data;
 
 #nullable disable
 
-namespace ezZkvi.Data.Migrations
+namespace OOAD_projekat_v2.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260506141854_SveKlase")]
-    partial class SveKlase
+    [Migration("20260518111018_InitialIdentitySetup")]
+    partial class InitialIdentitySetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -89,6 +89,11 @@ namespace ezZkvi.Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -140,6 +145,10 @@ namespace ezZkvi.Data.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator().HasValue("IdentityUser");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -238,6 +247,11 @@ namespace ezZkvi.Data.Migrations
                     b.Property<DateTime>("DatumSlanja")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Sadrzaj")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -247,32 +261,6 @@ namespace ezZkvi.Data.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("Feedback", (string)null);
-                });
-
-            modelBuilder.Entity("ezZkvi.Models.Korisnik", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Lozinka")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("Korisnik", (string)null);
                 });
 
             modelBuilder.Entity("ezZkvi.Models.KvizSesija", b =>
@@ -330,12 +318,13 @@ namespace ezZkvi.Data.Migrations
                     b.Property<bool>("IsTacan")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("PitanjeId")
+                    b.Property<int>("PitanjeId")
                         .HasColumnType("int");
 
                     b.Property<string>("Tekst")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
 
@@ -357,7 +346,8 @@ namespace ezZkvi.Data.Migrations
 
                     b.Property<string>("TekstPitanja")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("Tezina")
                         .HasColumnType("int");
@@ -379,11 +369,54 @@ namespace ezZkvi.Data.Migrations
 
                     b.Property<string>("Naziv")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Predmet", (string)null);
+                });
+
+            modelBuilder.Entity("ezZkvi.Models.Administrator", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.HasDiscriminator().HasValue("Administrator");
+                });
+
+            modelBuilder.Entity("ezZkvi.Models.Moderator", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<int>("BrojOdgovorenihPitanja")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BrojTacnihOdgovora")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue("Moderator");
+                });
+
+            modelBuilder.Entity("ezZkvi.Models.Student", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<int>("BrojOdgovorenihPitanja")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BrojTacnihOdgovora")
+                        .HasColumnType("int");
+
+                    b.ToTable("AspNetUsers", t =>
+                        {
+                            t.Property("BrojOdgovorenihPitanja")
+                                .HasColumnName("Student_BrojOdgovorenihPitanja");
+
+                            t.Property("BrojTacnihOdgovora")
+                                .HasColumnName("Student_BrojTacnihOdgovora");
+                        });
+
+                    b.HasDiscriminator().HasValue("Student");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -441,7 +474,9 @@ namespace ezZkvi.Data.Migrations
                 {
                     b.HasOne("ezZkvi.Models.Pitanje", "Pitanje")
                         .WithMany()
-                        .HasForeignKey("PitanjeId");
+                        .HasForeignKey("PitanjeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Pitanje");
                 });

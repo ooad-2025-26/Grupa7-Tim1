@@ -8,7 +8,7 @@ using ezZkvi.Data;
 
 #nullable disable
 
-namespace ezZkvi.Data.Migrations
+namespace OOAD_projekat_v2.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -86,6 +86,11 @@ namespace ezZkvi.Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -137,6 +142,10 @@ namespace ezZkvi.Data.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator().HasValue("IdentityUser");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -249,42 +258,6 @@ namespace ezZkvi.Data.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("Feedback", (string)null);
-                });
-
-            modelBuilder.Entity("ezZkvi.Models.Korisnik", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Lozinka")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("Korisnik", (string)null);
-
-                    b.HasDiscriminator().HasValue("Korisnik");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("ezZkvi.Models.KvizSesija", b =>
@@ -403,14 +376,14 @@ namespace ezZkvi.Data.Migrations
 
             modelBuilder.Entity("ezZkvi.Models.Administrator", b =>
                 {
-                    b.HasBaseType("ezZkvi.Models.Korisnik");
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
 
                     b.HasDiscriminator().HasValue("Administrator");
                 });
 
             modelBuilder.Entity("ezZkvi.Models.Moderator", b =>
                 {
-                    b.HasBaseType("ezZkvi.Models.Korisnik");
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
 
                     b.Property<int>("BrojOdgovorenihPitanja")
                         .HasColumnType("int");
@@ -423,7 +396,7 @@ namespace ezZkvi.Data.Migrations
 
             modelBuilder.Entity("ezZkvi.Models.Student", b =>
                 {
-                    b.HasBaseType("ezZkvi.Models.Korisnik");
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
 
                     b.Property<int>("BrojOdgovorenihPitanja")
                         .HasColumnType("int");
@@ -431,7 +404,7 @@ namespace ezZkvi.Data.Migrations
                     b.Property<int>("BrojTacnihOdgovora")
                         .HasColumnType("int");
 
-                    b.ToTable("Korisnik", t =>
+                    b.ToTable("AspNetUsers", t =>
                         {
                             t.Property("BrojOdgovorenihPitanja")
                                 .HasColumnName("Student_BrojOdgovorenihPitanja");

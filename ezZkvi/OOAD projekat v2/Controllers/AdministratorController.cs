@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,7 +26,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Administrator/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string id)
         {
             if (id == null)
             {
@@ -34,7 +34,7 @@ namespace ezZkvi.Controllers
             }
 
             var administrator = await _context.Administrator
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (administrator == null)
             {
                 return NotFound();
@@ -54,7 +54,7 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Username,Email,Lozinka")] Administrator administrator)
+        public async Task<IActionResult> Create([Bind("Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Administrator administrator)
         {
             if (ModelState.IsValid)
             {
@@ -66,7 +66,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Administrator/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(string id)
         {
             if (id == null)
             {
@@ -86,9 +86,9 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,Username,Email,Lozinka")] Administrator administrator)
+        public async Task<IActionResult> Edit(string id, [Bind("Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Administrator administrator)
         {
-            if (id != administrator.ID)
+            if (id != administrator.Id)
             {
                 return NotFound();
             }
@@ -102,7 +102,7 @@ namespace ezZkvi.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!AdministratorExists(administrator.ID))
+                    if (!AdministratorExists(administrator.Id))
                     {
                         return NotFound();
                     }
@@ -117,7 +117,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Administrator/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string id)
         {
             if (id == null)
             {
@@ -125,7 +125,7 @@ namespace ezZkvi.Controllers
             }
 
             var administrator = await _context.Administrator
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (administrator == null)
             {
                 return NotFound();
@@ -137,7 +137,7 @@ namespace ezZkvi.Controllers
         // POST: Administrator/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var administrator = await _context.Administrator.FindAsync(id);
             if (administrator != null)
@@ -149,9 +149,9 @@ namespace ezZkvi.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool AdministratorExists(int id)
+        private bool AdministratorExists(string id)
         {
-            return _context.Administrator.Any(e => e.ID == id);
+            return _context.Administrator.Any(e => e.Id == id);
         }
     }
 }

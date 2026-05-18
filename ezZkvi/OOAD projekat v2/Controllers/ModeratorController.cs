@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,7 +26,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Moderator/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string id)
         {
             if (id == null)
             {
@@ -34,7 +34,7 @@ namespace ezZkvi.Controllers
             }
 
             var moderator = await _context.Moderator
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (moderator == null)
             {
                 return NotFound();
@@ -54,7 +54,7 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,ID,Username,Email,Lozinka")] Moderator moderator)
+        public async Task<IActionResult> Create([Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Moderator moderator)
         {
             if (ModelState.IsValid)
             {
@@ -66,7 +66,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Moderator/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(string id)
         {
             if (id == null)
             {
@@ -86,9 +86,9 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,ID,Username,Email,Lozinka")] Moderator moderator)
+        public async Task<IActionResult> Edit(string id, [Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Moderator moderator)
         {
-            if (id != moderator.ID)
+            if (id != moderator.Id)
             {
                 return NotFound();
             }
@@ -102,7 +102,7 @@ namespace ezZkvi.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ModeratorExists(moderator.ID))
+                    if (!ModeratorExists(moderator.Id))
                     {
                         return NotFound();
                     }
@@ -117,7 +117,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Moderator/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string id)
         {
             if (id == null)
             {
@@ -125,7 +125,7 @@ namespace ezZkvi.Controllers
             }
 
             var moderator = await _context.Moderator
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (moderator == null)
             {
                 return NotFound();
@@ -137,7 +137,7 @@ namespace ezZkvi.Controllers
         // POST: Moderator/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var moderator = await _context.Moderator.FindAsync(id);
             if (moderator != null)
@@ -149,9 +149,9 @@ namespace ezZkvi.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ModeratorExists(int id)
+        private bool ModeratorExists(string id)
         {
-            return _context.Moderator.Any(e => e.ID == id);
+            return _context.Moderator.Any(e => e.Id == id);
         }
     }
 }
