@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\models\\korisnik.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\models\\korisnik.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\models\\administrator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\models\\administrator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\models\\tipfeedbacka.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -37,10 +41,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\models\\tezina.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\models\\tezina.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\models\\administrator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\models\\administrator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\models\\errorviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -114,7 +114,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Document",
@@ -142,7 +142,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "Tezina.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Tezina.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\Tezina.cs",
@@ -154,7 +154,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "Student.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Student.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\Student.cs",
@@ -166,7 +166,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "Moderator.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Moderator.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\Moderator.cs",
@@ -174,12 +174,11 @@
               "RelativeToolTip": "OOAD projekat v2\\Models\\Moderator.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:32:49.28Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-18T10:32:49.28Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Korisnik.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Korisnik.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\Korisnik.cs",
@@ -192,7 +191,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\appsettings.json",
               "RelativeDocumentMoniker": "OOAD projekat v2\\appsettings.json",
@@ -204,20 +203,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Program.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Program.cs",
-              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Program.cs",
-              "RelativeToolTip": "OOAD projekat v2\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAsAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Program.cs*",
+              "RelativeToolTip": "OOAD projekat v2\\Program.cs*",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABMAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-18T10:16:38.947Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "ApplicationDbContext.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Data\\ApplicationDbContext.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Data\\ApplicationDbContext.cs",
@@ -225,12 +224,11 @@
               "RelativeToolTip": "OOAD projekat v2\\Data\\ApplicationDbContext.cs",
               "ViewState": "AgIAAA0AAAAAAAAAAAAQwAcAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T09:52:38.505Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-18T09:52:38.505Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "TipFeedbacka.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\TipFeedbacka.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\TipFeedbacka.cs",
@@ -238,7 +236,19 @@
               "RelativeToolTip": "OOAD projekat v2\\Models\\TipFeedbacka.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:35:20.605Z",
+              "WhenOpened": "2026-05-18T10:35:20.605Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Administrator.cs",
+              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Administrator.cs",
+              "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\Administrator.cs",
+              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Administrator.cs",
+              "RelativeToolTip": "OOAD projekat v2\\Models\\Administrator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAQAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-18T10:32:43.392Z",
               "EditorCaption": ""
             },
             {
@@ -255,7 +265,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "Feedback.cs",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Feedback.cs",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\Feedback.cs",
@@ -263,20 +273,7 @@
               "RelativeToolTip": "OOAD projekat v2\\Models\\Feedback.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:32:45.801Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "Administrator.cs",
-              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Administrator.cs",
-              "RelativeDocumentMoniker": "OOAD projekat v2\\Models\\Administrator.cs",
-              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Models\\Administrator.cs",
-              "RelativeToolTip": "OOAD projekat v2\\Models\\Administrator.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAQAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:32:43.392Z"
+              "WhenOpened": "2026-05-18T10:32:45.801Z"
             },
             {
               "$type": "Document",
