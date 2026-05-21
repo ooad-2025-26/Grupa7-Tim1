@@ -1,47 +1,175 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="bs">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - OOAD_projekat_v2</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/OOAD_projekat_v2.styles.css" asp-append-version="true" />
+    <title>@ViewData["Title"] - KvizApp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080C14;
+            --surface: #0F1620;
+            --card: #141D2B;
+            --border: #1E2D42;
+            --accent: #00E5FF;
+            --amber: #FFB300;
+            --text: #E8EDF5;
+            --muted: #5A7090;
+            --success: #00E676;
+            --danger: #FF5252;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Nunito Sans',sans-serif;
+            min-height: 100vh;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--text);
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .logo span {
+                color: var(--accent);
+            }
+
+        .nav {
+            padding: 20px 12px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+            .nav-item:hover, .nav-item.active {
+                background: rgba(0,229,255,0.08);
+                color: var(--accent);
+            }
+
+            .nav-item .ico {
+                font-size: 1.1rem;
+                width: 20px;
+                text-align: center;
+            }
+
+        .user-card {
+            margin: 12px;
+            padding: 12px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .main-content {
+            margin-left: 220px;
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">OOAD_projekat_v2</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
+    @{
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+        var action = ViewContext.RouteData.Values["action"]?.ToString();
+    }
+    <div class="layout">
+        <div class="sidebar">
+            <div class="logo">KVIZ<span>APP</span></div>
+            <nav class="nav">
+                <a class="nav-item @(controller == "Home" ? "active" : "")"
+                   asp-controller="Home" asp-action="Index">
+                    <span class="ico">⊞</span> Početna
+                </a>
+                <a class="nav-item @(controller == "Quiz" && action == "Prepare" ? "active" : "")"
+                   asp-controller="Quiz" asp-action="Prepare">
+                    <span class="ico">📚</span> Priprema
+                </a>
+                <a class="nav-item @(controller == "Quiz" && action == "Simulate" ? "active" : "")"
+                   asp-controller="Quiz" asp-action="Simulate">
+                    <span class="ico">⏱</span> Simulacija
+                </a>
+                <a class="nav-item @(controller == "Leaderboard" ? "active" : "")"
+                   asp-controller="Leaderboard" asp-action="Index">
+                    <span class="ico">🏆</span> Leaderboard
+                </a>
+                <a class="nav-item @(controller == "Feedback" ? "active" : "")"
+                   asp-controller="Feedback" asp-action="Create">
+                    <span class="ico">💬</span> Feedback
+                </a>
+                <a class="nav-item @(controller == "Student" && action == "Edit" ? "active" : "")"
+                   asp-controller="Student" asp-action="Edit">
+                    <span class="ico">⚙</span> Postavke
+                </a>
+            </nav>
+            <div class="user-card">
+                <div class="user-name">@User.Identity?.Name</div>
+                <div class="user-role">Student</div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+        </div>
+
+        <div class="main-content">
             @RenderBody()
-        </main>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - OOAD_projekat_v2 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
