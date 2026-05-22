@@ -19,6 +19,12 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
+        // GET: /Student/Dashboard
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
         // GET: Student
         public async Task<IActionResult> Index()
         {

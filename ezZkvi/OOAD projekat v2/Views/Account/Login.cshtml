@@ -316,13 +316,14 @@
     btn.classList.add('loading'); btn.disabled = true;
 
     setTimeout(() => {
-      btn.classList.remove('loading'); btn.disabled = false;
-      showToast('Prijava (demo) — backend još nije povezan');
-    }, 1000);
+      showToast('Dobrodošao!');
+      setTimeout(() => window.location.href = '/Student/Dashboard', 600);
+    }, 800);
   }
 
   function demoLogin(role) {
-    showToast('Demo pristup: ' + role + ' — backend još nije povezan');
+    showToast('Demo pristup: ' + role);
+    setTimeout(() => window.location.href = '/Student/Dashboard', 700);
   }
 
   function handleRegister() {
