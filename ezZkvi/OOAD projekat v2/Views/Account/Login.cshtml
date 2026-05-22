@@ -1,0 +1,360 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Prijava";
+}
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Prijava</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080C14; --surface: #0F1620; --card: #141D2B;
+    --border: #1E2D42; --accent: #00E5FF; --amber: #FFB300;
+    --text: #E8EDF5; --muted: #5A7090; --success: #00E676; --danger: #FF5252;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Nunito Sans', sans-serif;
+    min-height: 100vh; display: flex; justify-content: center;
+    padding: 40px 20px;
+  }
+  .container { margin: auto 0; }
+
+  /* ===== COMPACT MODE (aktivira se kad je Registracija tab) ===== */
+  body.compact-mode { padding: 24px 20px; }
+  body.compact-mode .container { margin: 0; }
+  body.compact-mode .logo-wrap { margin-bottom: 18px; }
+  body.compact-mode .card { padding: 22px 24px; }
+  body.compact-mode .tabs { margin-bottom: 16px; }
+  body.compact-mode .form-group { margin-bottom: 11px; }
+  .grid-bg {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .glow {
+    position: fixed; width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,255,0.07) 0%, transparent 70%);
+    top: -200px; left: -200px; z-index: 0;
+    animation: floatGlow 8s ease-in-out infinite alternate;
+  }
+  @@keyframes floatGlow { from { transform: translate(0,0); } to { transform: translate(100px, 150px); } }
+
+  .container { position: relative; z-index: 1; width: 100%; max-width: 440px; padding: 20px; }
+  .logo-wrap { text-align: center; margin-bottom: 32px; animation: fadeDown 0.6s ease both; }
+  .logo {
+    font-family: 'Rajdhani', sans-serif; font-size: 2.4rem; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .logo-sub { font-size: 0.72rem; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 32px 28px; animation: fadeUp 0.6s ease 0.1s both;
+  }
+  .tabs {
+    display: flex; gap: 4px; background: var(--surface); border-radius: 8px; padding: 4px; margin-bottom: 24px;
+  }
+  .tab {
+    flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.9rem;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+    transition: all 0.25s; border: none; background: transparent;
+  }
+  .tab.active { background: var(--accent); color: var(--bg); }
+
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; color: var(--text);
+    font-family: 'Nunito Sans', sans-serif; font-size: 0.92rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  input.error { border-color: var(--danger); }
+
+  /* Override za autofill (Chrome/Edge browser zapamti email/lozinku i namece svijetlu pozadinu) */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--text);
+    -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+    caret-color: var(--text);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+  .error-msg { font-size: 0.7rem; color: var(--danger); margin-top: 4px; display: none; }
+  .error-msg.show { display: block; }
+
+  .btn {
+    width: 100%; padding: 13px; background: var(--accent); color: var(--bg);
+    border: none; border-radius: 8px; cursor: pointer;
+    font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; transition: all 0.2s; margin-top: 6px;
+    position: relative; overflow: hidden;
+  }
+  .btn:hover { background: #fff; box-shadow: 0 0 24px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn .spinner {
+    display: none; width: 18px; height: 18px; border: 2px solid transparent;
+    border-top-color: var(--bg); border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto;
+  }
+  .btn.loading .btn-text { display: none; }
+  .btn.loading .spinner { display: block; }
+  @@keyframes spin { to { transform: rotate(360deg); } }
+
+  .password-strength { height: 3px; background: var(--border); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .strength-bar { height: 100%; width: 0; border-radius: 3px; transition: all 0.3s; background: var(--danger); }
+  .strength-bar.weak { width: 33%; background: var(--danger); }
+  .strength-bar.medium { width: 66%; background: var(--amber); }
+  .strength-bar.strong { width: 100%; background: var(--success); }
+  .strength-label { font-size: 0.7rem; margin-top: 3px; color: var(--muted); transition: color 0.3s; }
+
+  .info-box {
+    background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--accent);
+    display: flex; align-items: center; gap: 8px; margin-top: 14px;
+  }
+
+  .demo-section { margin-top: 16px; }
+  .demo-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 10px; }
+  .demo-btns { display: flex; gap: 8px; }
+  .demo-btn {
+    flex: 1; padding: 10px 8px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Rajdhani', sans-serif;
+    font-size: 0.82rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    transition: all 0.2s; text-align: center;
+  }
+  .demo-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.04); }
+  .demo-btn span { display: block; font-size: 0.65rem; color: var(--border); margin-top: 2px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeUp 0.4s ease both; }
+  @@keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @@keyframes fadeDown { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: translateY(0); } }
+
+  .back-home {
+    position: fixed; top: 20px; left: 20px; z-index: 10;
+    padding: 8px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-size: 0.78rem; cursor: pointer;
+    transition: all 0.2s; text-decoration: none; display: flex; align-items: center; gap: 5px;
+  }
+  .back-home:hover { border-color: var(--accent); color: var(--accent); }
+
+  .corner-deco {
+    position: fixed; bottom: 20px; right: 20px;
+    font-family: 'Rajdhani', sans-serif; font-size: 0.68rem; letter-spacing: 3px;
+    color: var(--border); text-transform: uppercase; z-index: 1;
+  }
+  .toast {
+    position: fixed; top: 20px; right: 20px; z-index: 999;
+    padding: 12px 22px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+    transform: translateX(120%); transition: transform 0.4s ease;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.success { background: rgba(0,230,118,0.15); border: 1px solid var(--success); color: var(--success); }
+  .toast.error { background: rgba(255,82,82,0.15); border: 1px solid var(--danger); color: var(--danger); }
+
+  @@media (max-width: 500px) {
+    .container { padding: 12px; }
+    .card { padding: 22px 18px; }
+    .logo { font-size: 1.8rem; }
+    .demo-btns { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="glow"></div>
+
+<a class="back-home" asp-controller="Home" asp-action="Index">← Nazad</a>
+
+<div class="container">
+  <div class="logo-wrap">
+    <div class="logo">KVIZ<span>APP</span></div>
+    <div class="logo-sub">Platforma za provjeru znanja</div>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Prijava</button>
+      <button class="tab" onclick="switchTab('register')">Registracija</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="panel active" id="login">
+      <div class="form-group">
+        <label>Korisničko ime</label>
+        <input type="text" id="loginUser" placeholder="ahmed" autocomplete="username">
+        <div class="error-msg" id="loginUserErr">Korisničko ime je obavezno</div>
+      </div>
+      <div class="form-group">
+        <label>Lozinka</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+        <div class="error-msg" id="loginPassErr">Lozinka je obavezna</div>
+      </div>
+      <button class="btn" id="loginBtn" onclick="handleLogin()">
+        <span class="btn-text">Prijavi se</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="demo-section">
+        <div class="demo-label">Demo pristup</div>
+        <div class="demo-btns">
+          <div class="demo-btn" onclick="demoLogin('student')">Student<span>ahmed</span></div>
+          <div class="demo-btn" onclick="demoLogin('moderator')">Moderator<span>amila</span></div>
+          <div class="demo-btn" onclick="demoLogin('admin')">Admin<span>zlatan</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="panel" id="register">
+      <div class="form-group">
+        <label>Ime i prezime</label>
+        <input type="text" id="regName" placeholder="Ahmed Spahić" autocomplete="name">
+        <div class="error-msg" id="regNameErr">Ime i prezime su obavezni</div>
+      </div>
+      <div class="form-group">
+        <label>Korisničko ime</label>
+        <input type="text" id="regUser" placeholder="ahmed" autocomplete="username">
+        <div class="error-msg" id="regUserErr">Korisničko ime je obavezno</div>
+      </div>
+      <div class="form-group">
+        <label>Email adresa</label>
+        <input type="email" id="regEmail" placeholder="ime@@etf.unsa.ba" autocomplete="email">
+        <div class="error-msg" id="regEmailErr">Unesite validnu email adresu</div>
+      </div>
+      <div class="form-group">
+        <label>Lozinka</label>
+        <input type="password" id="regPass" placeholder="Min. 8 znakova" autocomplete="new-password" oninput="checkStrength(this.value)">
+        <div class="password-strength"><div class="strength-bar" id="strengthBar"></div></div>
+        <div class="strength-label" id="strengthLabel"></div>
+        <div class="error-msg" id="regPassErr">Lozinka mora imati barem 8 znakova</div>
+      </div>
+      <div class="form-group">
+        <label>Potvrda lozinke</label>
+        <input type="password" id="regPassConfirm" placeholder="Ponovi lozinku" autocomplete="new-password">
+        <div class="error-msg" id="regPassConfirmErr">Lozinke se ne podudaraju</div>
+      </div>
+      <button class="btn" id="regBtn" onclick="handleRegister()">
+        <span class="btn-text">Kreiraj nalog</span>
+        <div class="spinner"></div>
+      </button>
+      <div class="info-box">
+        <span>ℹ</span>
+        <span>Nalog čeka odobrenje administratora prije aktivacije.</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="corner-deco">ETF · OOAD · 2025–26</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const DEMO_USERS = {
+    'student':   { name: 'Ahmed Spahić',    username: 'ahmed',  role: 'student',   avatar: 'AS' },
+    'moderator': { name: 'Amila Duraković', username: 'amila', role: 'moderator', avatar: 'AD' },
+    'admin':     { name: 'Zlatan Avdić',     username: 'zlatan',role: 'admin',     avatar: 'ZA' }
+  };
+
+  function switchTab(t) {
+    document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='login')||(i===1&&t==='register')));
+    document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+    document.getElementById(t).classList.add('active');
+    document.body.classList.toggle('compact-mode', t === 'register');
+    clearErrors();
+  }
+
+  function showError(id) {
+    const el = document.getElementById(id);
+    el.classList.add('show');
+    const inp = el.previousElementSibling;
+    if (inp && inp.tagName === 'INPUT') inp.classList.add('error');
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('show'));
+    document.querySelectorAll('input').forEach(e => e.classList.remove('error'));
+  }
+
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast ' + type;
+    setTimeout(() => t.classList.add('show'), 10);
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function checkStrength(pass) {
+    const bar = document.getElementById('strengthBar');
+    const label = document.getElementById('strengthLabel');
+    bar.className = 'strength-bar';
+    if (!pass) { label.textContent = ''; return; }
+    if (pass.length < 6) { bar.classList.add('weak'); label.textContent = 'Slaba'; label.style.color = 'var(--danger)'; }
+    else if (pass.length < 10) { bar.classList.add('medium'); label.textContent = 'Srednja'; label.style.color = 'var(--amber)'; }
+    else { bar.classList.add('strong'); label.textContent = 'Jaka'; label.style.color = 'var(--success)'; }
+  }
+
+  function handleLogin() {
+    clearErrors();
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    let valid = true;
+    if (!user) { showError('loginUserErr'); valid = false; }
+    if (!pass) { showError('loginPassErr'); valid = false; }
+    if (!valid) return;
+
+    const btn = document.getElementById('loginBtn');
+    btn.classList.add('loading'); btn.disabled = true;
+
+    setTimeout(() => {
+      btn.classList.remove('loading'); btn.disabled = false;
+      showToast('Prijava (demo) — backend još nije povezan');
+    }, 1000);
+  }
+
+  function demoLogin(role) {
+    showToast('Demo pristup: ' + role + ' — backend još nije povezan');
+  }
+
+  function handleRegister() {
+    clearErrors();
+    const name = document.getElementById('regName').value.trim();
+    const user = document.getElementById('regUser').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const pass = document.getElementById('regPass').value;
+    const passC = document.getElementById('regPassConfirm').value;
+    let valid = true;
+    if (!name) { showError('regNameErr'); valid = false; }
+    if (!user) { showError('regUserErr'); valid = false; }
+    if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) { showError('regEmailErr'); valid = false; }
+    if (pass.length < 8) { showError('regPassErr'); valid = false; }
+    if (pass !== passC) { showError('regPassConfirmErr'); valid = false; }
+    if (!valid) return;
+
+    const btn = document.getElementById('regBtn');
+    btn.classList.add('loading'); btn.disabled = true;
+    setTimeout(() => {
+      btn.classList.remove('loading'); btn.disabled = false;
+      showToast('Registracija (demo) — backend još nije povezan');
+      setTimeout(() => switchTab('login'), 2000);
+    }, 1500);
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      if (document.getElementById('login').classList.contains('active')) handleLogin();
+      else handleRegister();
+    }
+  });
+</script>
+</body>
+</html>

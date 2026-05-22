@@ -3,6 +3,22 @@
   "WorkspaceRootPath": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\controllers\\moderatorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\controllers\\moderatorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|c:\\users\\korisnik\\documents\\ooad-kviz\\grupa7-tim1\\ezzkvi\\ooad projekat v2\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{3CD87DF0-9F4C-4442-8967-1424EEFBE76C}|OOAD projekat v2\\ezZkvi.csproj|solutionrelative:ooad projekat v2\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
@@ -27,19 +43,67 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Index.cshtml",
-              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Home\\Index.cshtml",
-              "RelativeDocumentMoniker": "OOAD projekat v2\\Views\\Home\\Index.cshtml",
-              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Home\\Index.cshtml",
-              "RelativeToolTip": "OOAD projekat v2\\Views\\Home\\Index.cshtml",
-              "ViewState": "AgIAAHIBAAAAAAAAAAAAAHwBAAAOAAAAAAAAAA==",
+              "Title": "_ViewImports.cshtml",
+              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\_ViewImports.cshtml",
+              "RelativeDocumentMoniker": "OOAD projekat v2\\Views\\_ViewImports.cshtml",
+              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\_ViewImports.cshtml",
+              "RelativeToolTip": "OOAD projekat v2\\Views\\_ViewImports.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAA0AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-05-22T08:29:11.625Z",
+              "WhenOpened": "2026-05-22T22:32:07.31Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "ModeratorController.cs",
+              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Controllers\\ModeratorController.cs",
+              "RelativeDocumentMoniker": "OOAD projekat v2\\Controllers\\ModeratorController.cs",
+              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Controllers\\ModeratorController.cs",
+              "RelativeToolTip": "OOAD projekat v2\\Controllers\\ModeratorController.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T22:30:25.345Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "OOAD projekat v2\\Views\\Account\\Login.cshtml",
+              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Account\\Login.cshtml",
+              "RelativeToolTip": "OOAD projekat v2\\Views\\Account\\Login.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T22:29:38.633Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "OOAD projekat v2\\Controllers\\HomeController.cs",
+              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "OOAD projekat v2\\Controllers\\HomeController.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAzwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T22:29:21.33Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "OOAD projekat v2\\Views\\Home\\Index.cshtml",
+              "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "OOAD projekat v2\\Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAACcBAAAAAAAAAAAtwDcBAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T08:29:11.625Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "_Layout.cshtml",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Shared\\_Layout.cshtml",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Views\\Shared\\_Layout.cshtml",
@@ -51,7 +115,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 6,
               "Title": "_ViewStart.cshtml",
               "DocumentMoniker": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\_ViewStart.cshtml",
               "RelativeDocumentMoniker": "OOAD projekat v2\\Views\\_ViewStart.cshtml",
