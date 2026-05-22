@@ -49,27 +49,6 @@
   }
   .nav-btn:hover { background: #fff; box-shadow: 0 0 20px rgba(0,229,255,0.4); }
 
-  .hamburger { display: none; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
-  .mobile-menu {
-    display: none; position: fixed; inset: 0;
-    background: rgba(8,12,20,0.97); z-index: 99; flex-direction: column;
-    align-items: center; justify-content: center; gap: 28px;
-  }
-  .mobile-menu.open { display: flex; }
-  .mobile-menu p {
-    color: var(--muted); font-size: 0.85rem; letter-spacing: 1px;
-  }
-  .mobile-menu a {
-    color: var(--text); text-decoration: none; font-family: 'Rajdhani', sans-serif;
-    font-size: 1.4rem; font-weight: 600; letter-spacing: 2px;
-    text-transform: uppercase; transition: color 0.2s;
-  }
-  .mobile-menu a:hover { color: var(--accent); }
-  .mobile-close {
-    position: absolute; top: 18px; right: 24px; background: none; border: none;
-    color: var(--text); font-size: 2rem; cursor: pointer;
-  }
-
   /* ===== HERO ===== */
   .hero {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -311,7 +290,6 @@
   }
   @@media (max-width: 768px) {
     .nav-right .nav-status { display: none; }
-    .hamburger { display: block; }
     .hero { padding: 100px 20px 60px; }
     .hero-title { font-size: 2.4rem; letter-spacing: 2px; }
     .hero-sub { font-size: 0.92rem; }
@@ -332,15 +310,8 @@
   <div class="nav-right">
     <div class="nav-status"><span class="dot"></span> Platforma aktivna</div>
     <a class="nav-btn" href="#">Prijava</a>
-    <button class="hamburger" onclick="toggleMobile()">☰</button>
   </div>
 </nav>
-
-<div class="mobile-menu" id="mobileMenu">
-  <button class="mobile-close" onclick="toggleMobile()">✕</button>
-  <p>Pristupi platformi</p>
-  <a href="#">Prijava →</a>
-</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -493,9 +464,6 @@
   window.addEventListener('scroll', () => {
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
   });
-
-  // Mobile
-  function toggleMobile() { document.getElementById('mobileMenu').classList.toggle('open'); }
 
   // Reveal on scroll
   const obs = new IntersectionObserver((entries) => {

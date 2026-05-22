@@ -32,7 +32,7 @@
               "RelativeDocumentMoniker": "OOAD projekat v2\\Views\\Home\\Index.cshtml",
               "ToolTip": "C:\\Users\\Korisnik\\Documents\\OOAD-Kviz\\Grupa7-Tim1\\ezZkvi\\OOAD projekat v2\\Views\\Home\\Index.cshtml",
               "RelativeToolTip": "OOAD projekat v2\\Views\\Home\\Index.cshtml",
-              "ViewState": "AgIAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAFMBAAAAAAAAAAAAAE4BAABBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-05-22T08:29:11.625Z",
               "EditorCaption": ""
@@ -47,8 +47,7 @@
               "RelativeToolTip": "OOAD projekat v2\\Views\\Shared\\_Layout.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-05-22T08:29:02.149Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-22T08:29:02.149Z"
             },
             {
               "$type": "Document",
@@ -60,8 +59,7 @@
               "RelativeToolTip": "OOAD projekat v2\\Views\\_ViewStart.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-05-22T08:28:58.937Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-22T08:28:58.937Z"
             }
           ]
         }
