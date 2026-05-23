@@ -196,7 +196,7 @@
       <a class="nav-item" href="#"><span class="ico">📚</span> Priprema</a>
       <a class="nav-item" href="#"><span class="ico">⏱</span> Simulacija <span class="nav-badge">NOVO</span></a>
       <a class="nav-item" href="#"><span class="ico">🏆</span> Leaderboard</a>
-      <a class="nav-item" href="#"><span class="ico">💬</span> Feedback</a>
+      <a class="nav-item" asp-controller="Feedback" asp-action="Create"><span class="ico">💬</span> Feedback</a>
     </nav>
     <a class="user-card" asp-controller="Account" asp-action="Login">
       <div class="top">
@@ -262,7 +262,7 @@
           <div class="action-icon green">🏆</div>
           <div><div class="action-text">Pogledaj rang listu</div><div class="action-sub">Trenutna pozicija: -</div></div>
         </a>
-        <a class="action-btn" href="#">
+        <a class="action-btn" asp-controller="Feedback" asp-action="Create">
           <div class="action-icon">💬</div>
           <div><div class="action-text">Pošalji feedback</div><div class="action-sub">Prijedlog pitanja ili prijava greške</div></div>
         </a>
