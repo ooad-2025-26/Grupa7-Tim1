@@ -1,0 +1,388 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Simulacija kviza";
+}
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Simulacija kviza</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080C14; --surface:#0F1620; --card:#141D2B;
+    --border:#1E2D42; --accent:#00E5FF; --amber:#FFB300;
+    --text:#E8EDF5; --muted:#5A7090; --success:#00E676; --danger:#FF5252;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Nunito Sans',sans-serif; min-height:100vh; }
+
+  #startScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:32px 20px; }
+  .back-link {
+    position:absolute; top:24px; left:24px;
+    padding:8px 16px; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; color:var(--muted); font-size:0.85rem; cursor:pointer;
+    transition:all 0.2s; text-decoration:none; display:flex; align-items:center; gap:6px;
+  }
+  .back-link:hover { border-color:var(--accent); color:var(--accent); }
+  .start-card {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:40px; max-width:520px; width:100%; text-align:center;
+    animation:fadeUp 0.5s ease both;
+  }
+  .sim-badge {
+    display:inline-block; background:rgba(255,179,0,0.1);
+    border:1px solid rgba(255,179,0,0.3); color:var(--amber);
+    padding:6px 16px; border-radius:20px;
+    font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:20px;
+  }
+  .start-title { font-family:'Rajdhani',sans-serif; font-size:2rem; font-weight:700; margin-bottom:8px; }
+  .start-sub { color:var(--muted); font-size:0.9rem; margin-bottom:28px; }
+  .info-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px; }
+  .info-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; }
+  .info-val { font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; color:var(--accent); }
+  .info-label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+  .warning-box {
+    background:rgba(255,179,0,0.07); border:1px solid rgba(255,179,0,0.2);
+    border-radius:8px; padding:12px 16px; color:var(--amber);
+    font-size:0.83rem; text-align:left; margin-bottom:24px;
+  }
+  .btn {
+    padding:14px 40px; border:none; border-radius:8px; cursor:pointer;
+    font-family:'Rajdhani',sans-serif; font-size:1rem; font-weight:700;
+    letter-spacing:2px; text-transform:uppercase; transition:all 0.2s; width:100%;
+  }
+  .btn-start { background:var(--amber); color:var(--bg); }
+  .btn-start:hover { background:#ffc933; box-shadow:0 0 24px rgba(255,179,0,0.4); }
+
+  /* Quiz screen */
+  #quizScreen { display:none; padding:24px; max-width:900px; margin:0 auto; }
+  .quiz-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:24px; background:var(--card);
+    border:1px solid var(--border); border-radius:12px; padding:16px 24px;
+    flex-wrap:wrap; gap:12px;
+  }
+  .quiz-meta { font-size:0.8rem; color:var(--muted); }
+  .quiz-meta strong { color:var(--text); font-size:1rem; }
+  .timer {
+    font-family:'Rajdhani',sans-serif; font-size:2rem; font-weight:700;
+    color:var(--accent); transition:color 0.3s; display:flex; align-items:center; gap:8px;
+  }
+  .timer.warning { color:var(--amber); }
+  .timer.danger { color:var(--danger); animation:pulse 0.5s ease infinite alternate; }
+  @@keyframes pulse { from{opacity:1} to{opacity:0.5} }
+  .timer-icon { font-size:1.2rem; }
+
+  .q-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:32px; margin-bottom:20px; animation:fadeUp 0.3s ease both;
+  }
+  .q-number { font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; color:var(--amber); margin-bottom:12px; }
+  .q-text { font-size:1.1rem; font-weight:600; line-height:1.6; margin-bottom:24px; }
+  .options { display:flex; flex-direction:column; gap:10px; }
+  .option {
+    padding:14px 18px; background:var(--surface); border:1.5px solid var(--border);
+    border-radius:10px; cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; gap:14px; font-size:0.92rem;
+  }
+  .option:hover { border-color:var(--amber); background:rgba(255,179,0,0.04); }
+  .option.selected { border-color:var(--amber); background:rgba(255,179,0,0.08); }
+  .opt-letter {
+    width:30px; height:30px; border-radius:6px; background:var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.85rem;
+    flex-shrink:0; transition:all 0.2s;
+  }
+  .option.selected .opt-letter { background:var(--amber); color:var(--bg); }
+
+  .q-nav {
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:16px 24px; flex-wrap:wrap; gap:12px;
+  }
+  .q-dots { display:flex; gap:6px; flex-wrap:wrap; max-width:500px; }
+  .q-dot {
+    width:10px; height:10px; border-radius:50%; background:var(--border);
+    cursor:pointer; transition:all 0.2s;
+  }
+  .q-dot.answered { background:var(--amber); }
+  .q-dot.current { background:var(--accent); transform:scale(1.3); }
+  .nav-btns { display:flex; gap:10px; }
+  .btn-nav {
+    padding:10px 20px; border:1px solid var(--border); background:var(--surface);
+    color:var(--muted); border-radius:8px; cursor:pointer; font-family:'Rajdhani',sans-serif;
+    font-weight:600; font-size:0.85rem; letter-spacing:1px; transition:all 0.2s;
+  }
+  .btn-nav:hover { border-color:var(--amber); color:var(--amber); }
+  .btn-finish { background:var(--amber); color:var(--bg); border:none; }
+  .btn-finish:hover { background:#ffc933; }
+
+  /* Result screen */
+  #resultScreen {
+    display:none; min-height:100vh; align-items:center; justify-content:center;
+    padding:32px 20px; flex-direction:column;
+  }
+  .result-card {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:40px; max-width:560px; width:100%; text-align:center;
+    animation:fadeUp 0.5s ease both;
+  }
+  .result-circle {
+    width:120px; height:120px; border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    margin:0 auto 24px; transition: border-color 0.5s, background 0.5s;
+  }
+  .result-pct { font-family:'Rajdhani',sans-serif; font-size:2.2rem; font-weight:700; }
+  .result-label { font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+  .result-title { font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; margin-bottom:6px; }
+  .result-sub { color:var(--muted); font-size:0.88rem; margin-bottom:28px; }
+  .result-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px; }
+  .rs-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; }
+  .rs-val { font-family:'Rajdhani',sans-serif; font-size:1.5rem; font-weight:700; }
+  .rs-label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+  .btn-review { background:var(--accent); color:var(--bg); border:none; border-radius:8px; padding:12px 24px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.9rem; letter-spacing:1px; transition:all 0.2s; text-decoration:none; display:inline-block; }
+  .btn-review:hover { background:#fff; }
+
+  .review-section { margin-top:32px; text-align:left; width:100%; }
+  .review-item {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:16px; margin-bottom:12px;
+  }
+  .review-item.is-correct { border-left:3px solid var(--success); }
+  .review-item.is-wrong { border-left:3px solid var(--danger); }
+  .review-item.is-skipped { border-left:3px solid var(--muted); }
+  .review-q { font-weight:600; margin-bottom:6px; }
+  .review-answer { font-size:0.85rem; color:var(--muted); }
+  .review-answer span.correct { color:var(--success); font-weight:600; }
+  .review-answer span.wrong { color:var(--danger); font-weight:600; }
+
+  /* Toast */
+  .toast { position:fixed; top:20px; right:20px; z-index:200; padding:12px 22px; border-radius:10px; font-size:0.85rem; font-weight:600; transform:translateX(120%); transition:transform 0.4s ease; }
+  .toast.show { transform:translateX(0); }
+  .toast.s { background:rgba(0,230,118,0.15); border:1px solid var(--success); color:var(--success); }
+
+  @@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  @@media(max-width:600px){
+    .start-card { padding:24px; }
+    .info-grid { grid-template-columns:1fr; }
+    #quizScreen { padding:16px; }
+    .q-card { padding:20px; }
+    .result-stats { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="startScreen">
+  <a class="back-link" asp-controller="Student" asp-action="Dashboard">← Nazad</a>
+  <div class="start-card">
+    <div class="sim-badge">⚡ Simulacija kviza</div>
+    <div class="start-title">OOAD – Simulacija</div>
+    <div class="start-sub">Oblast: Slučajevi upotrebe i UML dijagrami</div>
+    <div class="info-grid">
+      <div class="info-item"><div class="info-val">10</div><div class="info-label">Pitanja</div></div>
+      <div class="info-item"><div class="info-val">15</div><div class="info-label">Minuta</div></div>
+      <div class="info-item"><div class="info-val">1pt</div><div class="info-label">Po pitanju</div></div>
+    </div>
+    <div class="warning-box">⚠️ Tačni odgovori biće prikazani tek nakon završetka simulacije. Rezultat se automatski bilježi i ažurira tvoj rang na leaderboardu.</div>
+    <button class="btn btn-start" onclick="startQuiz()">Pokreni simulaciju</button>
+  </div>
+</div>
+
+<!-- Quiz Screen -->
+<div id="quizScreen">
+  <div class="quiz-header">
+    <div class="quiz-meta"><strong>OOAD · Simulacija</strong><br>Slučajevi upotrebe i UML dijagrami</div>
+    <div class="timer" id="timer"><span class="timer-icon">⏱</span><span id="timerDisplay">15:00</span></div>
+    <div class="quiz-meta" style="text-align:right">Pitanje<br><strong id="qCounter">1 / 10</strong></div>
+  </div>
+  <div class="q-card">
+    <div class="q-number" id="qNum">Pitanje 1 od 10</div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="options"></div>
+  </div>
+  <div class="q-nav">
+    <div class="q-dots" id="qDots"></div>
+    <div class="nav-btns">
+      <button class="btn-nav" onclick="prevQ()">← Preth.</button>
+      <button class="btn-nav" onclick="nextQ()">Sljedeće →</button>
+      <button class="btn-nav btn-finish" onclick="finishQuiz()">Završi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Result Screen -->
+<div id="resultScreen">
+  <div class="result-card">
+    <div class="result-circle" id="resultCircle">
+      <div class="result-pct" id="resultPct">0%</div>
+      <div class="result-label">Rezultat</div>
+    </div>
+    <div class="result-title" id="resultTitle">Simulacija završena</div>
+    <div class="result-sub" id="resultSub">Rezultat će biti sačuvan kad baza bude povezana.</div>
+    <div class="result-stats" id="resultStats">
+      <div class="rs-item"><div class="rs-val" id="rsCorrect" style="color:var(--success)">0</div><div class="rs-label">Tačnih</div></div>
+      <div class="rs-item"><div class="rs-val" id="rsWrong" style="color:var(--danger)">0</div><div class="rs-label">Netačnih</div></div>
+      <div class="rs-item"><div class="rs-val" id="rsTime" style="color:var(--amber)">00:00</div><div class="rs-label">Utrošeno</div></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a class="btn-review" asp-controller="Student" asp-action="Dashboard">← Dashboard</a>
+      <button class="btn-review" style="background:var(--surface);color:var(--muted);border:1px solid var(--border)" onclick="toggleReview()">Pregled odgovora</button>
+      <button class="btn-review" style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="location.reload()">Pokušaj ponovo</button>
+    </div>
+    <div class="review-section" id="reviewSection" style="display:none"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const quizQuestions = [
+  { q:"Koji od navedenih dijagrama u UML-u se koristi za prikaz dinamičkog ponašanja sistema tokom izvršavanja?", opts:["Dijagram klasa (Class Diagram)","Dijagram paketa (Package Diagram)","Dijagram sekvenci (Sequence Diagram)","Dijagram komponenti (Component Diagram)"], correct:2 },
+  { q:"Šta predstavlja Use Case dijagram?", opts:["Strukturu baze podataka","Interakciju između sistema i eksternih aktera","Tok podataka kroz sistem","Hijerarhiju klasa"], correct:1 },
+  { q:"Koji je osnovni element Use Case dijagrama koji predstavlja eksternog entiteta koji komunicira sa sistemom?", opts:["Klasa","Aktor","Objekat","Komponenta"], correct:1 },
+  { q:"Šta «include» relacija između dva slučaja upotrebe označava?", opts:["Opciono proširenje","Obavezno uključivanje funkcionalnosti","Nasljeđivanje","Generalizaciju"], correct:1 },
+  { q:"Koja je razlika između «extend» i «include» relacije?", opts:["Nema razlike","«extend» je opciona, «include» je obavezna","«include» je opciona, «extend» je obavezna","Obje su opcione"], correct:1 },
+  { q:"Šta je dijagram stanja (State Machine Diagram)?", opts:["Dijagram koji prikazuje statičku strukturu","Dijagram koji prikazuje promjene stanja objekta tokom vremena","Dijagram mrežne topologije","Dijagram baze podataka"], correct:1 },
+  { q:"Koji UML dijagram pripada strukturnim (statičkim) dijagramima?", opts:["Dijagram sekvenci","Dijagram aktivnosti","Dijagram klasa","Dijagram stanja"], correct:2 },
+  { q:"Šta predstavlja apstraktna klasa u UML-u?", opts:["Klasu koja se može instancirati","Klasu čije je ime napisano kurzivom – ne može se direktno instancirati","Klasu bez atributa","Klasu sa samo privatnim metodama"], correct:1 },
+  { q:"Koji princip OOP-a omogućava skrivanje interne implementacije?", opts:["Nasljeđivanje","Polimorfizam","Enkapsulacija","Apstrakcija"], correct:2 },
+  { q:"Šta je dijagram aktivnosti (Activity Diagram)?", opts:["Prikaz interakcije objekata","Prikaz tokova aktivnosti i odluka unutar sistema","Prikaz stanja objekta","Prikaz mrežne komunikacije"], correct:1 }
+];
+
+let current = 0, total = quizQuestions.length, seconds = 15*60, answers = {}, timerInterval;
+const letters = ['A','B','C','D'];
+
+// Init dots
+const dots = document.getElementById('qDots');
+for (let i=0; i<total; i++){
+  const d=document.createElement('div');
+  d.className='q-dot'+(i===0?' current':'');
+  d.id='dot'+i;
+  d.onclick = ()=> goTo(i);
+  dots.appendChild(d);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast s';
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function startQuiz(){
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('quizScreen').style.display='block';
+  renderQuestion();
+  startTimer();
+}
+
+function startTimer(){
+  timerInterval = setInterval(()=>{
+    seconds--;
+    const m=Math.floor(seconds/60), s=seconds%60;
+    document.getElementById('timerDisplay').textContent=m+':'+(s<10?'0':'')+s;
+    const t=document.getElementById('timer');
+    if(seconds<=300) t.className='timer warning';
+    if(seconds<=60) t.className='timer danger';
+    if(seconds<=0){clearInterval(timerInterval);finishQuiz();}
+  },1000);
+}
+
+function renderQuestion(){
+  const q = quizQuestions[current];
+  document.getElementById('qNum').textContent = 'Pitanje '+(current+1)+' od '+total;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('qCounter').textContent = (current+1)+' / '+total;
+  const optDiv = document.getElementById('options');
+  optDiv.innerHTML = '';
+  q.opts.forEach((opt,i) => {
+    const div = document.createElement('div');
+    div.className = 'option' + (answers[current]===i?' selected':'');
+    div.innerHTML = '<div class="opt-letter">'+letters[i]+'</div><span>'+opt+'</span>';
+    div.onclick = () => selectOpt(i);
+    optDiv.appendChild(div);
+  });
+  document.querySelectorAll('.q-dot').forEach((d,i)=>{ d.classList.toggle('current',i===current); });
+}
+
+function selectOpt(idx){
+  answers[current] = idx;
+  document.getElementById('dot'+current).classList.add('answered');
+  renderQuestion();
+}
+
+function nextQ(){ if(current<total-1){ current++; renderQuestion(); } }
+function prevQ(){ if(current>0){ current--; renderQuestion(); } }
+function goTo(idx){ current = idx; renderQuestion(); }
+
+function finishQuiz(){
+  clearInterval(timerInterval);
+  document.getElementById('quizScreen').style.display='none';
+  const rs = document.getElementById('resultScreen');
+  rs.style.display='flex';
+
+  let correct = 0, wrong = 0;
+  quizQuestions.forEach((q,i) => {
+    if (answers[i] === q.correct) correct++;
+    else if (answers[i] !== undefined) wrong++;
+  });
+  const pct = Math.round(correct/total*100);
+  const elapsed = 15*60 - seconds;
+  const em = Math.floor(elapsed/60), es = elapsed%60;
+
+  document.getElementById('resultPct').textContent = pct + '%';
+  document.getElementById('rsCorrect').textContent = correct;
+  document.getElementById('rsWrong').textContent = wrong;
+  document.getElementById('rsTime').textContent = em+':'+(es<10?'0':'')+es;
+
+  const circle = document.getElementById('resultCircle');
+  if (pct >= 70) {
+    circle.style.border = '4px solid var(--success)';
+    circle.style.background = 'rgba(0,230,118,0.06)';
+    document.getElementById('resultPct').style.color = 'var(--success)';
+    document.getElementById('resultTitle').textContent = 'Odlično! 🎉';
+  } else if (pct >= 50) {
+    circle.style.border = '4px solid var(--amber)';
+    circle.style.background = 'rgba(255,179,0,0.06)';
+    document.getElementById('resultPct').style.color = 'var(--amber)';
+    document.getElementById('resultTitle').textContent = 'Dobro! 👍';
+    document.getElementById('resultSub').textContent = 'Provjeri greške i pokušaj ponovo.';
+  } else {
+    circle.style.border = '4px solid var(--danger)';
+    circle.style.background = 'rgba(255,82,82,0.06)';
+    document.getElementById('resultPct').style.color = 'var(--danger)';
+    document.getElementById('resultTitle').textContent = 'Treba još vježbe 📚';
+    document.getElementById('resultSub').textContent = 'Preporuka: prvo probaj Pripremu za kviz pa se vrati ovamo.';
+  }
+
+  // Build review
+  const review = document.getElementById('reviewSection');
+  review.innerHTML = '';
+  quizQuestions.forEach((q,i) => {
+    const userAns = answers[i];
+    const isCorrect = userAns === q.correct;
+    const isSkipped = userAns === undefined;
+    const cls = isSkipped ? 'is-skipped' : (isCorrect ? 'is-correct' : 'is-wrong');
+    const div = document.createElement('div');
+    div.className = 'review-item ' + cls;
+    div.innerHTML = '<div class="review-q">'+(i+1)+'. '+q.q+'</div>' +
+      '<div class="review-answer">' +
+      (isSkipped ? '<span class="wrong">Nije odgovoreno</span>' :
+       (!isCorrect ? 'Tvoj odgovor: <span class="wrong">'+letters[userAns]+'. '+q.opts[userAns]+'</span><br>' : '')) +
+      'Tačan odgovor: <span class="correct">'+letters[q.correct]+'. '+q.opts[q.correct]+'</span></div>';
+    review.appendChild(div);
+  });
+}
+
+function toggleReview(){
+  const r = document.getElementById('reviewSection');
+  r.style.display = r.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

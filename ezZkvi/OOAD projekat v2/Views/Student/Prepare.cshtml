@@ -1,0 +1,297 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Priprema za kviz";
+}
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Priprema za kviz</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080C14; --surface:#0F1620; --card:#141D2B;
+    --border:#1E2D42; --accent:#00E5FF; --amber:#FFB300;
+    --text:#E8EDF5; --muted:#5A7090; --success:#00E676; --danger:#FF5252;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Nunito Sans',sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:32px 20px; }
+
+  .header { width:100%; max-width:800px; display:flex; align-items:center; gap:16px; margin-bottom:28px; }
+  .back-btn {
+    padding:8px 16px; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; color:var(--muted); font-size:0.85rem; cursor:pointer;
+    transition:all 0.2s; display:flex; align-items:center; gap:6px; text-decoration:none;
+  }
+  .back-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .header-info { flex:1; }
+  .header-title { font-family:'Rajdhani',sans-serif; font-size:1.5rem; font-weight:700; letter-spacing:1px; }
+  .header-sub { font-size:0.8rem; color:var(--muted); margin-top:2px; }
+
+  .subject-selector { width:100%; max-width:800px; display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .subject-chip {
+    padding:8px 18px; background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; font-size:0.82rem; cursor:pointer; transition:all 0.2s;
+    font-family:'Nunito Sans',sans-serif;
+  }
+  .subject-chip:hover, .subject-chip.active { border-color:var(--accent); color:var(--accent); background:rgba(0,229,255,0.06); }
+
+  .progress-wrap { width:100%; max-width:800px; margin-bottom:24px; }
+  .progress-labels { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+  .prog-bar { height:4px; background:var(--border); border-radius:4px; overflow:hidden; }
+  .prog-fill { height:100%; background:linear-gradient(90deg, var(--accent), #00B8D4); border-radius:4px; transition:width 0.5s ease; }
+
+  .q-card {
+    width:100%; max-width:800px; background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:32px; animation:fadeUp 0.4s ease both;
+  }
+  .q-number { font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; color:var(--accent); margin-bottom:16px; }
+  .q-text { font-size:1.15rem; font-weight:600; line-height:1.6; margin-bottom:28px; }
+  .options { display:flex; flex-direction:column; gap:12px; }
+  .option {
+    padding:16px 20px; background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
+    cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:14px; font-size:0.95rem;
+  }
+  .option:hover { border-color:var(--accent); background:rgba(0,229,255,0.04); }
+  .option.selected { border-color:var(--accent); background:rgba(0,229,255,0.08); }
+  .option.correct { border-color:var(--success); background:rgba(0,230,118,0.08); }
+  .option.wrong { border-color:var(--danger); background:rgba(255,82,82,0.08); }
+  .opt-letter {
+    width:32px; height:32px; border-radius:6px; background:var(--border); display:flex;
+    align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif;
+    font-weight:700; font-size:0.9rem; flex-shrink:0; transition:all 0.2s;
+  }
+  .option.selected .opt-letter { background:var(--accent); color:var(--bg); }
+  .option.correct .opt-letter { background:var(--success); color:var(--bg); }
+  .option.wrong .opt-letter { background:var(--danger); color:white; }
+
+  .feedback-box {
+    margin-top:20px; padding:16px 20px; border-radius:10px; font-size:0.9rem; line-height:1.5;
+    display:none; animation:fadeUp 0.3s ease both;
+  }
+  .feedback-box.correct-fb { background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.3); color:var(--success); }
+  .feedback-box.wrong-fb { background:rgba(255,82,82,0.1); border:1px solid rgba(255,82,82,0.3); color:#ff8a80; }
+  .fb-title { font-weight:700; margin-bottom:4px; font-family:'Rajdhani',sans-serif; font-size:1rem; letter-spacing:1px; }
+
+  .actions { display:flex; justify-content:flex-end; margin-top:24px; gap:12px; flex-wrap:wrap; }
+  .btn {
+    padding:12px 28px; border:none; border-radius:8px; cursor:pointer;
+    font-family:'Rajdhani',sans-serif; font-size:0.95rem; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase; transition:all 0.2s;
+  }
+  .btn-primary { background:var(--accent); color:var(--bg); }
+  .btn-primary:hover { background:#fff; box-shadow:0 0 20px rgba(0,229,255,0.4); }
+  .btn-secondary { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+
+  .mini-stats { display:flex; gap:20px; margin-bottom:24px; width:100%; max-width:800px; flex-wrap:wrap; }
+  .mini-stat {
+    flex:1; min-width:120px; background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:14px 18px; display:flex; align-items:center; gap:12px;
+  }
+  .ms-val { font-family:'Rajdhani',sans-serif; font-size:1.5rem; font-weight:700; }
+  .ms-val.a { color:var(--accent); } .ms-val.s { color:var(--success); } .ms-val.d { color:var(--danger); }
+  .ms-label { font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+  .kb-hint { font-size:0.7rem; color:var(--border); text-align:center; margin-top:16px; width:100%; max-width:800px; }
+  .kb-hint kbd {
+    display:inline-block; padding:2px 6px; background:var(--surface);
+    border:1px solid var(--border); border-radius:4px; font-size:0.68rem; margin:0 2px;
+  }
+
+  @@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+  @@media (max-width: 600px) {
+    body { padding:16px 12px; }
+    .q-card { padding:20px; }
+    .mini-stats { flex-direction:column; }
+    .mini-stat { min-width:auto; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back-btn" asp-controller="Student" asp-action="Dashboard">← Nazad</a>
+  <div class="header-info">
+    <div class="header-title">Priprema za kviz</div>
+    <div class="header-sub" id="headerSub">OOAD · Priprema za kviz</div>
+  </div>
+</div>
+
+<div class="subject-selector" id="subjectSelector">
+  <div class="subject-chip active" onclick="selectSubject(this,'OOAD')">OOAD</div>
+  <div class="subject-chip" onclick="selectSubject(this,'OS')">Operativni sistemi</div>
+  <div class="subject-chip" onclick="selectSubject(this,'ASP')">Algoritmi</div>
+  <div class="subject-chip" onclick="selectSubject(this,'NSP')">NSP</div>
+  <div class="subject-chip" onclick="selectSubject(this,'BP')">Baze podataka</div>
+</div>
+
+<div class="mini-stats">
+  <div class="mini-stat"><div><div class="ms-val a" id="qCurrent">1</div><div class="ms-label">Trenutno</div></div></div>
+  <div class="mini-stat"><div><div class="ms-val s" id="qCorrect">0</div><div class="ms-label">Tačnih</div></div></div>
+  <div class="mini-stat"><div><div class="ms-val d" id="qWrong">0</div><div class="ms-label">Netačnih</div></div></div>
+  <div class="mini-stat"><div><div class="ms-val" id="qTotal">5</div><div class="ms-label">Ukupno</div></div></div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-labels"><span>Napredak</span><span id="progLabel">1 / 5</span></div>
+  <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:20%"></div></div>
+</div>
+
+<div class="q-card" id="qCard">
+  <div class="q-number" id="qNum">Pitanje 1 od 5</div>
+  <div class="q-text" id="qText">Učitavanje...</div>
+  <div class="options" id="options"></div>
+  <div class="feedback-box" id="feedbackBox">
+    <div class="fb-title" id="fbTitle"></div>
+    <div id="fbText"></div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" style="display:none">← Prethodno</button>
+    <button class="btn btn-secondary" id="skipBtn" onclick="nextQuestion()">Preskoči</button>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Sljedeće →</button>
+  </div>
+</div>
+
+<div class="kb-hint">
+  Prečice: <kbd>1</kbd>-<kbd>4</kbd> odgovor · <kbd>→</kbd> sljedeće · <kbd>←</kbd> prethodno
+</div>
+
+<script>
+  const questions = {
+    OOAD: [
+      { q:"Koji UML dijagram prikazuje dinamičko ponašanje sistema kroz interakciju objekata u vremenu?", opts:["Dijagram klasa","Dijagram paketa","Dijagram sekvenci","Dijagram komponenti"], correct:2, explanation:"Dijagram sekvenci (Sequence Diagram) prikazuje interakciju između objekata u vremenskom redoslijedu." },
+      { q:"Šta predstavlja «include» relacija u Use Case dijagramu?", opts:["Opcionu funkcionalnost","Obaveznu funkcionalnost koja se uvijek izvršava","Nasljeđivanje između aktera","Proširenje osnovnog slučaja upotrebe"], correct:1, explanation:"Include relacija označava obaveznu funkcionalnost – uključeni slučaj upotrebe se uvijek izvršava unutar baznog." },
+      { q:"Koji je primarni cilj Objektno orijentisane analize i dizajna?", opts:["Pisanje efikasnog koda","Modelovanje sistema kroz objekte i njihove interakcije","Optimizacija baze podataka","Testiranje softvera"], correct:1, explanation:"OOAD se fokusira na modelovanje sistema kroz koncepte objekata, klasa, nasljeđivanja i polimorfizma." },
+      { q:"Šta je apstraktna klasa u OOP-u?", opts:["Klasa koja se može instancirati","Klasa bez metoda","Klasa koja se ne može direktno instancirati i sadrži apstraktne metode","Klasa sa samo statičkim metodama"], correct:2, explanation:"Apstraktna klasa služi kao šablon – ne može se kreirati instanca direktno, već se nasljeđuje." },
+      { q:"Koji princip OOP-a omogućava da različite klase implementiraju istu operaciju na različite načine?", opts:["Enkapsulacija","Nasljeđivanje","Polimorfizam","Kompozicija"], correct:2, explanation:"Polimorfizam omogućava da objekti različitih klasa odgovaraju na iste poruke na specifične načine." }
+    ],
+    OS: [
+      { q:"Koja je glavna razlika između procesa i niti (thread)?", opts:["Procesi su brži","Niti dijele memorijski prostor istog procesa","Procesi ne koriste CPU","Niti ne mogu komunicirati"], correct:1, explanation:"Niti unutar istog procesa dijele adresni prostor, dok procesi imaju izolovane memorijske prostore." },
+      { q:"Šta je deadlock u kontekstu operativnih sistema?", opts:["Beskrajna petlja","Situacija gdje dva ili više procesa čekaju resurse koje drže drugi","Greška u kernelu","Prekoračenje memorije"], correct:1, explanation:"Deadlock nastaje kada grupa procesa čeka resurse koje drže drugi procesi iz iste grupe." }
+    ],
+    ASP: [
+      { q:"Koja je vremenska složenost QuickSort algoritma u prosječnom slučaju?", opts:["O(n)","O(n log n)","O(n²)","O(log n)"], correct:1, explanation:"QuickSort ima prosječnu složenost O(n log n), dok je najgori slučaj O(n²)." }
+    ],
+    NSP: [
+      { q:"Koji dizajn pattern osigurava da klasa ima samo jednu instancu?", opts:["Factory","Observer","Singleton","Decorator"], correct:2, explanation:"Singleton pattern ograničava klasu na jednu instancu i pruža globalnu tačku pristupa." }
+    ],
+    BP: [
+      { q:"Šta je primarni ključ u relacijskoj bazi podataka?", opts:["Bilo koji atribut","Unikatan identifikator zapisa","Strani ključ","Indeks"], correct:1, explanation:"Primarni ključ jedinstveno identificira svaki zapis u tabeli i ne može biti NULL." }
+    ]
+  };
+
+  let currentSubject = 'OOAD', currentQ = 0, correctCount = 0, wrongCount = 0, answered = false;
+
+  function loadQuestions() {
+    const qs = questions[currentSubject] || questions.OOAD;
+    document.getElementById('qTotal').textContent = qs.length;
+    currentQ = 0; correctCount = 0; wrongCount = 0; answered = false;
+    document.getElementById('qCorrect').textContent = '0';
+    document.getElementById('qWrong').textContent = '0';
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    const qs = questions[currentSubject];
+    if (!qs || currentQ >= qs.length) return;
+    const q = qs[currentQ];
+    document.getElementById('qNum').textContent = 'Pitanje ' + (currentQ+1) + ' od ' + qs.length;
+    document.getElementById('qText').textContent = q.q;
+    document.getElementById('qCurrent').textContent = currentQ + 1;
+    document.getElementById('progLabel').textContent = (currentQ+1) + ' / ' + qs.length;
+    document.getElementById('progFill').style.width = ((currentQ+1)/qs.length*100) + '%';
+    const letters = ['A','B','C','D'];
+    const optDiv = document.getElementById('options');
+    optDiv.innerHTML = '';
+    q.opts.forEach((opt, i) => {
+      const div = document.createElement('div');
+      div.className = 'option';
+      div.innerHTML = '<div class="opt-letter">'+letters[i]+'</div><span>'+opt+'</span>';
+      div.setAttribute('onclick', 'selectOption(this, '+i+')');
+      optDiv.appendChild(div);
+    });
+    document.getElementById('feedbackBox').style.display = 'none';
+    document.getElementById('skipBtn').style.display = 'block';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('prevBtn').style.display = currentQ > 0 ? 'block' : 'none';
+    answered = false;
+  }
+
+  function selectOption(el, index) {
+    if (answered) return;
+    answered = true;
+    const q = questions[currentSubject][currentQ];
+    const opts = document.querySelectorAll('.option');
+    opts.forEach(o => o.style.pointerEvents = 'none');
+    const fb = document.getElementById('feedbackBox');
+    if (index === q.correct) {
+      el.classList.add('correct');
+      fb.className = 'feedback-box correct-fb';
+      document.getElementById('fbTitle').textContent = '✓ Tačan odgovor!';
+      correctCount++;
+      document.getElementById('qCorrect').textContent = correctCount;
+    } else {
+      el.classList.add('wrong');
+      opts[q.correct].classList.add('correct');
+      fb.className = 'feedback-box wrong-fb';
+      document.getElementById('fbTitle').textContent = '✗ Netačan odgovor';
+      wrongCount++;
+      document.getElementById('qWrong').textContent = wrongCount;
+    }
+    document.getElementById('fbText').textContent = q.explanation;
+    fb.style.display = 'block';
+    document.getElementById('skipBtn').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'block';
+  }
+
+  function nextQuestion() {
+    const qs = questions[currentSubject];
+    if (currentQ < qs.length - 1) {
+      currentQ++;
+      renderQuestion();
+    } else {
+      const pct = Math.round(correctCount/qs.length*100);
+      const scoreEarned = Math.round(correctCount * 5);
+
+      document.getElementById('qCard').innerHTML = `
+        <div style="text-align:center;padding:40px 0">
+          <div style="font-size:3rem;margin-bottom:16px">${pct >= 70 ? '🎉' : '📚'}</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;margin-bottom:8px">Priprema završena!</div>
+          <div style="color:var(--muted);margin-bottom:24px">Tačnih: <span style="color:var(--success)">${correctCount}</span> · Netačnih: <span style="color:var(--danger)">${wrongCount}</span> · Rezultat: <span style="color:var(--accent)">${pct}%</span></div>
+          <div style="color:var(--muted);font-size:0.82rem;margin-bottom:20px">+${scoreEarned} XP (sačuvaće se kad baza bude povezana)</div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="loadQuestions()">Pokušaj ponovo</button>
+            <a class="btn btn-secondary" href="/Student/Simulate" style="text-decoration:none">Idi na simulaciju →</a>
+          </div>
+        </div>`;
+    }
+  }
+
+  function prevQuestion() {
+    if (currentQ > 0) { currentQ--; renderQuestion(); }
+  }
+
+  function selectSubject(el, subj) {
+    document.querySelectorAll('.subject-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    currentSubject = subj;
+    document.getElementById('headerSub').textContent = subj + ' · Priprema za kviz';
+    loadQuestions();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (!answered && ['1','2','3','4'].includes(e.key)) {
+      const opts = document.querySelectorAll('.option');
+      const idx = parseInt(e.key) - 1;
+      if (opts[idx]) opts[idx].click();
+    }
+    if (answered && (e.key === 'ArrowRight' || e.key === 'Enter')) nextQuestion();
+    if (!answered && e.key === 'ArrowLeft' && currentQ > 0) prevQuestion();
+  });
+
+  loadQuestions();
+</script>
+</body>
+</html>

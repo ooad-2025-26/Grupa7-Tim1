@@ -25,6 +25,18 @@ namespace ezZkvi.Controllers
             return View();
         }
 
+        // GET: /Student/Prepare
+        public IActionResult Prepare()
+        {
+            return View();
+        }
+
+        // GET: /Student/Simulate
+        public IActionResult Simulate()
+        {
+            return View();
+        }
+
         // GET: Student
         public async Task<IActionResult> Index()
         {

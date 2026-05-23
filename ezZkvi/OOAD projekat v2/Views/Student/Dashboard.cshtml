@@ -193,8 +193,8 @@
     <a class="logo" asp-controller="Home" asp-action="Index">KVIZ<span>APP</span></a>
     <nav class="nav">
       <a class="nav-item active" asp-controller="Student" asp-action="Dashboard"><span class="ico">⊞</span> Početna</a>
-      <a class="nav-item" href="#"><span class="ico">📚</span> Priprema</a>
-      <a class="nav-item" href="#"><span class="ico">⏱</span> Simulacija <span class="nav-badge">NOVO</span></a>
+      <a class="nav-item" asp-controller="Student" asp-action="Prepare"><span class="ico">📚</span> Priprema</a>
+      <a class="nav-item" asp-controller="Student" asp-action="Simulate"><span class="ico">⏱</span> Simulacija <span class="nav-badge">NOVO</span></a>
       <a class="nav-item" href="#"><span class="ico">🏆</span> Leaderboard</a>
       <a class="nav-item" asp-controller="Feedback" asp-action="Create"><span class="ico">💬</span> Feedback</a>
     </nav>
@@ -250,11 +250,11 @@
     <div class="row2">
       <div class="section-card">
         <div class="section-title">Brze akcije</div>
-        <a class="action-btn" href="#">
+        <a class="action-btn" asp-controller="Student" asp-action="Prepare">
           <div class="action-icon">📚</div>
           <div><div class="action-text">Priprema za kviz</div><div class="action-sub">Vježbaj bez vremenskog ograničenja</div></div>
         </a>
-        <a class="action-btn" href="#">
+        <a class="action-btn" asp-controller="Student" asp-action="Simulate">
           <div class="action-icon amber">⏱</div>
           <div><div class="action-text">Simulacija kviza</div><div class="action-sub">Realni uslovi testiranja</div></div>
         </a>
