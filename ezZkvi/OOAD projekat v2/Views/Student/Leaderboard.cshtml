@@ -1,0 +1,265 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Leaderboard";
+}
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080C14; --surface:#0F1620; --card:#141D2B;
+    --border:#1E2D42; --accent:#00E5FF; --amber:#FFB300;
+    --text:#E8EDF5; --muted:#5A7090; --success:#00E676; --danger:#FF5252;
+    --gold:#FFD700; --silver:#C0C0C0; --bronze:#CD7F32;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Nunito Sans',sans-serif; min-height:100vh; padding:32px 20px; max-width:800px; margin:0 auto; }
+
+  .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; }
+  .page-title { font-family:'Rajdhani',sans-serif; font-size:2rem; font-weight:700; letter-spacing:1px; }
+  .page-title span { color:var(--amber); }
+  .page-sub { color:var(--muted); font-size:0.85rem; margin-top:4px; }
+  .back-link {
+    padding:8px 16px; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; color:var(--muted); font-size:0.85rem; cursor:pointer;
+    transition:all 0.2s; text-decoration:none; display:flex; align-items:center; gap:6px;
+  }
+  .back-link:hover { border-color:var(--accent); color:var(--accent); }
+
+  .filters { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+  .filter-btn {
+    padding:7px 16px; background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; color:var(--muted); font-size:0.82rem; cursor:pointer;
+    transition:all 0.2s; font-family:'Nunito Sans',sans-serif;
+  }
+  .filter-btn:hover, .filter-btn.active { border-color:var(--amber); color:var(--amber); background:rgba(255,179,0,0.07); }
+
+  .sort-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+  .sort-label { font-size:0.75rem; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-right:4px; }
+  .sort-btn {
+    padding:5px 12px; background:transparent; border:1px solid var(--border);
+    border-radius:6px; color:var(--muted); font-size:0.75rem; cursor:pointer;
+    transition:all 0.2s; font-family:'Nunito Sans',sans-serif;
+  }
+  .sort-btn:hover, .sort-btn.active { border-color:var(--accent); color:var(--accent); }
+
+  /* Podium */
+  .podium { display:flex; align-items:flex-end; justify-content:center; gap:16px; margin-bottom:32px; }
+  .podium-item { text-align:center; animation:fadeUp 0.5s ease both; }
+  .podium-item:nth-child(1) { animation-delay:0.1s; }
+  .podium-item:nth-child(2) { animation-delay:0s; }
+  .podium-item:nth-child(3) { animation-delay:0.2s; }
+  .avatar {
+    width:54px; height:54px; border-radius:50%; margin:0 auto 8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Rajdhani',sans-serif; font-size:1.4rem; font-weight:700;
+    border:3px solid var(--border);
+  }
+  .avatar.gold { border-color:var(--gold); background:rgba(255,215,0,0.12); color:var(--gold); }
+  .avatar.silver { border-color:var(--silver); background:rgba(192,192,192,0.1); color:var(--silver); }
+  .avatar.bronze { border-color:var(--bronze); background:rgba(205,127,50,0.1); color:var(--bronze); }
+  .podium-name { font-size:0.85rem; font-weight:600; margin-bottom:4px; }
+  .podium-score { font-family:'Rajdhani',sans-serif; font-size:1.1rem; font-weight:700; }
+  .podium-block {
+    border-radius:10px 10px 0 0; width:100px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Rajdhani',sans-serif; font-size:1.5rem; font-weight:700; margin:10px auto 0;
+  }
+  .p1 { height:80px; background:linear-gradient(180deg, rgba(255,215,0,0.2), rgba(255,215,0,0.05)); border-top:2px solid var(--gold); color:var(--gold); }
+  .p2 { height:110px; background:linear-gradient(180deg, rgba(255,215,0,0.25), rgba(255,215,0,0.05)); border-top:2px solid var(--gold); color:var(--gold); }
+  .p3 { height:60px; background:linear-gradient(180deg, rgba(205,127,50,0.2), rgba(205,127,50,0.05)); border-top:2px solid var(--bronze); color:var(--bronze); }
+
+  .table-wrap {
+    background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    animation:fadeUp 0.5s ease 0.3s both;
+  }
+  .table-header {
+    display:grid; grid-template-columns:60px 1fr 100px 100px 100px;
+    padding:12px 20px; background:var(--surface); border-bottom:1px solid var(--border);
+    font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted);
+  }
+  .table-row {
+    display:grid; grid-template-columns:60px 1fr 100px 100px 100px;
+    padding:14px 20px; border-bottom:1px solid var(--border);
+    align-items:center; transition:background 0.2s; cursor:pointer;
+  }
+  .table-row:last-child { border-bottom:none; }
+  .table-row:hover { background:rgba(0,229,255,0.03); }
+  .table-row.me { background:rgba(0,229,255,0.06); border-left:3px solid var(--accent); }
+  .rank { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1rem; color:var(--muted); }
+  .rank.t1 { color:var(--gold); } .rank.t2 { color:var(--silver); } .rank.t3 { color:var(--bronze); }
+  .user-info { display:flex; align-items:center; gap:10px; }
+  .user-av {
+    width:34px; height:34px; border-radius:50%; background:var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.85rem; flex-shrink:0;
+  }
+  .user-n { font-weight:600; font-size:0.9rem; }
+  .you-tag {
+    background:rgba(0,229,255,0.15); color:var(--accent); padding:2px 8px;
+    border-radius:10px; font-size:0.65rem; letter-spacing:1px; text-transform:uppercase; margin-left:6px;
+  }
+  .score { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1rem; color:var(--accent); }
+  .pct { color:var(--success); font-weight:600; font-size:0.9rem; }
+  .quizzes { color:var(--muted); font-size:0.85rem; }
+
+  .last-badge { font-size:0.68rem; padding:2px 8px; border-radius:8px; margin-left:6px; }
+  .last-badge.good { background:rgba(0,230,118,0.1); color:var(--success); }
+  .last-badge.ok { background:rgba(255,179,0,0.1); color:var(--amber); }
+  .last-badge.bad { background:rgba(255,82,82,0.1); color:var(--danger); }
+
+  @@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+  @@media(max-width:600px){
+    body{padding:16px;}
+    .podium{flex-direction:column;align-items:center;}
+    .podium-block{width:200px;}
+    .table-header,.table-row{grid-template-columns:50px 1fr 80px 80px;}
+    .table-header > :last-child,.table-row > :last-child{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div>
+    <a class="back-link" asp-controller="Student" asp-action="Dashboard" style="margin-bottom:12px;display:inline-flex">← Nazad</a>
+    <div class="page-title">🏆 Leader<span>board</span></div>
+    <div class="page-sub">Rang lista prema ostvarenim bodovima – placeholder podaci (baza nije povezana)</div>
+  </div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active">Svi predmeti</button>
+  <button class="filter-btn">Simulacije</button>
+  <button class="filter-btn">Pripreme</button>
+</div>
+
+<div class="sort-bar">
+  <span class="sort-label">Sortiraj:</span>
+  <button class="sort-btn active" onclick="sortBy('score', this)">Bodovi ↓</button>
+  <button class="sort-btn" onclick="sortBy('pct', this)">Tačnost ↓</button>
+  <button class="sort-btn" onclick="sortBy('quizzes', this)">Kvizovi ↓</button>
+  <button class="sort-btn" onclick="sortBy('name', this)">Ime ↑</button>
+</div>
+
+<div class="podium" id="podium"></div>
+
+<div class="table-wrap">
+  <div class="table-header">
+    <span>#</span><span>Korisnik</span><span>Bodovi</span><span>Tačnost</span><span>Kvizovi</span>
+  </div>
+  <div id="tableBody"></div>
+</div>
+
+<script>
+  // Placeholder podaci dok baza ne bude povezana
+  const leaderboard = [
+    { name:'Emin Begić',      username:'gichbe',   avatar:'EB', score:650, pct:100, quizzes:8, lastScore:99 },
+    { name:'Ahmed Spahić',    username:'ahmed',    avatar:'AS', score:480, pct:87, quizzes:12, lastScore:90 },
+    { name:'Lejla Mehić',     username:'lejla',    avatar:'LM', score:425, pct:82, quizzes:11, lastScore:75 },
+    { name:'Amila Duraković', username:'amila',    avatar:'AD', score:390, pct:79, quizzes:10, lastScore:80 },
+    { name:'Student',         username:'student',  avatar:'ST', score:340, pct:72, quizzes:9,  lastScore:65 },
+    { name:'Zlatan Avdić',    username:'zlatan',   avatar:'ZA', score:285, pct:68, quizzes:8,  lastScore:55 },
+    { name:'Faruk Hodžić',    username:'faruk',    avatar:'FH', score:260, pct:65, quizzes:7,  lastScore:70 },
+    { name:'Mirna Salić',     username:'mirna',    avatar:'MS', score:225, pct:60, quizzes:7,  lastScore:45 },
+    { name:'Tarik Bukvić',    username:'tarik',    avatar:'TB', score:195, pct:55, quizzes:6,  lastScore:40 },
+    { name:'Adna Mujić',      username:'adna',     avatar:'AM', score:165, pct:50, quizzes:5,  lastScore:35 }
+  ];
+
+  // Pretvaramo se da je trenutni korisnik "student" — kad imamo Identity, ovo ćemo dobiti sa servera
+  const currentUsername = 'student';
+
+  function renderLeaderboard() {
+    const lb = leaderboard;
+
+    // Podium – top 3
+    const podium = document.getElementById('podium');
+    if (lb.length >= 3) {
+      podium.innerHTML = `
+        <div class="podium-item">
+          <div class="avatar silver">${lb[1].avatar}</div>
+          <div class="podium-name">${lb[1].name.split(' ')[0]}</div>
+          <div class="podium-score" style="color:var(--silver)">${lb[1].score}</div>
+          <div class="podium-block p1">2</div>
+        </div>
+        <div class="podium-item">
+          <div class="avatar gold">${lb[0].avatar}</div>
+          <div class="podium-name">${lb[0].name.split(' ')[0]}</div>
+          <div class="podium-score" style="color:var(--gold)">${lb[0].score}</div>
+          <div class="podium-block p2">1</div>
+        </div>
+        <div class="podium-item">
+          <div class="avatar bronze">${lb[2].avatar}</div>
+          <div class="podium-name">${lb[2].name.split(' ')[0]}</div>
+          <div class="podium-score" style="color:var(--bronze)">${lb[2].score}</div>
+          <div class="podium-block p3">3</div>
+        </div>`;
+    }
+
+    // Table – top 10
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    const top10 = lb.slice(0, 10);
+    top10.forEach((entry, i) => {
+      const isMe = entry.username === currentUsername;
+      const rankClass = i === 0 ? 't1' : (i === 1 ? 't2' : (i === 2 ? 't3' : ''));
+      const avColor = isMe ? 'background:rgba(0,229,255,0.12);color:var(--accent)' : '';
+      const pctColor = entry.pct >= 80 ? 'var(--success)' : (entry.pct >= 60 ? 'var(--amber)' : 'var(--danger)');
+      const lastBadge = entry.lastScore ? `<span class="last-badge ${entry.lastScore >= 70 ? 'good' : (entry.lastScore >= 50 ? 'ok' : 'bad')}">${entry.lastScore}%</span>` : '';
+
+      const div = document.createElement('div');
+      div.className = 'table-row' + (isMe ? ' me' : '');
+      div.setAttribute('data-score', entry.score);
+      div.setAttribute('data-pct', entry.pct);
+      div.setAttribute('data-quizzes', entry.quizzes);
+      div.setAttribute('data-name', entry.name);
+      div.innerHTML = `
+        <span class="rank ${rankClass}">${i+1}</span>
+        <div class="user-info">
+          <div class="user-av" style="${avColor}">${entry.avatar}</div>
+          <span class="user-n">${entry.name}${isMe ? '<span class="you-tag">Ti</span>' : ''}${lastBadge}</span>
+        </div>
+        <span class="score">${entry.score}</span>
+        <span class="pct" style="color:${pctColor}">${entry.pct}%</span>
+        <span class="quizzes">${entry.quizzes}</span>`;
+      tbody.appendChild(div);
+    });
+  }
+
+  function sortBy(field, btnEl) {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    const tbody = document.getElementById('tableBody');
+    const rows = Array.from(tbody.querySelectorAll('.table-row'));
+
+    rows.sort((a, b) => {
+      let va = a.getAttribute('data-' + field);
+      let vb = b.getAttribute('data-' + field);
+      if (field === 'score' || field === 'pct' || field === 'quizzes') {
+        return parseInt(vb) - parseInt(va);
+      }
+      return va.localeCompare(vb);
+    });
+
+    rows.forEach((row, i) => {
+      const rankEl = row.querySelector('.rank');
+      rankEl.textContent = i + 1;
+      rankEl.className = 'rank';
+      if (i === 0) rankEl.classList.add('t1');
+      else if (i === 1) rankEl.classList.add('t2');
+      else if (i === 2) rankEl.classList.add('t3');
+      if (row.classList.contains('me')) rankEl.style.color = 'var(--accent)';
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+  }
+
+  renderLeaderboard();
+</script>
+</body>
+</html>

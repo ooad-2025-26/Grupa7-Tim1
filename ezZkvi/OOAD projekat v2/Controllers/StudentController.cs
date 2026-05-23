@@ -37,6 +37,12 @@ namespace ezZkvi.Controllers
             return View();
         }
 
+        // GET: /Student/Leaderboard
+        public IActionResult Leaderboard()
+        {
+            return View();
+        }
+
         // GET: Student
         public async Task<IActionResult> Index()
         {
