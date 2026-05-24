@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,23 +10,47 @@ using ezZkvi.Models;
 
 namespace ezZkvi.Controllers
 {
-    public class StudentsController : Controller
+    public class StudentController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public StudentsController(ApplicationDbContext context)
+        public StudentController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // GET: Students
+        // GET: /Student/Dashboard
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
+        // GET: /Student/Prepare
+        public IActionResult Prepare()
+        {
+            return View();
+        }
+
+        // GET: /Student/Simulate
+        public IActionResult Simulate()
+        {
+            return View();
+        }
+
+        // GET: /Student/Leaderboard
+        public IActionResult Leaderboard()
+        {
+            return View();
+        }
+
+        // GET: Student
         public async Task<IActionResult> Index()
         {
             return View(await _context.Student.ToListAsync());
         }
 
-        // GET: Students/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: Student/Details/5
+        public async Task<IActionResult> Details(string id)
         {
             if (id == null)
             {
@@ -34,7 +58,7 @@ namespace ezZkvi.Controllers
             }
 
             var student = await _context.Student
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (student == null)
             {
                 return NotFound();
@@ -43,18 +67,18 @@ namespace ezZkvi.Controllers
             return View(student);
         }
 
-        // GET: Students/Create
+        // GET: Student/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Students/Create
+        // POST: Student/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,ID,Username,Email,Lozinka")] Student student)
+        public async Task<IActionResult> Create([Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Student student)
         {
             if (ModelState.IsValid)
             {
@@ -65,8 +89,8 @@ namespace ezZkvi.Controllers
             return View(student);
         }
 
-        // GET: Students/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // GET: Student/Edit/5
+        public async Task<IActionResult> Edit(string id)
         {
             if (id == null)
             {
@@ -81,14 +105,14 @@ namespace ezZkvi.Controllers
             return View(student);
         }
 
-        // POST: Students/Edit/5
+        // POST: Student/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,ID,Username,Email,Lozinka")] Student student)
+        public async Task<IActionResult> Edit(string id, [Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Student student)
         {
-            if (id != student.ID)
+            if (id != student.Id)
             {
                 return NotFound();
             }
@@ -102,7 +126,7 @@ namespace ezZkvi.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!StudentExists(student.ID))
+                    if (!StudentExists(student.Id))
                     {
                         return NotFound();
                     }
@@ -116,8 +140,8 @@ namespace ezZkvi.Controllers
             return View(student);
         }
 
-        // GET: Students/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        // GET: Student/Delete/5
+        public async Task<IActionResult> Delete(string id)
         {
             if (id == null)
             {
@@ -125,7 +149,7 @@ namespace ezZkvi.Controllers
             }
 
             var student = await _context.Student
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (student == null)
             {
                 return NotFound();
@@ -134,10 +158,10 @@ namespace ezZkvi.Controllers
             return View(student);
         }
 
-        // POST: Students/Delete/5
+        // POST: Student/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var student = await _context.Student.FindAsync(id);
             if (student != null)
@@ -149,9 +173,9 @@ namespace ezZkvi.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool StudentExists(int id)
+        private bool StudentExists(string id)
         {
-            return _context.Student.Any(e => e.ID == id);
+            return _context.Student.Any(e => e.Id == id);
         }
     }
 }

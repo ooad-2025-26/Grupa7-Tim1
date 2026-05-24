@@ -1,43 +1,262 @@
-﻿@model ezZkvi.Models.Feedback
-
 @{
-    ViewData["Title"] = "Create";
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Pošalji feedback";
 }
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Pošalji feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#080C14;--surface:#0F1620;--card:#141D2B;--border:#1E2D42;--accent:#00E5FF;--amber:#FFB300;--text:#E8EDF5;--muted:#5A7090;--success:#00E676;--danger:#FF5252; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Nunito Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 20px;}
 
-<h1>Create</h1>
+  .header{width:100%;max-width:640px;margin-bottom:28px;display:flex;align-items:center;gap:12px;}
+  .back-link{padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-decoration:none;display:flex;align-items:center;gap:6px;}
+  .back-link:hover{border-color:var(--accent);color:var(--accent);}
+  .page-title{font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;letter-spacing:1px;}
+  .page-title span{color:var(--accent);}
+  .page-sub{color:var(--muted);font-size:0.85rem;margin-top:4px;}
 
-<h4>Feedback</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control"></select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="TipFeedbacka" class="control-label"></label>
-                <select asp-for="TipFeedbacka" class="form-control"></select>
-                <span asp-validation-for="TipFeedbacka" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="DatumSlanja" class="control-label"></label>
-                <input asp-for="DatumSlanja" class="form-control" />
-                <span asp-validation-for="DatumSlanja" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+  /* Type selector */
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:640px;margin-bottom:24px;}
+  .type-card{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:22px;cursor:pointer;transition:all 0.2s;text-align:center;}
+  .type-card:hover{border-color:var(--muted);}
+  .type-card.selected.suggest{border-color:var(--accent);background:rgba(0,229,255,0.05);}
+  .type-card.selected.report{border-color:var(--amber);background:rgba(255,179,0,0.05);}
+  .type-icon{font-size:2rem;margin-bottom:10px;}
+  .type-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:1px;}
+  .type-desc{font-size:0.8rem;color:var(--muted);margin-top:4px;}
+
+  .form-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:640px;animation:fadeUp 0.4s ease both;}
+  .form-title{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+  .form-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;}
+  .form-title.amber::before{background:var(--amber);}
+
+  .form-group{margin-bottom:18px;}
+  label{display:block;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+  input[type=text], textarea, select.inp{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s;}
+  input[type=text]:focus, textarea:focus, select.inp:focus{border-color:var(--accent);}
+  textarea{resize:vertical;min-height:90px;}
+  .opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .opt-input{position:relative;}
+  .opt-input input{padding-left:34px;}
+  .opt-label-abs{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--muted);font-size:0.82rem;}
+  .correct-row{display:flex;gap:10px;}
+  .correct-opt{flex:1;padding:9px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;transition:all 0.2s;}
+  .correct-opt.selected{border-color:var(--success);background:rgba(0,230,118,0.08);color:var(--success);}
+  .correct-opt:hover{border-color:var(--muted);}
+
+  /* File upload */
+  .upload-area{border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);}
+  .upload-area:hover{border-color:var(--accent);}
+  .upload-icon{font-size:1.5rem;margin-bottom:6px;}
+  .upload-text{font-size:0.85rem;color:var(--muted);}
+  .upload-sub{font-size:0.75rem;color:var(--border);margin-top:4px;}
+  input[type=file]{display:none;}
+  .file-preview{margin-top:10px;display:none;align-items:center;gap:10px;padding:8px 12px;background:var(--card);border-radius:8px;font-size:0.82rem;}
+  .file-preview.show{display:flex;}
+  .file-preview img{max-width:60px;max-height:60px;border-radius:6px;}
+  .file-remove{color:var(--danger);cursor:pointer;font-size:1rem;}
+
+  .btn-row{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
+  .btn{padding:12px 26px;border:none;border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:0.95rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;transition:all 0.2s;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:#fff;box-shadow:0 0 20px rgba(0,229,255,0.35);}
+  .btn-secondary{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* Success screen */
+  #successScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;}
+  .success-circle{width:90px;height:90px;border-radius:50%;border:3px solid var(--success);background:rgba(0,230,118,0.08);display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 20px;animation:pop 0.5s ease both;}
+  @@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+  .success-title{font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:var(--success);margin-bottom:8px;}
+  .success-sub{color:var(--muted);font-size:0.9rem;}
+
+  @@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+  @@media(max-width:520px){
+    .type-grid{grid-template-columns:1fr;}
+    .form-card{padding:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header" id="mainContent">
+  <a class="back-link" asp-controller="Student" asp-action="Dashboard">← Nazad</a>
+  <div>
+    <div class="page-title">Pošalji <span>feedback</span></div>
+    <div class="page-sub">Pomozi nam da poboljšamo sadržaj platforme</div>
+  </div>
+</div>
+
+<div class="type-grid" id="typeGrid">
+  <div class="type-card suggest" onclick="selectType('suggest', this)">
+    <div class="type-icon">💡</div>
+    <div class="type-name">Prijedlog pitanja</div>
+    <div class="type-desc">Predloži novo pitanje za bazu</div>
+  </div>
+  <div class="type-card report" onclick="selectType('report', this)">
+    <div class="type-icon">🐛</div>
+    <div class="type-name">Prijava greške</div>
+    <div class="type-desc">Prijavi grešku u sadržaju ili sistemu</div>
+  </div>
+</div>
+
+<!-- Suggest form -->
+<div class="form-card" id="suggestForm" style="display:none">
+  <div class="form-title">Prijedlog novog pitanja</div>
+  <div class="form-group">
+    <label>Predmet</label>
+    <select class="inp">
+      <option>Objektno orijentisana analiza i dizajn</option>
+      <option>Operativni sistemi</option>
+      <option>Algoritmi i strukture podataka</option>
+      <option>Napredno softversko programiranje</option>
+      <option>Baze podataka</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Oblast / Kategorija</label>
+    <input type="text" placeholder="npr. UML dijagrami">
+  </div>
+  <div class="form-group">
+    <label>Tekst pitanja</label>
+    <textarea placeholder="Unesite tekst pitanja koje predlažeš..."></textarea>
+  </div>
+  <div class="form-group">
+    <label>Ponuđeni odgovori</label>
+    <div class="opts-grid">
+      <div class="opt-input"><span class="opt-label-abs">A</span><input type="text" placeholder="Odgovor A"></div>
+      <div class="opt-input"><span class="opt-label-abs">B</span><input type="text" placeholder="Odgovor B"></div>
+      <div class="opt-input"><span class="opt-label-abs">C</span><input type="text" placeholder="Odgovor C"></div>
+      <div class="opt-input"><span class="opt-label-abs">D</span><input type="text" placeholder="Odgovor D"></div>
     </div>
+  </div>
+  <div class="form-group">
+    <label>Tačan odgovor</label>
+    <div class="correct-row">
+      <div class="correct-opt selected" onclick="selCorrect(this)">A</div>
+      <div class="correct-opt" onclick="selCorrect(this)">B</div>
+      <div class="correct-opt" onclick="selCorrect(this)">C</div>
+      <div class="correct-opt" onclick="selCorrect(this)">D</div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Pojašnjenje (opciono)</label>
+    <textarea placeholder="Kratko objasni zašto je taj odgovor tačan..." style="min-height:60px"></textarea>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="resetForm()">Otkaži</button>
+    <button class="btn btn-primary" onclick="submitForm()">Pošalji prijedlog</button>
+  </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
+<!-- Report form -->
+<div class="form-card" id="reportForm" style="display:none">
+  <div class="form-title amber">Prijava greške</div>
+  <div class="form-group">
+    <label>Lokacija greške</label>
+    <select class="inp">
+      <option>Pitanje u bazi</option>
+      <option>Simulacija kviza</option>
+      <option>Priprema za kviz</option>
+      <option>Leaderboard</option>
+      <option>Ostalo</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Predmet / Pitanje (opciono)</label>
+    <input type="text" placeholder="Navedi specifično pitanje ako je relevantno">
+  </div>
+  <div class="form-group">
+    <label>Opis greške</label>
+    <textarea placeholder="Detaljno opiši grešku: šta si vidio/la, šta si očekivao/la..."></textarea>
+  </div>
+  <div class="form-group">
+    <label>Screenshot (opciono)</label>
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📎</div>
+      <div class="upload-text">Klikni za dodavanje screenshota</div>
+      <div class="upload-sub">PNG, JPG do 5MB</div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" onchange="previewFile(this)">
+    <div class="file-preview" id="filePreview">
+      <img id="fileThumb" src="" alt="">
+      <span id="fileName"></span>
+      <span class="file-remove" onclick="removeFile()">✕</span>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="resetForm()">Otkaži</button>
+    <button class="btn btn-primary" style="background:var(--amber)" onclick="submitForm()">Pošalji prijavu</button>
+  </div>
 </div>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+<!-- Success -->
+<div id="successScreen">
+  <div class="success-circle">✓</div>
+  <div class="success-title">Feedback poslan!</div>
+  <div class="success-sub" style="margin-bottom:20px">Tvoj feedback je proslijeđen moderatoru na pregled. Hvala ti!</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+    <button class="btn btn-secondary" onclick="resetForm()">Pošalji novi feedback</button>
+    <a class="btn btn-secondary" asp-controller="Student" asp-action="Dashboard" style="text-decoration:none">← Nazad na dashboard</a>
+  </div>
+</div>
+
+<script>
+  let currentType = null;
+  function selectType(type, el){
+    document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');
+    currentType = type;
+    document.getElementById('suggestForm').style.display = type==='suggest' ? 'block' : 'none';
+    document.getElementById('reportForm').style.display = type==='report' ? 'block' : 'none';
+  }
+  function selCorrect(el){
+    document.querySelectorAll('.correct-opt').forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function previewFile(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      if (file.size > 5*1024*1024) { alert('Datoteka je prevelika. Max 5MB.'); input.value = ''; return; }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('fileThumb').src = e.target.result;
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('filePreview').classList.add('show');
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  function removeFile() {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('filePreview').classList.remove('show');
+  }
+
+  function submitForm(){
+    // Backend još nije povezan — samo pokazujemo success ekran
+    document.getElementById('typeGrid').style.display='none';
+    document.getElementById('suggestForm').style.display='none';
+    document.getElementById('reportForm').style.display='none';
+    document.querySelector('.header').style.display='none';
+    document.getElementById('successScreen').style.display='flex';
+  }
+  function resetForm(){
+    document.getElementById('typeGrid').style.display='grid';
+    document.getElementById('suggestForm').style.display='none';
+    document.getElementById('reportForm').style.display='none';
+    document.querySelector('.header').style.display='flex';
+    document.getElementById('successScreen').style.display='none';
+    document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+    removeFile();
+  }
+</script>
+</body>
+</html>
