@@ -1,0 +1,303 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Admin Panel";
+}
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#080C14;--surface:#0F1620;--card:#141D2B;--border:#1E2D42;--accent:#00E5FF;--amber:#FFB300;--text:#E8EDF5;--muted:#5A7090;--success:#00E676;--danger:#FF5252; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Nunito Sans',sans-serif;min-height:100vh;}
+  .layout{display:flex;min-height:100vh;}
+
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.3s ease;}
+  .logo{font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:2px;color:var(--text);padding:0 24px 24px;border-bottom:1px solid var(--border);text-decoration:none;display:block;}
+  .logo span{color:var(--accent);}
+  .nav{padding:20px 12px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.9rem;color:var(--muted);margin-bottom:4px;transition:all 0.2s;text-decoration:none;position:relative;}
+  .nav-item:hover,.nav-item.active{background:rgba(0,229,255,0.08);color:var(--accent);}
+  .nav-item .ico{font-size:1rem;width:20px;text-align:center;}
+  .badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--danger);color:white;font-size:0.65rem;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .user-card{margin:12px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;text-decoration:none;display:block;color:var(--text);}
+  .user-card:hover{border-color:var(--accent);}
+  .user-name{font-weight:600;font-size:0.9rem;}
+  .user-role{font-size:0.72rem;letter-spacing:2px;color:var(--danger);text-transform:uppercase;margin-top:2px;}
+  .logout-hint{font-size:0.65rem;color:var(--muted);margin-top:4px;opacity:0;transition:opacity 0.2s;}
+  .user-card:hover .logout-hint{opacity:1;}
+
+  .main{flex:1;padding:28px;overflow-y:auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+  .page-title{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;}
+  .page-title span{color:var(--accent);}
+
+  .menu-toggle{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:1.2rem;cursor:pointer;}
+
+  .notif-btn{position:relative;padding:9px 18px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);font-size:0.85rem;transition:all 0.2s;display:flex;align-items:center;gap:8px;}
+  .notif-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .notif-dot{width:8px;height:8px;background:var(--danger);border-radius:50%;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;animation:fadeUp 0.5s ease both;cursor:pointer;transition:all 0.2s;text-decoration:none;display:block;color:var(--text);}
+  .stat:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .stat:nth-child(2){animation-delay:.1s}.stat:nth-child(3){animation-delay:.2s}.stat:nth-child(4){animation-delay:.3s}
+  .stat-val{font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;}
+  .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+  .stat-trend{font-size:0.78rem;margin-top:6px;}
+  .up{color:var(--success)}.dn{color:var(--danger)}.neu{color:var(--muted)}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+  .section-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;animation:fadeUp 0.5s ease 0.2s both;}
+  .sec-title{font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .sec-title::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;}
+
+  .notif-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;animation:fadeUp 0.5s ease 0.3s both;}
+  .notif-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+  select.inp,input.inp,textarea.inp{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.85rem;outline:none;width:100%;transition:border-color 0.2s;}
+  select.inp:focus,input.inp:focus,textarea.inp:focus{border-color:var(--accent);}
+  textarea.inp{resize:vertical;min-height:70px;}
+  label.lbl{display:block;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+  .btn-send{padding:10px 22px;background:var(--accent);color:var(--bg);border:none;border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.88rem;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;margin-top:12px;}
+  .btn-send:hover{background:#fff;}
+
+  .item-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .item-row:last-child{border-bottom:none;}
+  .item-name{font-size:0.88rem;font-weight:600;}
+  .item-sub{font-size:0.75rem;color:var(--muted);margin-top:1px;}
+  .item-val{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.95rem;color:var(--accent);}
+  .pend-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .pend-item:last-child{border-bottom:none;}
+  .av-sm{width:30px;height:30px;border-radius:50%;background:rgba(0,229,255,0.1);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent);font-size:0.75rem;flex-shrink:0;}
+  .pend-actions{display:flex;gap:6px;margin-left:auto;}
+  .pa-btn{padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;border:1px solid;transition:all 0.2s;background:transparent;}
+  .pa-ok{border-color:var(--success);color:var(--success);}
+  .pa-ok:hover{background:rgba(0,230,118,0.08);}
+  .pa-no{border-color:var(--danger);color:var(--danger);}
+  .pa-no:hover{background:rgba(255,82,82,0.08);}
+
+  .log-item{padding:9px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;}
+  .log-item:last-child{border-bottom:none;}
+  .log-icon{font-size:0.85rem;margin-top:1px;flex-shrink:0;}
+  .log-text{font-size:0.82rem;line-height:1.4;}
+  .log-time{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+
+  .toast{position:fixed;top:24px;right:24px;z-index:200;padding:12px 24px;border-radius:10px;font-size:0.85rem;font-weight:600;transform:translateX(120%);transition:transform 0.4s ease;}
+  .toast.show{transform:translateX(0);}
+  .toast.success{background:rgba(0,230,118,0.15);border:1px solid var(--success);color:var(--success);}
+  .toast.info{background:rgba(0,229,255,0.15);border:1px solid var(--accent);color:var(--accent);}
+
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9;}
+
+  @@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+  @@media(max-width:1024px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .row2{grid-template-columns:1fr;}
+  }
+  @@media(max-width:768px){
+    .menu-toggle{display:block;}
+    .sidebar{position:fixed;left:0;top:0;height:100%;z-index:10;transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-overlay.open{display:block;}
+    .main{padding:20px 16px;}
+  }
+  @@media(max-width:480px){
+    .stats{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <a class="logo" asp-controller="Home" asp-action="Index">KVIZ<span>APP</span></a>
+    <nav class="nav">
+      <a class="nav-item active" asp-controller="Administrator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
+      <a class="nav-item" asp-controller="Administrator" asp-action="Users"><span class="ico">👥</span> Korisnici <span class="badge">3</span></a>
+      <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
+      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback <span class="badge">3</span></a>
+      <a class="nav-item" href="#"><span class="ico">📧</span> Obavijesti</a>
+      <a class="nav-item" asp-controller="Account" asp-action="Login"><span class="ico">🚪</span> Odjava</a>
+    </nav>
+    <a class="user-card" asp-controller="Account" asp-action="Login">
+      <div class="user-name">Zlatan Avdić</div>
+      <div class="user-role">Administrator</div>
+      <div class="logout-hint">Klikni za odjavu →</div>
+    </a>
+  </div>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="page-title">Admin <span>panel</span></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div class="notif-btn" onclick="showToast('3 nova zahtjeva za odobrenje','info')"><div class="notif-dot"></div> 3 nova zahtjeva</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <a class="stat" asp-controller="Administrator" asp-action="Users">
+        <div class="stat-val" style="color:var(--accent)">143</div>
+        <div class="stat-label">Korisnika</div>
+        <div class="stat-trend up">↑ 138 aktivnih</div>
+      </a>
+      <a class="stat" asp-controller="Moderator" asp-action="Content">
+        <div class="stat-val" style="color:var(--amber)">450</div>
+        <div class="stat-label">Pitanja u bazi</div>
+        <div class="stat-trend up">↑ +12 novih</div>
+      </a>
+      <div class="stat" style="cursor:default">
+        <div class="stat-val" style="color:var(--success)">1240</div>
+        <div class="stat-label">Kvizova završeno</div>
+        <div class="stat-trend up">↑ 87 ove sedmice</div>
+      </div>
+      <a class="stat" asp-controller="Moderator" asp-action="Feedback">
+        <div class="stat-val" style="color:var(--danger)">3</div>
+        <div class="stat-label">Neobrađeni feedback</div>
+        <div class="stat-trend dn">↑ +3 nova</div>
+      </a>
+    </div>
+
+    <div class="notif-panel">
+      <div class="sec-title">📧 Slanje obavijesti</div>
+      <div class="notif-form">
+        <div>
+          <label class="lbl">Primatelji</label>
+          <select class="inp"><option>Svi korisnici</option><option>Samo studenti</option><option>Moderatori i admini</option></select>
+        </div>
+        <div>
+          <label class="lbl">Tip obavijesti</label>
+          <select class="inp"><option>Novi sadržaj</option><option>Sistemska poruka</option><option>Ažuriranje platforme</option></select>
+        </div>
+        <div>
+          <label class="lbl">Naslov</label>
+          <input type="text" class="inp" placeholder="npr. Dodana nova pitanja – OOAD" id="notifTitle">
+        </div>
+        <div>
+          <label class="lbl">Predmet (opciono)</label>
+          <select class="inp"><option>– Svi predmeti –</option><option>OOAD</option><option>OS</option><option>ASP</option></select>
+        </div>
+      </div>
+      <div>
+        <label class="lbl" style="margin-top:12px;display:block">Poruka</label>
+        <textarea class="inp" placeholder="Sadržaj obavijesti koja će biti poslana emailom..." id="notifMsg"></textarea>
+      </div>
+      <button class="btn-send" onclick="sendNotification()">📨 Pošalji obavijest</button>
+    </div>
+
+    <div class="row2">
+      <div class="section-card">
+        <div class="sec-title">Na čekanju – Odobrenje naloga</div>
+        <div id="pendingList">
+          <div class="pend-item" id="pend1">
+            <div class="av-sm">NK</div>
+            <div><div style="font-size:0.88rem;font-weight:600">Nedžad Kurtović</div><div style="font-size:0.75rem;color:var(--muted)">09. Apr 2026</div></div>
+            <div class="pend-actions">
+              <button class="pa-btn pa-ok" onclick="approvePending('pend1')">✓</button>
+              <button class="pa-btn pa-no" onclick="rejectPending('pend1')">✕</button>
+            </div>
+          </div>
+          <div class="pend-item" id="pend2">
+            <div class="av-sm">MB</div>
+            <div><div style="font-size:0.88rem;font-weight:600">Mirza Bašić</div><div style="font-size:0.75rem;color:var(--muted)">08. Apr 2026</div></div>
+            <div class="pend-actions">
+              <button class="pa-btn pa-ok" onclick="approvePending('pend2')">✓</button>
+              <button class="pa-btn pa-no" onclick="rejectPending('pend2')">✕</button>
+            </div>
+          </div>
+          <div class="pend-item" id="pend3">
+            <div class="av-sm">LH</div>
+            <div><div style="font-size:0.88rem;font-weight:600">Lamija Habibović</div><div style="font-size:0.75rem;color:var(--muted)">07. Apr 2026</div></div>
+            <div class="pend-actions">
+              <button class="pa-btn pa-ok" onclick="approvePending('pend3')">✓</button>
+              <button class="pa-btn pa-no" onclick="rejectPending('pend3')">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="sec-title">Najaktivniji predmeti</div>
+        <div class="item-row">
+          <div><div class="item-name">OOAD</div><div class="item-sub">142 pitanja · 8 oblasti</div></div>
+          <div class="item-val">412 kvizova</div>
+        </div>
+        <div class="item-row">
+          <div><div class="item-name">Operativni sistemi</div><div class="item-sub">98 pitanja · 6 oblasti</div></div>
+          <div class="item-val">287 kvizova</div>
+        </div>
+        <div class="item-row">
+          <div><div class="item-name">Algoritmi i strukture podataka</div><div class="item-sub">210 pitanja · 10 oblasti</div></div>
+          <div class="item-val">541 kvizova</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="sec-title">Log aktivnosti</div>
+      <div class="log-item"><span class="log-icon">👤</span><div><div class="log-text">Korisniku <strong>Amila Duraković</strong> dodijeljena uloga <span style="color:var(--amber)">Moderator</span></div><div class="log-time">Danas 08:14</div></div></div>
+      <div class="log-item"><span class="log-icon">📧</span><div><div class="log-text">Obavijest poslana svim korisnicima: <strong>"Nova pitanja – OOAD oblast SU"</strong></div><div class="log-time">Jučer 16:30</div></div></div>
+      <div class="log-item"><span class="log-icon">✓</span><div><div class="log-text">Nalog studenta <strong>Kenan Hodžić</strong> odobren</div><div class="log-time">Jučer 11:05</div></div></div>
+      <div class="log-item"><span class="log-icon">📝</span><div><div class="log-text">Dodano <strong>12 novih pitanja</strong> u predmet OS</div><div class="log-time">09. Apr, 14:22</div></div></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type;
+    setTimeout(() => t.classList.add('show'), 10);
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function sendNotification() {
+    const title = document.getElementById('notifTitle').value;
+    const msg = document.getElementById('notifMsg').value;
+    if (!title || !msg) {
+      alert('Molimo popunite naslov i poruku.');
+      return;
+    }
+    showToast('Obavijest uspješno poslana!', 'success');
+    document.getElementById('notifTitle').value = '';
+    document.getElementById('notifMsg').value = '';
+  }
+
+  function approvePending(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(20px)';
+      el.style.transition = 'all 0.3s';
+      setTimeout(() => el.remove(), 300);
+      showToast('Korisnik odobren!', 'success');
+    }
+  }
+
+  function rejectPending(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(20px)';
+      el.style.transition = 'all 0.3s';
+      setTimeout(() => el.remove(), 300);
+      showToast('Zahtjev odbijen', 'info');
+    }
+  }
+</script>
+</body>
+</html>

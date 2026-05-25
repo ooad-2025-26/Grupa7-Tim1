@@ -1,0 +1,283 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Pregled feedbacka";
+}
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Pregled feedbacka</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#080C14;--surface:#0F1620;--card:#141D2B;--border:#1E2D42;--accent:#00E5FF;--amber:#FFB300;--text:#E8EDF5;--muted:#5A7090;--success:#00E676;--danger:#FF5252; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Nunito Sans',sans-serif;min-height:100vh;padding:28px 24px;}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+  .page-title{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;}
+  .page-title span{color:var(--accent);}
+
+  .back-link{padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-decoration:none;display:flex;align-items:center;gap:6px;}
+  .back-link:hover{border-color:var(--accent);color:var(--accent);}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;}
+  .stat-val{font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;}
+  .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .filter-btn{padding:7px 16px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:0.82rem;cursor:pointer;transition:all 0.2s;font-family:'Nunito Sans',sans-serif;}
+  .filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,0.06);}
+  .filter-btn.amber.active{border-color:var(--amber);color:var(--amber);background:rgba(255,179,0,0.06);}
+  .search-wrap{position:relative;flex:1;min-width:180px;}
+  .search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px 8px 34px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.85rem;outline:none;}
+  .search-wrap input:focus{border-color:var(--accent);}
+  .si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.85rem;}
+
+  .feed-list{display:flex;flex-direction:column;gap:12px;}
+  .feed-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.3s;animation:fadeUp 0.4s ease both;}
+  .feed-card:hover{border-color:rgba(0,229,255,0.2);}
+  .feed-card.processed{opacity:0.5;}
+  .feed-card.fade-out{opacity:0;transform:translateX(30px);pointer-events:none;}
+  .feed-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  .feed-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .feed-type{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:10px;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+  .type-suggest{background:rgba(0,229,255,0.1);color:var(--accent);}
+  .type-report{background:rgba(255,179,0,0.1);color:var(--amber);}
+  .feed-user{font-size:0.8rem;color:var(--muted);}
+  .feed-date{font-size:0.75rem;color:var(--muted);}
+  .feed-status{display:inline-block;padding:3px 10px;border-radius:10px;font-size:0.7rem;}
+  .status-new{background:rgba(0,229,255,0.1);color:var(--accent);}
+  .status-done{background:rgba(0,230,118,0.1);color:var(--success);}
+  .status-rejected{background:rgba(255,82,82,0.1);color:var(--danger);}
+
+  .feed-title{font-weight:700;font-size:0.95rem;margin-bottom:6px;}
+  .feed-content{font-size:0.85rem;color:var(--muted);line-height:1.6;margin-bottom:12px;}
+  .feed-subject{display:inline-block;padding:2px 8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:0.75rem;color:var(--muted);margin-bottom:10px;}
+
+  .q-preview{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;}
+  .q-preview-text{font-size:0.88rem;font-weight:600;margin-bottom:10px;}
+  .q-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .q-opt{padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;}
+  .q-opt.correct{border-color:var(--success);color:var(--success);}
+
+  .feed-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .act-btn{padding:6px 14px;border-radius:7px;cursor:pointer;font-size:0.8rem;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all 0.2s;font-family:'Nunito Sans',sans-serif;}
+  .act-btn.accept{border-color:var(--success);color:var(--success);}
+  .act-btn.accept:hover{background:rgba(0,230,118,0.08);}
+  .act-btn.reject{border-color:var(--danger);color:var(--danger);}
+  .act-btn.reject:hover{background:rgba(255,82,82,0.08);}
+  .act-btn.done{border-color:var(--muted);color:var(--muted);}
+  .act-btn.done:hover{background:rgba(255,255,255,0.04);}
+
+  .id-tag{font-size:0.72rem;color:var(--border);font-family:'Rajdhani',sans-serif;letter-spacing:1px;}
+
+  .toast{position:fixed;top:24px;right:24px;z-index:200;padding:12px 24px;border-radius:10px;font-size:0.85rem;font-weight:600;transform:translateX(120%);transition:transform 0.4s ease;}
+  .toast.show{transform:translateX(0);}
+  .toast.success{background:rgba(0,230,118,0.15);border:1px solid var(--success);color:var(--success);}
+  .toast.error{background:rgba(255,82,82,0.15);border:1px solid var(--danger);color:var(--danger);}
+
+  @@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+  @@media(max-width:768px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    body{padding:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a class="back-link" asp-controller="Administrator" asp-action="Dashboard">← Nazad</a>
+    <div>
+      <div class="page-title">Pregled <span>feedbacka</span></div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Prijedlozi pitanja i prijave grešaka</div>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val" style="color:var(--accent)" id="statNew">3</div><div class="stat-label">Neobrađenih</div></div>
+  <div class="stat"><div class="stat-val" style="color:var(--success)" id="statDone">1</div><div class="stat-label">Obrađenih</div></div>
+  <div class="stat"><div class="stat-val" style="color:var(--amber)">2</div><div class="stat-label">Prijedloga</div></div>
+  <div class="stat"><div class="stat-val" style="color:var(--danger)">2</div><div class="stat-label">Prijava grešaka</div></div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap"><span class="si">🔍</span><input type="text" id="feedSearch" placeholder="Pretraži feedback..." oninput="filterFeed()"></div>
+  <button class="filter-btn active" onclick="setF(this,'all')">Svi</button>
+  <button class="filter-btn" onclick="setF(this,'suggest')">Prijedlozi</button>
+  <button class="filter-btn amber" onclick="setF(this,'report')">Prijave grešaka</button>
+  <button class="filter-btn" onclick="setF(this,'new')">Neobrađeni</button>
+</div>
+
+<div class="feed-list" id="feedList">
+
+  <div class="feed-card" id="fc1" data-type="suggest" data-status="new">
+    <div class="feed-header">
+      <div class="feed-meta">
+        <span class="feed-type type-suggest">💡 Prijedlog pitanja</span>
+        <span class="feed-user">Ahmed Spahić</span>
+        <span class="id-tag">#FB-089</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="feed-date">11. Apr 2026, 09:22</span>
+        <span class="feed-status status-new">Novo</span>
+      </div>
+    </div>
+    <span class="feed-subject">OOAD · Slučajevi upotrebe</span>
+    <div class="q-preview">
+      <div class="q-preview-text">Šta «include» relacija u Use Case dijagramu znači?</div>
+      <div class="q-opts">
+        <div class="q-opt">A. Opciona funkcionalnost</div>
+        <div class="q-opt correct">B. Obavezna funkcionalnost ✓</div>
+        <div class="q-opt">C. Nasljeđivanje aktera</div>
+        <div class="q-opt">D. Proširenje toka</div>
+      </div>
+    </div>
+    <div class="feed-actions">
+      <button class="act-btn accept" onclick="processFeed('fc1','accept')">✓ Prihvati pitanje</button>
+      <button class="act-btn reject" onclick="processFeed('fc1','reject')">✕ Odbij</button>
+      <button class="act-btn">✏ Uredi pa prihvati</button>
+    </div>
+  </div>
+
+  <div class="feed-card" id="fc2" data-type="report" data-status="new">
+    <div class="feed-header">
+      <div class="feed-meta">
+        <span class="feed-type type-report">🐛 Prijava greške</span>
+        <span class="feed-user">Merima Kadić</span>
+        <span class="id-tag">#FB-088</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="feed-date">10. Apr 2026, 18:45</span>
+        <span class="feed-status status-new">Novo</span>
+      </div>
+    </div>
+    <span class="feed-subject">Simulacija kviza · OOAD</span>
+    <div class="feed-title">Netačan tačan odgovor u pitanju #042</div>
+    <div class="feed-content">U pitanju o dijagramima stanja, sistem označava odgovor C kao tačan, ali prema predavanjima profesora odgovor bi trebao biti B. Priložena je slika sa screenshotom.</div>
+    <div class="feed-actions">
+      <button class="act-btn accept" onclick="processFeed('fc2','done')">✓ Označi kao obrađeno</button>
+      <button class="act-btn">Pogledaj pitanje</button>
+      <button class="act-btn reject" onclick="processFeed('fc2','reject')">✕ Odbaci</button>
+    </div>
+  </div>
+
+  <div class="feed-card" id="fc3" data-type="suggest" data-status="new">
+    <div class="feed-header">
+      <div class="feed-meta">
+        <span class="feed-type type-suggest">💡 Prijedlog pitanja</span>
+        <span class="feed-user">Kenan Hodžić</span>
+        <span class="id-tag">#FB-087</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="feed-date">09. Apr 2026, 14:30</span>
+        <span class="feed-status status-new">Novo</span>
+      </div>
+    </div>
+    <span class="feed-subject">OS · Procesi i niti</span>
+    <div class="q-preview">
+      <div class="q-preview-text">Koji sistemski poziv u UNIX-u kreira novi proces?</div>
+      <div class="q-opts">
+        <div class="q-opt">A. exec()</div>
+        <div class="q-opt correct">B. fork() ✓</div>
+        <div class="q-opt">C. spawn()</div>
+        <div class="q-opt">D. create()</div>
+      </div>
+    </div>
+    <div class="feed-actions">
+      <button class="act-btn accept" onclick="processFeed('fc3','accept')">✓ Prihvati pitanje</button>
+      <button class="act-btn reject" onclick="processFeed('fc3','reject')">✕ Odbij</button>
+    </div>
+  </div>
+
+  <div class="feed-card processed" id="fc4" data-type="report" data-status="done">
+    <div class="feed-header">
+      <div class="feed-meta">
+        <span class="feed-type type-report">🐛 Prijava greške</span>
+        <span class="feed-user">Selma Bajrić</span>
+        <span class="id-tag">#FB-086</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="feed-date">08. Apr 2026, 11:15</span>
+        <span class="feed-status status-done">Obrađeno</span>
+      </div>
+    </div>
+    <span class="feed-subject">Priprema za kviz · ASP</span>
+    <div class="feed-title">Greška u prikazu pitanja na mobilnom</div>
+    <div class="feed-content">Tekst pitanja se preklapa sa ponuđenim odgovorima na manjim ekranima. Problem je riješen u zadnjem deployu.</div>
+    <div class="feed-actions">
+      <button class="act-btn done" disabled>✓ Obrađeno</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast ' + type;
+    setTimeout(() => t.classList.add('show'), 10);
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function processFeed(cardId, action) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const statusTag = card.querySelector('.feed-status');
+    const actionsDiv = card.querySelector('.feed-actions');
+
+    if (action === 'reject') {
+      card.classList.add('fade-out');
+      setTimeout(() => { card.remove(); updateStats(); }, 300);
+      showToast('Feedback odbijen', 'error');
+    } else {
+      // accept ili done -> oznaci kao obradjeno
+      card.classList.add('processed');
+      card.setAttribute('data-status', 'done');
+      statusTag.className = 'feed-status status-done';
+      statusTag.textContent = 'Obrađeno';
+      actionsDiv.innerHTML = '<button class="act-btn done" disabled>✓ Obrađeno</button>';
+      updateStats();
+      showToast(action === 'accept' ? 'Pitanje prihvaćeno!' : 'Označeno kao obrađeno', 'success');
+    }
+  }
+
+  function updateStats() {
+    const cards = document.querySelectorAll('.feed-card');
+    let newCount = 0, doneCount = 0;
+    cards.forEach(c => {
+      const s = c.getAttribute('data-status');
+      if (s === 'new') newCount++;
+      else doneCount++;
+    });
+    document.getElementById('statNew').textContent = newCount;
+    document.getElementById('statDone').textContent = doneCount;
+  }
+
+  function filterFeed() {
+    const q = document.getElementById('feedSearch').value.toLowerCase();
+    document.querySelectorAll('.feed-card').forEach(c => {
+      const text = c.textContent.toLowerCase();
+      c.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  }
+
+  function setF(btn, type) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.feed-card').forEach(c => {
+      let show = true;
+      if (type === 'suggest') show = c.getAttribute('data-type') === 'suggest';
+      else if (type === 'report') show = c.getAttribute('data-type') === 'report';
+      else if (type === 'new') show = c.getAttribute('data-status') === 'new';
+      c.style.display = show ? '' : 'none';
+    });
+  }
+</script>
+</body>
+</html>

@@ -25,6 +25,12 @@ namespace ezZkvi.Controllers
             return View();
         }
 
+        // GET: /Administrator/Dashboard
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
         // GET: Administrator
         public async Task<IActionResult> Index()
         {

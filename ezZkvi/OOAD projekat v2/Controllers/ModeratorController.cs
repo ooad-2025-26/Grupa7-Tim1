@@ -25,6 +25,12 @@ namespace ezZkvi.Controllers
             return View();
         }
 
+        // GET: /Moderator/Feedback
+        public IActionResult Feedback()
+        {
+            return View();
+        }
+
         // GET: Moderator
         public async Task<IActionResult> Index()
         {
