@@ -323,7 +323,11 @@
 
   function demoLogin(role) {
     showToast('Demo pristup: ' + role);
-    setTimeout(() => window.location.href = '/Student/Dashboard', 700);
+    setTimeout(() => {
+      if (role === 'moderator') window.location.href = '/Moderator/Content';
+      else if (role === 'admin') window.location.href = '/Administrator/Users';
+      else window.location.href = '/Student/Dashboard';
+    }, 700);
   }
 
   function handleRegister() {

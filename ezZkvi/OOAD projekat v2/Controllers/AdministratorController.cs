@@ -19,6 +19,12 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
+        // GET: /Administrator/Users
+        public IActionResult Users()
+        {
+            return View();
+        }
+
         // GET: Administrator
         public async Task<IActionResult> Index()
         {

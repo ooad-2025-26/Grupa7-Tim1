@@ -1,0 +1,278 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "KvizApp – Upravljanje sadržajem";
+}
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KvizApp – Upravljanje sadržajem</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#080C14;--surface:#0F1620;--card:#141D2B;--border:#1E2D42;--accent:#00E5FF;--amber:#FFB300;--text:#E8EDF5;--muted:#5A7090;--success:#00E676;--danger:#FF5252; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Nunito Sans',sans-serif;min-height:100vh;padding:28px 24px;}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+  .page-title{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;letter-spacing:1px;}
+  .page-title span{color:var(--accent);}
+  .role-badge{padding:5px 14px;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);border-radius:20px;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);}
+
+  .back-link{padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-decoration:none;display:flex;align-items:center;gap:6px;}
+  .back-link:hover{border-color:var(--accent);color:var(--accent);}
+
+  .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:24px;width:fit-content;}
+  .tab{padding:9px 22px;border-radius:7px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);transition:all 0.2s;border:none;background:transparent;}
+  .tab.active{background:var(--accent);color:var(--bg);}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  .search-wrap{position:relative;flex:1;min-width:200px;}
+  .search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px 10px 36px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.88rem;outline:none;}
+  .search-wrap input:focus{border-color:var(--accent);}
+  .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.9rem;}
+  select{padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.85rem;outline:none;cursor:pointer;font-family:'Nunito Sans',sans-serif;}
+  select:focus{border-color:var(--accent);}
+  .btn-add{padding:9px 20px;background:var(--accent);color:var(--bg);border:none;border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+  .btn-add:hover{background:#fff;box-shadow:0 0 16px rgba(0,229,255,0.4);}
+
+  .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .t-header{display:grid;grid-template-columns:1fr 120px 100px 90px 100px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  .t-row{display:grid;grid-template-columns:1fr 120px 100px 90px 100px;padding:14px 20px;border-bottom:1px solid var(--border);align-items:center;transition:background 0.2s;}
+  .t-row:last-child{border-bottom:none;}
+  .t-row:hover{background:rgba(0,229,255,0.03);}
+  .q-text-cell{font-size:0.88rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px;}
+  .q-sub{font-size:0.75rem;color:var(--muted);margin-top:2px;}
+  .tag{display:inline-block;padding:3px 10px;border-radius:10px;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;}
+  .tag-ooad{background:rgba(0,229,255,0.1);color:var(--accent);}
+  .tag-os{background:rgba(255,179,0,0.1);color:var(--amber);}
+  .tag-asp{background:rgba(0,230,118,0.1);color:var(--success);}
+  .diff{font-size:0.8rem;}
+  .diff-easy{color:var(--success);}
+  .diff-med{color:var(--amber);}
+  .diff-hard{color:var(--danger);}
+  .actions-cell{display:flex;gap:6px;}
+  .act-btn{padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all 0.2s;}
+  .act-btn.edit:hover{border-color:var(--accent);color:var(--accent);}
+  .act-btn.del:hover{border-color:var(--danger);color:var(--danger);}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:560px;animation:fadeUp 0.3s ease both;max-height:90vh;overflow-y:auto;}
+  .modal-title{font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:1px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;}
+  .modal-close{cursor:pointer;color:var(--muted);font-size:1.2rem;transition:color 0.2s;}
+  .modal-close:hover{color:var(--danger);}
+  .form-group{margin-bottom:16px;}
+  label{display:block;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  input[type=text],textarea,select.full{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s;}
+  input[type=text]:focus,textarea:focus,select.full:focus{border-color:var(--accent);}
+  textarea{resize:vertical;min-height:80px;}
+  .opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .opt-input{position:relative;}
+  .opt-input input{padding-left:36px;}
+  .opt-label{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--muted);font-size:0.85rem;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+  .btn-cancel{padding:10px 20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:0.85rem;letter-spacing:1px;transition:all 0.2s;}
+  .btn-save{padding:10px 24px;background:var(--accent);color:var(--bg);border:none;border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;}
+  .btn-save:hover{background:#fff;}
+
+  /* Toast */
+  .toast{position:fixed;top:24px;right:24px;z-index:200;padding:12px 24px;border-radius:10px;font-size:0.85rem;font-weight:600;transform:translateX(120%);transition:transform 0.4s ease;}
+  .toast.show{transform:translateX(0);}
+  .toast.success{background:rgba(0,230,118,0.15);border:1px solid var(--success);color:var(--success);}
+  .toast.error{background:rgba(255,82,82,0.15);border:1px solid var(--danger);color:var(--danger);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+  @@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+  @@media(max-width:768px){
+    .t-header,.t-row{grid-template-columns:1fr 100px 80px;}
+    .t-header > :nth-child(3),.t-row > :nth-child(3),
+    .t-header > :last-child,.t-row > :last-child{display:none;}
+    body{padding:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a class="back-link" asp-controller="Home" asp-action="Index">← Nazad</a>
+    <div>
+      <div class="page-title">Upravljanje <span>sadržajem</span></div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Pitanja i predmeti platforme</div>
+    </div>
+  </div>
+  <div class="role-badge">Moderator</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('questions')">Pitanja</button>
+  <button class="tab" onclick="switchTab('subjects')">Predmeti</button>
+</div>
+
+<!-- Questions Panel -->
+<div class="panel active" id="questions">
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Pretraži pitanja..." oninput="filterQuestions()">
+    </div>
+    <select id="subjectFilter" onchange="filterQuestions()">
+      <option value="">Svi predmeti</option>
+      <option>OOAD</option>
+      <option>Operativni sistemi</option>
+      <option>ASP</option>
+    </select>
+    <select id="diffFilter" onchange="filterQuestions()">
+      <option value="">Sve težine</option>
+      <option>Lako</option>
+      <option>Srednje</option>
+      <option>Teško</option>
+    </select>
+    <button class="btn-add" onclick="openModal()">+ Dodaj pitanje</button>
+  </div>
+
+  <div class="table-wrap" id="questionTable">
+    <div class="t-header">
+      <span>Pitanje</span><span>Predmet</span><span>Oblast</span><span>Težina</span><span>Akcije</span>
+    </div>
+    <div class="t-row" data-subject="OOAD" data-diff="Lako"><div><div class="q-text-cell">Koji UML dijagram prikazuje dinamičko ponašanje sistema?</div></div><span><span class="tag tag-ooad">OOAD</span></span><span style="font-size:0.82rem;color:var(--muted)">UML dijagrami</span><span class="diff diff-easy">Lako</span><div class="actions-cell"><button class="act-btn edit" onclick="editQuestion(this)">✏ Uredi</button><button class="act-btn del" onclick="deleteQuestion(this)">🗑</button></div></div>
+    <div class="t-row" data-subject="OOAD" data-diff="Srednje"><div><div class="q-text-cell">Šta je use case diagram i čemu služi u OOAD procesu?</div></div><span><span class="tag tag-ooad">OOAD</span></span><span style="font-size:0.82rem;color:var(--muted)">Slučajevi upotrebe</span><span class="diff diff-med">Srednje</span><div class="actions-cell"><button class="act-btn edit">✏ Uredi</button><button class="act-btn del" onclick="deleteQuestion(this)">🗑</button></div></div>
+    <div class="t-row" data-subject="OS" data-diff="Srednje"><div><div class="q-text-cell">Koja je razlika između procesa i niti (thread) u OS-u?</div></div><span><span class="tag tag-os">OS</span></span><span style="font-size:0.82rem;color:var(--muted)">Procesi i niti</span><span class="diff diff-med">Srednje</span><div class="actions-cell"><button class="act-btn edit">✏ Uredi</button><button class="act-btn del" onclick="deleteQuestion(this)">🗑</button></div></div>
+    <div class="t-row" data-subject="ASP" data-diff="Teško"><div><div class="q-text-cell">Objasnite algoritam sortiranja QuickSort i njegovu složenost.</div></div><span><span class="tag tag-asp">ASP</span></span><span style="font-size:0.82rem;color:var(--muted)">Algoritmi sortiranja</span><span class="diff diff-hard">Teško</span><div class="actions-cell"><button class="act-btn edit">✏ Uredi</button><button class="act-btn del" onclick="deleteQuestion(this)">🗑</button></div></div>
+    <div class="t-row" data-subject="OS" data-diff="Teško"><div><div class="q-text-cell">Šta je deadlock i kako se može spriječiti u OS-u?</div></div><span><span class="tag tag-os">OS</span></span><span style="font-size:0.82rem;color:var(--muted)">Sinhronizacija</span><span class="diff diff-hard">Teško</span><div class="actions-cell"><button class="act-btn edit">✏ Uredi</button><button class="act-btn del" onclick="deleteQuestion(this)">🗑</button></div></div>
+  </div>
+</div>
+
+<!-- Subjects Panel -->
+<div class="panel" id="subjects">
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Pretraži predmete...">
+    </div>
+    <button class="btn-add" onclick="showToast('Funkcionalnost u razvoju','success')">+ Novi predmet</button>
+  </div>
+  <div class="table-wrap">
+    <div class="t-header" style="grid-template-columns:1fr 80px 80px 100px">
+      <span>Naziv predmeta</span><span>Pitanja</span><span>Oblasti</span><span>Akcije</span>
+    </div>
+    <div class="t-row" style="grid-template-columns:1fr 80px 80px 100px">
+      <div><div class="q-text-cell">Objektno orijentisana analiza i dizajn</div></div>
+      <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">142</span>
+      <span style="color:var(--muted)">8</span>
+      <div class="actions-cell"><button class="act-btn edit">✏ Uredi</button><button class="act-btn del">🗑</button></div>
+    </div>
+    <div class="t-row" style="grid-template-columns:1fr 80px 80px 100px">
+      <div><div class="q-text-cell">Operativni sistemi</div></div>
+      <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">98</span>
+      <span style="color:var(--muted)">6</span>
+      <div class="actions-cell"><button class="act-btn edit">✏ Uredi</button><button class="act-btn del">🗑</button></div>
+    </div>
+    <div class="t-row" style="grid-template-columns:1fr 80px 80px 100px">
+      <div><div class="q-text-cell">Algoritmi i strukture podataka</div></div>
+      <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">210</span>
+      <span style="color:var(--muted)">10</span>
+      <div class="actions-cell"><button class="act-btn edit">✏ Uredi</button><button class="act-btn del">🗑</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Novo pitanje <span class="modal-close" onclick="closeModal()">✕</span></div>
+    <div class="form-group">
+      <label>Predmet</label>
+      <select class="full"><option>OOAD</option><option>Operativni sistemi</option><option>ASP</option></select>
+    </div>
+    <div class="form-group">
+      <label>Oblast</label>
+      <input type="text" placeholder="npr. UML dijagrami">
+    </div>
+    <div class="form-group">
+      <label>Tekst pitanja</label>
+      <textarea placeholder="Unesite tekst pitanja..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Ponuđeni odgovori</label>
+      <div class="opts-grid">
+        <div class="opt-input"><span class="opt-label">A</span><input type="text" placeholder="Odgovor A"></div>
+        <div class="opt-input"><span class="opt-label">B</span><input type="text" placeholder="Odgovor B"></div>
+        <div class="opt-input"><span class="opt-label">C</span><input type="text" placeholder="Odgovor C"></div>
+        <div class="opt-input"><span class="opt-label">D</span><input type="text" placeholder="Odgovor D"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Tačan odgovor</label>
+        <select class="full"><option>A</option><option>B</option><option>C</option><option>D</option></select>
+      </div>
+      <div class="form-group">
+        <label>Težina</label>
+        <select class="full"><option>Lako</option><option>Srednje</option><option>Teško</option></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Otkaži</button>
+      <button class="btn-save" onclick="saveQuestion()">Sačuvaj pitanje</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function switchTab(t){
+    document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='questions')||(i===1&&t==='subjects')));
+    document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));
+    document.getElementById(t).classList.add('active');
+  }
+  function openModal(){document.getElementById('modalOverlay').classList.add('open');}
+  function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+  document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast ' + type;
+    setTimeout(() => t.classList.add('show'), 10);
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function filterQuestions() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const subject = document.getElementById('subjectFilter').value;
+    const diff = document.getElementById('diffFilter').value;
+    document.querySelectorAll('#questionTable .t-row').forEach(row => {
+      const text = row.textContent.toLowerCase();
+      const rowSub = row.getAttribute('data-subject');
+      const rowDiff = row.getAttribute('data-diff');
+      const show = (!search || text.includes(search)) && (!subject || rowSub === subject) && (!diff || rowDiff === diff);
+      row.style.display = show ? '' : 'none';
+    });
+  }
+
+  function deleteQuestion(btn) {
+    if (confirm('Da li ste sigurni da želite obrisati ovo pitanje?')) {
+      const row = btn.closest('.t-row');
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(20px)';
+      row.style.transition = 'all 0.3s ease';
+      setTimeout(() => row.remove(), 300);
+      showToast('Pitanje obrisano', 'success');
+    }
+  }
+
+  function editQuestion(btn) {
+    openModal();
+  }
+
+  function saveQuestion() {
+    closeModal();
+    showToast('Pitanje uspješno sačuvano!', 'success');
+  }
+</script>
+</body>
+</html>

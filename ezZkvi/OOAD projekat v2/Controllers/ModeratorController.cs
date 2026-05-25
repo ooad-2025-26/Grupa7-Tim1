@@ -19,6 +19,12 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
+        // GET: /Moderator/Content
+        public IActionResult Content()
+        {
+            return View();
+        }
+
         // GET: Moderator
         public async Task<IActionResult> Index()
         {
