@@ -1,14 +1,8 @@
 @{
-    Layout = null;
-    ViewData["Title"] = "KvizApp – Prijava";
+    ViewData["Title"] = "Prijava";
 }
-<!DOCTYPE html>
-<html lang="bs">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KvizApp – Prijava</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+@section Styles {
 <style>
   :root {
     --bg: #080C14; --surface: #0F1620; --card: #141D2B;
@@ -171,8 +165,8 @@
     .demo-btns { flex-direction: column; }
   }
 </style>
-</head>
-<body>
+}
+
 <div class="grid-bg"></div>
 <div class="glow"></div>
 
@@ -259,6 +253,7 @@
 <div class="corner-deco">ETF · OOAD · 2025–26</div>
 <div class="toast" id="toast"></div>
 
+@section Scripts {
 <script>
   const DEMO_USERS = {
     'student':   { name: 'Ahmed Spahić',    username: 'ahmed',  role: 'student',   avatar: 'AS' },
@@ -324,7 +319,7 @@
   function demoLogin(role) {
     showToast('Demo pristup: ' + role);
     setTimeout(() => {
-      if (role === 'moderator') window.location.href = '/Moderator/Content';
+      if (role === 'moderator') window.location.href = '/Moderator/Dashboard';
       else if (role === 'admin') window.location.href = '/Administrator/Dashboard';
       else window.location.href = '/Student/Dashboard';
     }, 700);
@@ -361,5 +356,4 @@
     }
   });
 </script>
-</body>
-</html>
+}

@@ -1,0 +1,221 @@
+@{
+    ViewData["Title"] = "Moderator Panel";
+
+    var bsCulture = new System.Globalization.CultureInfo("bs-Latn-BA");
+    var trenutniDatum = DateTime.Now.ToString("dddd · dd. MMMM yyyy", bsCulture);
+}
+
+@section Styles {
+<style>
+  .layout{display:flex;min-height:100vh;}
+
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.3s ease;}
+  .logo{font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:2px;color:var(--text);padding:0 24px 24px;border-bottom:1px solid var(--border);text-decoration:none;display:block;}
+  .logo span{color:var(--accent);}
+  .nav{padding:20px 12px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.9rem;color:var(--muted);margin-bottom:4px;transition:all 0.2s;text-decoration:none;position:relative;}
+  .nav-item:hover,.nav-item.active{background:rgba(255,179,0,0.08);color:var(--amber);}
+  .nav-item .ico{font-size:1rem;width:20px;text-align:center;}
+  .badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--amber);color:var(--bg);font-size:0.65rem;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .user-card{margin:12px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;text-decoration:none;display:block;color:var(--text);}
+  .user-card:hover{border-color:var(--amber);}
+  .user-name{font-weight:600;font-size:0.9rem;}
+  .user-role{font-size:0.72rem;letter-spacing:2px;color:var(--amber);text-transform:uppercase;margin-top:2px;}
+  .logout-hint{font-size:0.65rem;color:var(--muted);margin-top:4px;opacity:0;transition:opacity 0.2s;}
+  .user-card:hover .logout-hint{opacity:1;}
+
+  .main{flex:1;padding:28px;overflow-y:auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+  .page-title{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;}
+  .page-title span{color:var(--amber);}
+  .date-badge{font-size:0.76rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+
+  .menu-toggle{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:1.2rem;cursor:pointer;}
+
+  .notif-btn{padding:9px 18px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);font-size:0.85rem;transition:all 0.2s;display:flex;align-items:center;gap:8px;text-decoration:none;}
+  .notif-btn:hover{border-color:var(--amber);color:var(--amber);}
+  .notif-dot{width:8px;height:8px;background:var(--amber);border-radius:50%;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;animation:fadeUp 0.5s ease both;transition:all 0.2s;text-decoration:none;display:block;color:var(--text);}
+  .stat.clickable{cursor:pointer;}
+  .stat.clickable:hover{border-color:var(--amber);transform:translateY(-2px);}
+  .stat:nth-child(2){animation-delay:.1s}.stat:nth-child(3){animation-delay:.2s}.stat:nth-child(4){animation-delay:.3s}
+  .stat-val{font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;}
+  .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+  .stat-trend{font-size:0.78rem;margin-top:6px;}
+  .up{color:var(--success)}.dn{color:var(--danger)}.neu{color:var(--muted)}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+  .section-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;animation:fadeUp 0.5s ease 0.2s both;}
+  .sec-title{font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .sec-title::before{content:'';width:3px;height:12px;background:var(--amber);border-radius:2px;}
+
+  /* Feedback items */
+  .fb-item{padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:background 0.2s;}
+  .fb-item:last-child{border-bottom:none;}
+  .fb-item:hover{background:rgba(255,179,0,0.03);margin:0 -10px;padding:12px 10px;border-radius:6px;}
+  .fb-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+  .fb-content{flex:1;}
+  .fb-title-text{font-size:0.86rem;font-weight:600;}
+  .fb-meta{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+  .fb-tag{display:inline-block;padding:1px 8px;border-radius:8px;font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;}
+  .tag-suggest{background:rgba(0,229,255,0.1);color:var(--accent);}
+  .tag-report{background:rgba(255,82,82,0.1);color:var(--danger);}
+
+  /* Subject items */
+  .subj-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .subj-row:last-child{border-bottom:none;}
+  .subj-name{font-size:0.88rem;font-weight:600;}
+  .subj-sub{font-size:0.72rem;color:var(--muted);margin-top:1px;}
+  .subj-count{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1rem;color:var(--amber);}
+
+  /* Activity log */
+  .log-item{padding:9px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;}
+  .log-item:last-child{border-bottom:none;}
+  .log-icon{font-size:0.85rem;margin-top:1px;flex-shrink:0;}
+  .log-text{font-size:0.82rem;line-height:1.4;}
+  .log-time{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9;}
+
+  @@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+  @@media(max-width:1024px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .row2{grid-template-columns:1fr;}
+  }
+  @@media(max-width:768px){
+    .menu-toggle{display:block;}
+    .sidebar{position:fixed;left:0;top:0;height:100%;z-index:10;transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-overlay.open{display:block;}
+    .main{padding:20px 16px;}
+  }
+  @@media(max-width:480px){
+    .stats{grid-template-columns:1fr;}
+  }
+</style>
+}
+
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <a class="logo" asp-controller="Home" asp-action="Index">KVIZ<span>APP</span></a>
+    <nav class="nav">
+      <a class="nav-item active" asp-controller="Moderator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
+      <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
+      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback <span class="badge">3</span></a>
+      <a class="nav-item" asp-controller="Account" asp-action="Login"><span class="ico">🚪</span> Odjava</a>
+    </nav>
+    <a class="user-card" asp-controller="Account" asp-action="Login">
+      <div class="user-name">Amila Duraković</div>
+      <div class="user-role">Moderator</div>
+      <div class="logout-hint">Klikni za odjavu →</div>
+    </a>
+  </div>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div>
+          <div class="page-title">Moderator <span>panel</span></div>
+          <div class="date-badge">@trenutniDatum</div>
+        </div>
+      </div>
+      <a class="notif-btn" asp-controller="Moderator" asp-action="Feedback"><div class="notif-dot"></div> 3 nova feedback-a</a>
+    </div>
+
+    <div class="stats">
+      <a class="stat clickable" asp-controller="Moderator" asp-action="Content">
+        <div class="stat-val" style="color:var(--accent)">450</div>
+        <div class="stat-label">Pitanja u bazi</div>
+        <div class="stat-trend up">↑ +12 ove sedmice</div>
+      </a>
+      <div class="stat">
+        <div class="stat-val" style="color:var(--amber)">5</div>
+        <div class="stat-label">Predmeta</div>
+        <div class="stat-trend neu">→ aktivnih</div>
+      </div>
+      <a class="stat clickable" asp-controller="Moderator" asp-action="Feedback">
+        <div class="stat-val" style="color:var(--danger)">3</div>
+        <div class="stat-label">Neobrađeni feedback</div>
+        <div class="stat-trend dn">↑ +3 nova</div>
+      </a>
+      <div class="stat">
+        <div class="stat-val" style="color:var(--success)">47</div>
+        <div class="stat-label">Obrađenih ovog mjeseca</div>
+        <div class="stat-trend up">↑ +8 ove sedmice</div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="section-card">
+        <div class="sec-title">Najnoviji feedback za obradu</div>
+        <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
+          <div class="fb-icon">💡</div>
+          <div class="fb-content">
+            <div class="fb-title-text">Prijedlog: «include» relacija u Use Case</div>
+            <div class="fb-meta"><span class="fb-tag tag-suggest">Prijedlog</span> · Ahmed Spahić · 11. Apr</div>
+          </div>
+        </a>
+        <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
+          <div class="fb-icon">🐛</div>
+          <div class="fb-content">
+            <div class="fb-title-text">Netačan tačan odgovor u pitanju #042</div>
+            <div class="fb-meta"><span class="fb-tag tag-report">Greška</span> · Merima Kadić · 10. Apr</div>
+          </div>
+        </a>
+        <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
+          <div class="fb-icon">💡</div>
+          <div class="fb-content">
+            <div class="fb-title-text">Prijedlog: fork() sistemski poziv UNIX</div>
+            <div class="fb-meta"><span class="fb-tag tag-suggest">Prijedlog</span> · Kenan Hodžić · 09. Apr</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="section-card">
+        <div class="sec-title">Pitanja po predmetu</div>
+        <div class="subj-row">
+          <div><div class="subj-name">Objektno orijentisana analiza i dizajn</div><div class="subj-sub">8 oblasti</div></div>
+          <div class="subj-count">142</div>
+        </div>
+        <div class="subj-row">
+          <div><div class="subj-name">Operativni sistemi</div><div class="subj-sub">6 oblasti</div></div>
+          <div class="subj-count">98</div>
+        </div>
+        <div class="subj-row">
+          <div><div class="subj-name">Algoritmi i strukture podataka</div><div class="subj-sub">10 oblasti</div></div>
+          <div class="subj-count">210</div>
+        </div>
+        <div class="subj-row">
+          <div><div class="subj-name">Napredno softversko programiranje</div><div class="subj-sub">5 oblasti</div></div>
+          <div class="subj-count">76</div>
+        </div>
+        <div class="subj-row">
+          <div><div class="subj-name">Baze podataka</div><div class="subj-sub">4 oblasti</div></div>
+          <div class="subj-count">54</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="sec-title">Log mojih aktivnosti</div>
+      <div class="log-item"><span class="log-icon">✓</span><div><div class="log-text">Prihvaćen prijedlog pitanja <strong>"Dijagram sekvenci u UML-u"</strong></div><div class="log-time">Danas 10:42</div></div></div>
+      <div class="log-item"><span class="log-icon">✏</span><div><div class="log-text">Uređeno pitanje <strong>#142</strong> u predmetu OOAD</div><div class="log-time">Danas 09:18</div></div></div>
+      <div class="log-item"><span class="log-icon">✕</span><div><div class="log-text">Odbijen prijedlog (duplikat postojećeg pitanja)</div><div class="log-time">Jučer 16:55</div></div></div>
+      <div class="log-item"><span class="log-icon">📝</span><div><div class="log-text">Dodano <strong>3 nova pitanja</strong> u predmet OS</div><div class="log-time">Jučer 14:22</div></div></div>
+    </div>
+  </main>
+</div>
+
+@section Scripts {
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
+</script>
+}

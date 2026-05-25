@@ -1,14 +1,8 @@
 @{
-    Layout = null;
-    ViewData["Title"] = "KvizApp – Admin Panel";
+    ViewData["Title"] = "Admin Panel";
 }
-<!DOCTYPE html>
-<html lang="bs">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KvizApp – Admin Panel</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+@section Styles {
 <style>
   :root { --bg:#080C14;--surface:#0F1620;--card:#141D2B;--border:#1E2D42;--accent:#00E5FF;--amber:#FFB300;--text:#E8EDF5;--muted:#5A7090;--success:#00E676;--danger:#FF5252; }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -109,8 +103,8 @@
     .stats{grid-template-columns:1fr;}
   }
 </style>
-</head>
-<body>
+}
+
 <div class="layout">
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="sidebar">
@@ -251,6 +245,7 @@
 
 <div class="toast" id="toast"></div>
 
+@section Scripts {
 <script>
   function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
@@ -299,5 +294,4 @@
     }
   }
 </script>
-</body>
-</html>
+}

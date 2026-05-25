@@ -1,0 +1,21 @@
+# Visual Studio cache
+.vs/
+
+# JetBrains Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# .NET build artefakti (na nivou cijelog repoa)
+**/bin/
+**/obj/
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,14 +1,8 @@
 @{
-    Layout = null;
-    ViewData["Title"] = "KvizApp – Upravljanje korisnicima";
+    ViewData["Title"] = "Upravljanje korisnicima";
 }
-<!DOCTYPE html>
-<html lang="bs">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KvizApp – Upravljanje korisnicima</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+@section Styles {
 <style>
   :root { --bg:#080C14;--surface:#0F1620;--card:#141D2B;--border:#1E2D42;--accent:#00E5FF;--amber:#FFB300;--text:#E8EDF5;--muted:#5A7090;--success:#00E676;--danger:#FF5252; }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -101,11 +95,11 @@
     body{padding:16px;}
   }
 </style>
-</head>
-<body>
+}
+
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px">
-    <a class="back-link" asp-controller="Home" asp-action="Index">← Nazad</a>
+    <a class="back-link" asp-controller="Administrator" asp-action="Dashboard">← Nazad</a>
     <div>
       <div class="page-title">Upravljanje <span>korisnicima</span></div>
       <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Dodjela uloga i upravljanje nalozima</div>
@@ -205,6 +199,7 @@
 
 <div class="toast" id="toast"></div>
 
+@section Scripts {
 <script>
   function openRoleModal(name, role, av){
     document.getElementById('modalName').textContent = name;
@@ -300,5 +295,4 @@
     document.getElementById('statBlocked').textContent = blocked;
   }
 </script>
-</body>
-</html>
+}

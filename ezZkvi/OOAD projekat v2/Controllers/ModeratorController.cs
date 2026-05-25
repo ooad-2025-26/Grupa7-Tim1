@@ -19,6 +19,12 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
+        // GET: /Moderator/Dashboard
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
         // GET: /Moderator/Content
         public IActionResult Content()
         {

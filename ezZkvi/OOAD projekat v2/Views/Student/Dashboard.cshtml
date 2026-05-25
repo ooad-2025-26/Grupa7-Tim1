@@ -1,18 +1,12 @@
 @{
-    Layout = null;
-    ViewData["Title"] = "KvizApp – Dashboard";
+    ViewData["Title"] = "Dashboard";
 
     // Bosanski datum (npr. "Subota · 23. Maj 2026")
     var bsCulture = new System.Globalization.CultureInfo("bs-Latn-BA");
     var trenutniDatum = DateTime.Now.ToString("dddd · dd. MMMM yyyy", bsCulture);
 }
-<!DOCTYPE html>
-<html lang="bs">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KvizApp – Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+@section Styles {
 <style>
   :root {
     --bg: #080C14; --surface: #0F1620; --card: #141D2B;
@@ -185,8 +179,8 @@
   }
   @@media(max-width:480px){ .stats{grid-template-columns:1fr;} }
 </style>
-</head>
-<body>
+}
+
 <div class="layout">
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="sidebar">
@@ -341,6 +335,7 @@
   </main>
 </div>
 
+@section Scripts {
 <script>
   // Pozdrav prema dobu dana
   (function() {
@@ -358,5 +353,4 @@
     document.getElementById('sidebarOverlay').classList.toggle('open');
   }
 </script>
-</body>
-</html>
+}
