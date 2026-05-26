@@ -1,0 +1,6 @@
+services:
+  ezzkvi:
+    image: ${DOCKER_REGISTRY-}ezzkvi
+    build:
+      context: .
+      dockerfile: OOAD projekat v2/Dockerfile
