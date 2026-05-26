@@ -184,74 +184,59 @@
     </div>
 
     <!-- LOGIN -->
-    <div class="panel active" id="login">
-      <div class="form-group">
-        <label>Korisničko ime</label>
-        <input type="text" id="loginUser" placeholder="ahmed" autocomplete="username">
-        <div class="error-msg" id="loginUserErr">Korisničko ime je obavezno</div>
-      </div>
-      <div class="form-group">
-        <label>Lozinka</label>
-        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
-        <div class="error-msg" id="loginPassErr">Lozinka je obavezna</div>
-      </div>
-      <button class="btn" id="loginBtn" onclick="handleLogin()">
-        <span class="btn-text">Prijavi se</span>
-        <div class="spinner"></div>
-      </button>
-
-      <div class="demo-section">
-        <div class="demo-label">Demo pristup</div>
-        <div class="demo-btns">
-          <div class="demo-btn" onclick="demoLogin('student')">Student<span>ahmed</span></div>
-          <div class="demo-btn" onclick="demoLogin('moderator')">Moderator<span>amila</span></div>
-          <div class="demo-btn" onclick="demoLogin('admin')">Admin<span>zlatan</span></div>
+        <div class="panel active" id="login">
+            <form asp-controller="Account" asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="error-msg show"></div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="Email" placeholder="ime@etf.unsa.ba" autocomplete="username">
+                    <div class="error-msg" id="loginUserErr">Email je obavezan</div>
+                </div>
+                <div class="form-group">
+                    <label>Lozinka</label>
+                    <input type="password" name="Password" placeholder="••••••••" autocomplete="current-password">
+                    <div class="error-msg" id="loginPassErr">Lozinka je obavezna</div>
+                </div>
+                <button type="submit" class="btn" id="loginBtn">
+                    <span class="btn-text">Prijavi se</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
         </div>
-      </div>
-    </div>
 
     <!-- REGISTER -->
-    <div class="panel" id="register">
-      <div class="form-group">
-        <label>Ime i prezime</label>
-        <input type="text" id="regName" placeholder="Ahmed Spahić" autocomplete="name">
-        <div class="error-msg" id="regNameErr">Ime i prezime su obavezni</div>
-      </div>
-      <div class="form-group">
-        <label>Korisničko ime</label>
-        <input type="text" id="regUser" placeholder="ahmed" autocomplete="username">
-        <div class="error-msg" id="regUserErr">Korisničko ime je obavezno</div>
-      </div>
-      <div class="form-group">
-        <label>Email adresa</label>
-        <input type="email" id="regEmail" placeholder="ime@@etf.unsa.ba" autocomplete="email">
-        <div class="error-msg" id="regEmailErr">Unesite validnu email adresu</div>
-      </div>
-      <div class="form-group">
-        <label>Lozinka</label>
-        <input type="password" id="regPass" placeholder="Min. 8 znakova" autocomplete="new-password" oninput="checkStrength(this.value)">
-        <div class="password-strength"><div class="strength-bar" id="strengthBar"></div></div>
-        <div class="strength-label" id="strengthLabel"></div>
-        <div class="error-msg" id="regPassErr">Lozinka mora imati barem 8 znakova</div>
-      </div>
-      <div class="form-group">
-        <label>Potvrda lozinke</label>
-        <input type="password" id="regPassConfirm" placeholder="Ponovi lozinku" autocomplete="new-password">
-        <div class="error-msg" id="regPassConfirmErr">Lozinke se ne podudaraju</div>
-      </div>
-      <button class="btn" id="regBtn" onclick="handleRegister()">
-        <span class="btn-text">Kreiraj nalog</span>
-        <div class="spinner"></div>
-      </button>
-      <div class="info-box">
-        <span>ℹ</span>
-        <span>Nalog čeka odobrenje administratora prije aktivacije.</span>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="corner-deco">ETF · OOAD · 2025–26</div>
-<div class="toast" id="toast"></div>
+        <div class="panel" id="register">
+            <form asp-controller="Account" asp-action="Register" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="error-msg show"></div>
+                <div class="form-group">
+                    <label>Email adresa</label>
+                    <input type="email" name="Email" placeholder="ime@etf.unsa.ba" autocomplete="email">
+                    <div class="error-msg" id="regEmailErr">Unesite validnu email adresu</div>
+                </div>
+                <div class="form-group">
+                    <label>Lozinka</label>
+                    <input type="password" name="Password" placeholder="Min. 8 znakova" autocomplete="new-password" oninput="checkStrength(this.value)">
+                    <div class="password-strength"><div class="strength-bar" id="strengthBar"></div></div>
+                    <div class="strength-label" id="strengthLabel"></div>
+                    <div class="error-msg" id="regPassErr">Lozinka mora imati barem 8 znakova</div>
+                </div>
+                <div class="form-group">
+                    <label>Potvrda lozinke</label>
+                    <input type="password" name="ConfirmPassword" placeholder="Ponovi lozinku" autocomplete="new-password">
+                    <div class="error-msg" id="regPassConfirmErr">Lozinke se ne podudaraju</div>
+                </div>
+                <button type="submit" class="btn" id="regBtn">
+                    <span class="btn-text">Kreiraj nalog</span>
+                    <div class="spinner"></div>
+                </button>
+                <div class="info-box">
+                    <span>ℹ</span>
+                    <span>Nalog čeka odobrenje administratora prije aktivacije.</span>
+                </div>
+            </form>
+        </div>
 
 @section Scripts {
 <script>
