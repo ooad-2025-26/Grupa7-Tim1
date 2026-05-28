@@ -1,298 +1,651 @@
+@model List<ezZkvi.ViewModels.AdminUserViewModel>
+
 @{
     ViewData["Title"] = "Upravljanje korisnicima";
+
+    var totalUsers = Model.Count;
+    var activeUsers = Model.Count(u => u.IsApproved);
+    var pendingUsers = Model.Count(u => !u.IsApproved);
+    var adminUsers = Model.Count(u => !string.IsNullOrWhiteSpace(u.Role) && u.Role.Contains("Admin"));
+
+    string GetInitials(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return "US";
+
+        var namePart = email.Split('@')[0];
+        var parts = namePart.Split(new[] { '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length >= 2)
+            return (parts[0][0].ToString() + parts[1][0].ToString()).ToUpper();
+
+        if (namePart.Length >= 2)
+            return namePart.Substring(0, 2).ToUpper();
+
+        return namePart.ToUpper();
+    }
+
+    string GetRoleText(string role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+            return "Nema ulogu";
+
+        if (role.Contains("Admin"))
+            return "Admin";
+
+        if (role.Contains("Moderator"))
+            return "Moderator";
+
+        if (role.Contains("Student"))
+            return "Student";
+
+        return role;
+    }
+
+    string GetAvatarClass(string role)
+    {
+        role = GetRoleText(role);
+
+        if (role == "Admin")
+            return "admin";
+
+        if (role == "Moderator")
+            return "mod";
+
+        return "student";
+    }
+
+    string GetRoleClass(string role)
+    {
+        role = GetRoleText(role);
+
+        if (role == "Admin")
+            return "role-admin";
+
+        if (role == "Moderator")
+            return "role-mod";
+
+        return "role-student";
+    }
 }
 
 @section Styles {
-<style>
-  :root { --bg:#080C14;--surface:#0F1620;--card:#141D2B;--border:#1E2D42;--accent:#00E5FF;--amber:#FFB300;--text:#E8EDF5;--muted:#5A7090;--success:#00E676;--danger:#FF5252; }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:'Nunito Sans',sans-serif;min-height:100vh;padding:28px 24px;}
+    <style>
+        :root {
+            --bg: #080C14;
+            --surface: #0F1620;
+            --card: #141D2B;
+            --border: #1E2D42;
+            --accent: #00E5FF;
+            --amber: #FFB300;
+            --text: #E8EDF5;
+            --muted: #5A7090;
+            --success: #00E676;
+            --danger: #FF5252;
+        }
 
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
-  .page-title{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;}
-  .page-title span{color:var(--accent);}
-  .admin-badge{padding:5px 14px;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:20px;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--danger);}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  .back-link{padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-decoration:none;display:flex;align-items:center;gap:6px;}
-  .back-link:hover{border-color:var(--accent);color:var(--accent);}
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Nunito Sans',sans-serif;
+            min-height: 100vh;
+            padding: 28px 24px;
+        }
 
-  /* Stats */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;}
-  .stat-val{font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;}
-  .stat-val.a{color:var(--accent);}
-  .stat-val.g{color:var(--success);}
-  .stat-val.w{color:var(--amber);}
-  .stat-val.r{color:var(--danger);}
-  .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
 
-  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
-  .search-wrap{position:relative;flex:1;min-width:200px;}
-  .search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px 10px 36px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.88rem;outline:none;}
-  .search-wrap input:focus{border-color:var(--accent);}
-  .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);}
-  select{padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.85rem;outline:none;cursor:pointer;font-family:'Nunito Sans',sans-serif;}
+        .page-title {
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
 
-  .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
-  .t-header{display:grid;grid-template-columns:1fr 120px 120px 90px 140px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
-  .t-row{display:grid;grid-template-columns:1fr 120px 120px 90px 140px;padding:13px 20px;border-bottom:1px solid var(--border);align-items:center;transition:background 0.2s;}
-  .t-row:last-child{border-bottom:none;}
-  .t-row:hover{background:rgba(255,255,255,0.02);}
-  .user-cell{display:flex;align-items:center;gap:10px;}
-  .av{width:34px;height:34px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.8rem;flex-shrink:0;}
-  .av.student{background:rgba(0,229,255,0.1);color:var(--accent);}
-  .av.mod{background:rgba(255,179,0,0.1);color:var(--amber);}
-  .av.admin{background:rgba(255,82,82,0.1);color:var(--danger);}
-  .u-name{font-weight:600;font-size:0.88rem;}
-  .u-email{font-size:0.75rem;color:var(--muted);}
-  .role-tag{display:inline-block;padding:3px 10px;border-radius:10px;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;font-weight:600;}
-  .role-student{background:rgba(0,229,255,0.1);color:var(--accent);}
-  .role-mod{background:rgba(255,179,0,0.1);color:var(--amber);}
-  .role-admin{background:rgba(255,82,82,0.1);color:var(--danger);}
-  .status-tag{display:inline-block;padding:3px 10px;border-radius:10px;font-size:0.72rem;cursor:pointer;transition:all 0.2s;}
-  .status-active{background:rgba(0,230,118,0.1);color:var(--success);}
-  .status-pending{background:rgba(255,179,0,0.1);color:var(--amber);}
-  .status-blocked{background:rgba(255,82,82,0.1);color:var(--danger);}
-  .actions-cell{display:flex;gap:6px;flex-wrap:wrap;}
-  .act-btn{padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.72rem;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all 0.2s;white-space:nowrap;}
-  .act-btn.role-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .act-btn.approve:hover{border-color:var(--success);color:var(--success);}
-  .act-btn.block:hover{border-color:var(--danger);color:var(--danger);}
+            .page-title span {
+                color: var(--accent);
+            }
 
-  /* Modal */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;display:none;align-items:center;justify-content:center;padding:20px;}
-  .modal-overlay.open{display:flex;}
-  .modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:460px;animation:fadeUp 0.3s ease both;}
-  .modal-title{font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:1px;margin-bottom:8px;}
-  .modal-user{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:20px;}
-  .modal-av{width:44px;height:44px;border-radius:50%;background:rgba(0,229,255,0.1);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent);}
-  .current-role{font-size:0.72rem;color:var(--muted);margin-top:2px;}
-  .role-options{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
-  .role-option{padding:14px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:12px;}
-  .role-option:hover{border-color:var(--accent);}
-  .role-option.selected{border-color:var(--accent);background:rgba(0,229,255,0.05);}
-  .role-opt-icon{font-size:1.2rem;width:30px;text-align:center;}
-  .role-opt-name{font-weight:700;font-size:0.9rem;}
-  .role-opt-desc{font-size:0.75rem;color:var(--muted);margin-top:2px;}
-  .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
-  .btn-cancel{padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:0.85rem;letter-spacing:1px;transition:all 0.2s;}
-  .btn-save{padding:10px 22px;background:var(--accent);color:var(--bg);border:none;border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;}
-  .btn-save:hover{background:#fff;}
+        .admin-badge {
+            padding: 5px 14px;
+            background: rgba(255,82,82,0.1);
+            border: 1px solid rgba(255,82,82,0.3);
+            border-radius: 20px;
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--danger);
+        }
 
-  /* Toast */
-  .toast{position:fixed;top:24px;right:24px;z-index:200;padding:12px 24px;border-radius:10px;font-size:0.85rem;font-weight:600;transform:translateX(120%);transition:transform 0.4s ease;}
-  .toast.show{transform:translateX(0);}
-  .toast.success{background:rgba(0,230,118,0.15);border:1px solid var(--success);color:var(--success);}
-  .toast.error{background:rgba(255,82,82,0.15);border:1px solid var(--danger);color:var(--danger);}
+        .back-link {
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-  @@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+            .back-link:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
 
-  @@media(max-width:768px){
-    .stats{grid-template-columns:repeat(2,1fr);}
-    .t-header,.t-row{grid-template-columns:1fr 100px 100px;}
-    .t-header > :nth-child(3),.t-row > :nth-child(3),
-    .t-header > :last-child,.t-row > :last-child{display:none;}
-    body{padding:16px;}
-  }
-</style>
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .stat {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 20px;
+        }
+
+        .stat-val {
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+            .stat-val.a {
+                color: var(--accent);
+            }
+
+            .stat-val.g {
+                color: var(--success);
+            }
+
+            .stat-val.w {
+                color: var(--amber);
+            }
+
+            .stat-val.r {
+                color: var(--danger);
+            }
+
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+            .search-wrap input {
+                width: 100%;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 10px 14px 10px 36px;
+                color: var(--text);
+                font-family: 'Nunito Sans',sans-serif;
+                font-size: 0.88rem;
+                outline: none;
+            }
+
+                .search-wrap input:focus {
+                    border-color: var(--accent);
+                }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        select {
+            padding: 9px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            font-family: 'Nunito Sans',sans-serif;
+        }
+
+        .message-box {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .message-success {
+            background: rgba(0,230,118,0.1);
+            border: 1px solid rgba(0,230,118,0.35);
+            color: var(--success);
+        }
+
+        .message-error {
+            background: rgba(255,82,82,0.1);
+            border: 1px solid rgba(255,82,82,0.35);
+            color: var(--danger);
+        }
+
+        .table-wrap {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .t-header {
+            display: grid;
+            grid-template-columns: 1fr 130px 130px 230px;
+            padding: 12px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .t-row {
+            display: grid;
+            grid-template-columns: 1fr 130px 130px 230px;
+            padding: 13px 20px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+            .t-row:last-child {
+                border-bottom: none;
+            }
+
+            .t-row:hover {
+                background: rgba(255,255,255,0.02);
+            }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .av {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Rajdhani',sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+            .av.student {
+                background: rgba(0,229,255,0.1);
+                color: var(--accent);
+            }
+
+            .av.mod {
+                background: rgba(255,179,0,0.1);
+                color: var(--amber);
+            }
+
+            .av.admin {
+                background: rgba(255,82,82,0.1);
+                color: var(--danger);
+            }
+
+        .u-name {
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+
+        .u-email {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .role-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .role-student {
+            background: rgba(0,229,255,0.1);
+            color: var(--accent);
+        }
+
+        .role-mod {
+            background: rgba(255,179,0,0.1);
+            color: var(--amber);
+        }
+
+        .role-admin {
+            background: rgba(255,82,82,0.1);
+            color: var(--danger);
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            transition: all 0.2s;
+        }
+
+        .status-active {
+            background: rgba(0,230,118,0.1);
+            color: var(--success);
+        }
+
+        .status-pending {
+            background: rgba(255,179,0,0.1);
+            color: var(--amber);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .action-form {
+            display: inline;
+        }
+
+        .act-btn {
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--muted);
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: 'Nunito Sans',sans-serif;
+        }
+
+            .act-btn.approve:hover {
+                border-color: var(--success);
+                color: var(--success);
+            }
+
+            .act-btn.reject:hover {
+                border-color: var(--danger);
+                color: var(--danger);
+            }
+
+            .act-btn.remove:hover {
+                border-color: var(--amber);
+                color: var(--amber);
+            }
+
+        .empty-state {
+            padding: 30px 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        @@media(max-width:900px) {
+            .stats {
+                grid-template-columns: repeat(2,1fr);
+            }
+
+            .t-header,
+            .t-row {
+                grid-template-columns: 1fr 110px 110px;
+            }
+
+                .t-header > :last-child,
+                .t-row > :last-child {
+                    display: none;
+                }
+
+            body {
+                padding: 16px;
+            }
+        }
+
+        @@media(max-width:560px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .t-header,
+            .t-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .t-header {
+                display: none;
+            }
+
+            .t-row {
+                padding: 16px;
+            }
+        }
+    </style>
 }
 
 <div class="topbar">
-  <div style="display:flex;align-items:center;gap:12px">
-    <a class="back-link" asp-controller="Administrator" asp-action="Dashboard">← Nazad</a>
-    <div>
-      <div class="page-title">Upravljanje <span>korisnicima</span></div>
-      <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Dodjela uloga i upravljanje nalozima</div>
+    <div style="display:flex;align-items:center;gap:12px">
+        <a class="back-link" asp-controller="Administrator" asp-action="Dashboard">Nazad</a>
+        <div>
+            <div class="page-title">Upravljanje <span>korisnicima</span></div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">
+                Odobravanje registracija i upravljanje pristupom
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="admin-badge">Admin</div>
+    <div class="admin-badge">Admin</div>
 </div>
 
+@if (TempData["Message"] != null)
+{
+    <div class="message-box message-success">
+        @TempData["Message"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="message-box message-error">
+        @TempData["Error"]
+    </div>
+}
+
 <div class="stats">
-  <div class="stat"><div class="stat-val a" id="statTotal">143</div><div class="stat-label">Ukupno korisnika</div></div>
-  <div class="stat"><div class="stat-val g" id="statActive">138</div><div class="stat-label">Aktivnih</div></div>
-  <div class="stat"><div class="stat-val w" id="statPending">5</div><div class="stat-label">Na čekanju</div></div>
-  <div class="stat"><div class="stat-val r" id="statBlocked">2</div><div class="stat-label">Blokiranih</div></div>
+    <div class="stat">
+        <div class="stat-val a" id="statTotal">@totalUsers</div>
+        <div class="stat-label">Ukupno korisnika</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-val g" id="statActive">@activeUsers</div>
+        <div class="stat-label">Aktivnih</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-val w" id="statPending">@pendingUsers</div>
+        <div class="stat-label">Na čekanju</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-val r" id="statAdmins">@adminUsers</div>
+        <div class="stat-label">Admina</div>
+    </div>
 </div>
 
 <div class="toolbar">
-  <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input type="text" id="userSearch" placeholder="Pretraži korisnike..." oninput="filterUsers()">
-  </div>
-  <select id="roleFilter" onchange="filterUsers()"><option value="">Sve uloge</option><option>Student</option><option>Moderator</option><option>Administrator</option></select>
-  <select id="statusFilter" onchange="filterUsers()"><option value="">Svi statusi</option><option>Aktivan</option><option>Na čekanju</option><option>Blokiran</option></select>
+    <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="userSearch" placeholder="Pretraži korisnike..." oninput="filterUsers()">
+    </div>
+
+    <select id="roleFilter" onchange="filterUsers()">
+        <option value="">Sve uloge</option>
+        <option value="Student">Student</option>
+        <option value="Moderator">Moderator</option>
+        <option value="Admin">Admin</option>
+        <option value="Nema ulogu">Nema ulogu</option>
+    </select>
+
+    <select id="statusFilter" onchange="filterUsers()">
+        <option value="">Svi statusi</option>
+        <option value="Aktivan">Aktivan</option>
+        <option value="Na čekanju">Na čekanju</option>
+    </select>
 </div>
 
 <div class="table-wrap" id="userTable">
-  <div class="t-header">
-    <span>Korisnik</span><span>Uloga</span><span>Datum reg.</span><span>Status</span><span>Akcije</span>
-  </div>
-  <div class="t-row" data-role="Student" data-status="Aktivan">
-    <div class="user-cell"><div class="av student">AS</div><div><div class="u-name">Ahmed Spahić</div><div class="u-email">ahmed@@etf.unsa.ba</div></div></div>
-    <span><span class="role-tag role-student">Student</span></span>
-    <span style="font-size:0.82rem;color:var(--muted)">10. Feb 2026</span>
-    <span><span class="status-tag status-active">Aktivan</span></span>
-    <div class="actions-cell"><button class="act-btn role-btn" onclick="openRoleModal('Ahmed Spahić','Student','AS')">👤 Uloga</button><button class="act-btn block" onclick="toggleBlock(this)">🚫</button></div>
-  </div>
-  <div class="t-row" data-role="Moderator" data-status="Aktivan">
-    <div class="user-cell"><div class="av mod">AD</div><div><div class="u-name">Amila Duraković</div><div class="u-email">amila@@etf.unsa.ba</div></div></div>
-    <span><span class="role-tag role-mod">Moderator</span></span>
-    <span style="font-size:0.82rem;color:var(--muted)">05. Jan 2026</span>
-    <span><span class="status-tag status-active">Aktivan</span></span>
-    <div class="actions-cell"><button class="act-btn role-btn" onclick="openRoleModal('Amila Duraković','Moderator','AD')">👤 Uloga</button><button class="act-btn block" onclick="toggleBlock(this)">🚫</button></div>
-  </div>
-  <div class="t-row" data-role="Student" data-status="Na čekanju">
-    <div class="user-cell"><div class="av student">NK</div><div><div class="u-name">Nedžad Kurtović</div><div class="u-email">nedzad@@etf.unsa.ba</div></div></div>
-    <span><span class="role-tag role-student">Student</span></span>
-    <span style="font-size:0.82rem;color:var(--muted)">09. Apr 2026</span>
-    <span><span class="status-tag status-pending">Na čekanju</span></span>
-    <div class="actions-cell"><button class="act-btn approve" onclick="approveUser(this)">✓ Odobri</button><button class="act-btn block" onclick="rejectUser(this)">✕ Odbij</button></div>
-  </div>
-  <div class="t-row" data-role="Administrator" data-status="Aktivan">
-    <div class="user-cell"><div class="av admin">ZA</div><div><div class="u-name">Zlatan Avdić</div><div class="u-email">zlatan@@etf.unsa.ba</div></div></div>
-    <span><span class="role-tag role-admin">Admin</span></span>
-    <span style="font-size:0.82rem;color:var(--muted)">01. Sep 2025</span>
-    <span><span class="status-tag status-active">Aktivan</span></span>
-    <div class="actions-cell"><button class="act-btn role-btn" onclick="openRoleModal('Zlatan Avdić','Administrator','ZA')">👤 Uloga</button></div>
-  </div>
-  <div class="t-row" data-role="Student" data-status="Na čekanju">
-    <div class="user-cell"><div class="av student">MB</div><div><div class="u-name">Mirza Bašić</div><div class="u-email">mirza@@etf.unsa.ba</div></div></div>
-    <span><span class="role-tag role-student">Student</span></span>
-    <span style="font-size:0.82rem;color:var(--muted)">08. Apr 2026</span>
-    <span><span class="status-tag status-pending">Na čekanju</span></span>
-    <div class="actions-cell"><button class="act-btn approve" onclick="approveUser(this)">✓ Odobri</button><button class="act-btn block" onclick="rejectUser(this)">✕ Odbij</button></div>
-  </div>
-</div>
+    <div class="t-header">
+        <span>Korisnik</span>
+        <span>Uloga</span>
+        <span>Status</span>
+        <span>Akcije</span>
+    </div>
 
-<!-- Role Modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-title">Dodjela uloge</div>
-    <div class="modal-user">
-      <div class="modal-av" id="modalAv">AS</div>
-      <div>
-        <div style="font-weight:700" id="modalName">Ahmed Spahić</div>
-        <div class="current-role">Trenutna uloga: <span id="modalCurrent" style="color:var(--accent)">Student</span></div>
-      </div>
-    </div>
-    <div class="role-options">
-      <div class="role-option selected" onclick="selectRole(this)">
-        <div class="role-opt-icon">👩‍🎓</div>
-        <div><div class="role-opt-name">Student</div><div class="role-opt-desc">Pristup kvizovima, leaderboardu i feedbacku</div></div>
-      </div>
-      <div class="role-option" onclick="selectRole(this)">
-        <div class="role-opt-icon">🛠</div>
-        <div><div class="role-opt-name">Moderator</div><div class="role-opt-desc">Upravljanje sadržajem i pregled feedbacka</div></div>
-      </div>
-      <div class="role-option" onclick="selectRole(this)">
-        <div class="role-opt-icon">👑</div>
-        <div><div class="role-opt-name">Administrator</div><div class="role-opt-desc">Puni pristup svim funkcionalnostima</div></div>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Otkaži</button>
-      <button class="btn-save" onclick="saveRole()">Sačuvaj izmjenu</button>
-    </div>
-  </div>
-</div>
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            Nema korisnika za prikaz.
+        </div>
+    }
+    else
+    {
+        foreach (var user in Model)
+        {
+            var roleText = GetRoleText(user.Role);
+            var statusText = user.IsApproved ? "Aktivan" : "Na čekanju";
+            var initials = GetInitials(user.Email);
+            var avatarClass = GetAvatarClass(user.Role);
+            var roleClass = GetRoleClass(user.Role);
 
-<div class="toast" id="toast"></div>
+            <div class="t-row" data-role="@roleText" data-status="@statusText">
+                <div class="user-cell">
+                    <div class="av @avatarClass">@initials</div>
+                    <div>
+                        <div class="u-name">@user.Email</div>
+                        <div class="u-email">@user.Email</div>
+                    </div>
+                </div>
+
+                <span>
+                    <span class="role-tag @roleClass">@roleText</span>
+                </span>
+
+                <span>
+                    @if (user.IsApproved)
+                    {
+                        <span class="status-tag status-active">Aktivan</span>
+                    }
+                    else
+                    {
+                        <span class="status-tag status-pending">Na čekanju</span>
+                    }
+                </span>
+
+                <div class="actions-cell">
+                    @if (!user.IsApproved)
+                    {
+                        <form class="action-form" asp-controller="Administrator" asp-action="ApproveUser" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@user.Id" />
+                            <button type="submit" class="act-btn approve">Odobri</button>
+                        </form>
+
+                        <form class="action-form" asp-controller="Administrator" asp-action="RejectUser" method="post" onsubmit="return confirm('Da li želite odbiti ovog korisnika?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@user.Id" />
+                            <button type="submit" class="act-btn reject">Odbij</button>
+                        </form>
+                    }
+                    else
+                    {
+                        if (roleText != "Admin")
+                        {
+                            <form class="action-form" asp-controller="Administrator" asp-action="RemoveAccess" method="post" onsubmit="return confirm('Da li želite ukloniti pristup ovom korisniku?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@user.Id" />
+                                <button type="submit" class="act-btn remove">Ukloni pristup</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span style="font-size:0.75rem;color:var(--muted);">Zaštićen nalog</span>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
 
 @section Scripts {
-<script>
-  function openRoleModal(name, role, av){
-    document.getElementById('modalName').textContent = name;
-    document.getElementById('modalCurrent').textContent = role;
-    document.getElementById('modalAv').textContent = av;
-    document.getElementById('modalOverlay').classList.add('open');
-  }
-  function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
-  function selectRole(el){
-    document.querySelectorAll('.role-option').forEach(r=>r.classList.remove('selected'));
-    el.classList.add('selected');
-  }
-  document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+    <script>
+        function filterUsers() {
+            const search = document.getElementById('userSearch').value.toLowerCase();
+            const role = document.getElementById('roleFilter').value;
+            const status = document.getElementById('statusFilter').value;
 
-  function showToast(msg, type='success') {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.className = 'toast ' + type;
-    setTimeout(() => t.classList.add('show'), 10);
-    setTimeout(() => t.classList.remove('show'), 3500);
-  }
+            document.querySelectorAll('#userTable .t-row').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rowRole = row.getAttribute('data-role');
+                const rowStatus = row.getAttribute('data-status');
 
-  function filterUsers() {
-    const search = document.getElementById('userSearch').value.toLowerCase();
-    const role = document.getElementById('roleFilter').value;
-    const status = document.getElementById('statusFilter').value;
-    document.querySelectorAll('#userTable .t-row').forEach(row => {
-      const text = row.textContent.toLowerCase();
-      const rowRole = row.getAttribute('data-role');
-      const rowStatus = row.getAttribute('data-status');
-      const show = (!search || text.includes(search)) && (!role || rowRole === role) && (!status || rowStatus === status);
-      row.style.display = show ? '' : 'none';
-    });
-  }
+                const show =
+                    (!search || text.includes(search)) &&
+                    (!role || rowRole === role) &&
+                    (!status || rowStatus === status);
 
-  function approveUser(btn) {
-    const row = btn.closest('.t-row');
-    const statusTag = row.querySelector('.status-tag');
-    statusTag.className = 'status-tag status-active';
-    statusTag.textContent = 'Aktivan';
-    row.setAttribute('data-status', 'Aktivan');
-    row.querySelector('.actions-cell').innerHTML = '<button class="act-btn role-btn" onclick="openRoleModal(\''+row.querySelector('.u-name').textContent+'\',\'Student\',\''+row.querySelector('.av').textContent+'\')">👤 Uloga</button><button class="act-btn block" onclick="toggleBlock(this)">🚫</button>';
-    updateStats();
-    showToast('Korisnik odobren!', 'success');
-  }
-
-  function rejectUser(btn) {
-    if (confirm('Da li želite odbiti ovaj zahtjev?')) {
-      const row = btn.closest('.t-row');
-      row.style.opacity = '0'; row.style.transform = 'translateX(20px)'; row.style.transition = 'all 0.3s';
-      setTimeout(() => row.remove(), 300);
-      updateStats();
-      showToast('Zahtjev odbijen', 'error');
-    }
-  }
-
-  function toggleBlock(btn) {
-    const row = btn.closest('.t-row');
-    const statusTag = row.querySelector('.status-tag');
-    if (statusTag.classList.contains('status-blocked')) {
-      statusTag.className = 'status-tag status-active';
-      statusTag.textContent = 'Aktivan';
-      row.setAttribute('data-status', 'Aktivan');
-      showToast('Korisnik deblokiran', 'success');
-    } else {
-      statusTag.className = 'status-tag status-blocked';
-      statusTag.textContent = 'Blokiran';
-      row.setAttribute('data-status', 'Blokiran');
-      showToast('Korisnik blokiran', 'error');
-    }
-    updateStats();
-  }
-
-  function saveRole() {
-    const selected = document.querySelector('.role-option.selected .role-opt-name');
-    if (selected) {
-      closeModal();
-      showToast('Uloga uspješno promijenjena u ' + selected.textContent, 'success');
-    }
-  }
-
-  function updateStats() {
-    const rows = document.querySelectorAll('#userTable .t-row');
-    let total = rows.length, active = 0, pending = 0, blocked = 0;
-    rows.forEach(r => {
-      const s = r.getAttribute('data-status');
-      if (s === 'Aktivan') active++;
-      if (s === 'Na čekanju') pending++;
-      if (s === 'Blokiran') blocked++;
-    });
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statActive').textContent = active;
-    document.getElementById('statPending').textContent = pending;
-    document.getElementById('statBlocked').textContent = blocked;
-  }
-</script>
+                row.style.display = show ? '' : 'none';
+            });
+        }
+    </script>
 }

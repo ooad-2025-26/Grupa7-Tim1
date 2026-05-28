@@ -1,4 +1,4 @@
-using ezZkvi.Models;
+﻿using ezZkvi.Models;
 using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -28,15 +28,31 @@ namespace ezZkvi.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if (user == null)
+            {
+                ModelState.AddModelError("", "Pogrešan email ili lozinka.");
+                return View(model);
+            }
+
+            if (!user.IsApproved)
+            {
+                ModelState.AddModelError("", "Vaš nalog još nije odobren od strane administratora.");
+                return View(model);
+            }
 
             var result = await _signInManager.PasswordSignInAsync(
-                model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                user.UserName,
+                model.Password,
+                model.RememberMe,
+                lockoutOnFailure: false);
 
             if (result.Succeeded)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
-
                 if (await _userManager.IsInRoleAsync(user, "Admin"))
                     return RedirectToAction("Dashboard", "Administrator");
 
@@ -49,35 +65,49 @@ namespace ezZkvi.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            ModelState.AddModelError("", "Pogre�an email ili lozinka.");
+            ModelState.AddModelError("", "Pogrešan email ili lozinka.");
             return View(model);
         }
 
         // GET: /Account/Register
         [HttpGet]
-        public IActionResult Register() => View();
+        public IActionResult Register()
+        {
+            return RedirectToAction("Login");
+        }
 
         // POST: /Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+                return View("Login", model);
 
-            var user = new Korisnik { UserName = model.Email, Email = model.Email };
+            var user = new Korisnik
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                EmailConfirmed = true,
+                IsApproved = false
+            };
+
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(user, "Student");
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Dashboard", "Student");
+
+                TempData["Message"] = "Registracija je uspješna. Nalog čeka odobrenje administratora.";
+                return RedirectToAction("Login", "Account");
             }
 
             foreach (var error in result.Errors)
+            {
                 ModelState.AddModelError("", error.Description);
+            }
 
-            return View(model);
+            return View("Login", model);
         }
 
         // POST: /Account/Logout

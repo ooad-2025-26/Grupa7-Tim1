@@ -1,9 +1,12 @@
 using ezZkvi.Data;
 using ezZkvi.Models;
+using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using ezZkvi.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,16 +18,116 @@ namespace ezZkvi.Controllers
     public class AdministratorController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<Korisnik> _userManager;
 
-        public AdministratorController(ApplicationDbContext context)
+        public AdministratorController(ApplicationDbContext context, UserManager<Korisnik> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: /Administrator/Users
-        public IActionResult Users()
+        public async Task<IActionResult> Users()
         {
-            return View();
+            var users = await _userManager.Users.ToListAsync();
+
+            var model = new List<AdminUserViewModel>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+
+                model.Add(new AdminUserViewModel
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    Role = roles.FirstOrDefault() ?? "Nema ulogu",
+                    IsApproved = user.IsApproved
+                });
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+            user.IsApproved = true;
+            user.EmailConfirmed = true;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            if (!await _userManager.IsInRoleAsync(user, "Student"))
+            {
+                await _userManager.AddToRoleAsync(user, "Student");
+            }
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+            if (user.IsApproved)
+                return RedirectToAction(nameof(Users));
+
+            await _userManager.DeleteAsync(user);
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveAccess(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser != null && currentUser.Id == user.Id)
+            {
+                TempData["Error"] = "Ne možete ukloniti pristup sami sebi.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                TempData["Error"] = "Ne možete ukloniti pristup administratoru.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            user.IsApproved = false;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = "Greška prilikom uklanjanja pristupa.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            await _userManager.UpdateSecurityStampAsync(user);
+
+            TempData["Message"] = "Korisniku je uklonjen pristup.";
+            return RedirectToAction(nameof(Users));
         }
 
         // GET: /Administrator/Dashboard

@@ -70,26 +70,61 @@ using (var scope = app.Services.CreateScope())
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
+        {
             await roleManager.CreateAsync(new IdentityRole(role));
+        }
     }
 
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Korisnik>>();
 
-    var admin = await userManager.FindByEmailAsync("admin@ezzkvi.ba");
-    if (admin == null)
+    async Task SeedUserAsync(string email, string password, string role)
     {
-        admin = new Korisnik { UserName = "admin@ezzkvi.ba", Email = "admin@ezzkvi.ba" };
-        await userManager.CreateAsync(admin, "Admin123!");
-        await userManager.AddToRoleAsync(admin, "Admin");
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user == null)
+        {
+            user = new Korisnik
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                IsApproved = true
+            };
+
+            var result = await userManager.CreateAsync(user, password);
+
+            if (!result.Succeeded)
+            {
+                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+        }
+        else
+        {
+            user.EmailConfirmed = true;
+            user.IsApproved = true;
+
+            var updateResult = await userManager.UpdateAsync(user);
+
+            if (!updateResult.Succeeded)
+            {
+                throw new Exception(string.Join(", ", updateResult.Errors.Select(e => e.Description)));
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(user, role))
+        {
+            var roleResult = await userManager.AddToRoleAsync(user, role);
+
+            if (!roleResult.Succeeded)
+            {
+                throw new Exception(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+            }
+        }
     }
 
-    var moderator = await userManager.FindByEmailAsync("moderator@ezzkvi.ba");
-    if (moderator == null)
-    {
-        moderator = new Korisnik { UserName = "moderator@ezzkvi.ba", Email = "moderator@ezzkvi.ba" };
-        await userManager.CreateAsync(moderator, "Moderator123!");
-        await userManager.AddToRoleAsync(moderator, "Moderator");
-    }
+    await SeedUserAsync("admin@ezzkvi.ba", "Admin123!", "Admin");
+    await SeedUserAsync("moderator@ezzkvi.ba", "Moderator123!", "Moderator");
+    await SeedUserAsync("student@ezzkvi.ba", "Student123!", "Student");
 }
 
 app.Run();

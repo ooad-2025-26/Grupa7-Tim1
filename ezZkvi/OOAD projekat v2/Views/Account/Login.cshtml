@@ -183,6 +183,13 @@
       <button class="tab" onclick="switchTab('register')">Registracija</button>
     </div>
 
+@if (TempData["Message"] != null)
+{
+            <div style="padding:12px; margin-bottom:15px; border:1px solid #00E676; color:#00E676; border-radius:8px;">
+                @TempData["Message"]
+            </div>
+}
+
     <!-- LOGIN -->
         <div class="panel active" id="login">
             <form asp-controller="Account" asp-action="Login" method="post">
