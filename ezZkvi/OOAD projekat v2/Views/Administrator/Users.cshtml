@@ -469,6 +469,28 @@
             .t-row {
                 padding: 16px;
             }
+
+            .role-form {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            .role-select {
+                padding: 6px 8px;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                background: var(--surface);
+                color: var(--text);
+                font-size: 0.72rem;
+                outline: none;
+                font-family: 'Nunito Sans',sans-serif;
+            }
+
+                .role-select:focus {
+                    border-color: var(--accent);
+                }
         }
     </style>
 }
@@ -608,6 +630,27 @@
                     }
                     else
                     {
+                        <form class="role-form" asp-controller="Administrator" asp-action="ChangeRole" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@user.Id" />
+
+                            <select name="role" class="role-select">
+                                @foreach (var roleOption in new[] { "Student", "Moderator", "Admin" })
+                                {
+                                    if (roleText == roleOption)
+                                    {
+                                        <option value="@roleOption" selected>@roleOption</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@roleOption">@roleOption</option>
+                                    }
+                                }
+                            </select>
+
+                            <button type="submit" class="act-btn approve">Spasi ulogu</button>
+                        </form>
+
                         if (roleText != "Admin")
                         {
                             <form class="action-form" asp-controller="Administrator" asp-action="RemoveAccess" method="post" onsubmit="return confirm('Da li želite ukloniti pristup ovom korisniku?');">
@@ -618,7 +661,7 @@
                         }
                         else
                         {
-                            <span style="font-size:0.75rem;color:var(--muted);">Zaštićen nalog</span>
+                            <span style="font-size:0.75rem;color:var(--muted);">Admin nalog</span>
                         }
                     }
                 </div>

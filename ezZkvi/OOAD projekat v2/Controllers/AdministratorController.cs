@@ -4,13 +4,8 @@ using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ezZkvi.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
 
 namespace ezZkvi.Controllers
 {
@@ -127,6 +122,60 @@ namespace ezZkvi.Controllers
             await _userManager.UpdateSecurityStampAsync(user);
 
             TempData["Message"] = "Korisniku je uklonjen pristup.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangeRole(string id, string role)
+        {
+            var allowedRoles = new[] { "Admin", "Moderator", "Student" };
+
+            if (!allowedRoles.Contains(role))
+            {
+                TempData["Error"] = "Neispravna uloga.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser != null && currentUser.Id == user.Id)
+            {
+                TempData["Error"] = "Ne možete mijenjati vlastitu ulogu.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+
+            if (currentRoles.Any())
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+                if (!removeResult.Succeeded)
+                {
+                    TempData["Error"] = "Greška prilikom uklanjanja stare uloge.";
+                    return RedirectToAction(nameof(Users));
+                }
+            }
+
+            var addResult = await _userManager.AddToRoleAsync(user, role);
+
+            if (!addResult.Succeeded)
+            {
+                TempData["Error"] = "Greška prilikom dodjeljivanja nove uloge.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            user.IsApproved = true;
+            await _userManager.UpdateAsync(user);
+            await _userManager.UpdateSecurityStampAsync(user);
+
+            TempData["Message"] = $"Korisniku {user.Email} dodijeljena je uloga {role}.";
             return RedirectToAction(nameof(Users));
         }
 
