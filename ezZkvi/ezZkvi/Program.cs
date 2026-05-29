@@ -54,6 +54,21 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var userManager = context.RequestServices.GetRequiredService<UserManager<Korisnik>>();
+        var user = await userManager.GetUserAsync(context.User);
+        if (user != null)
+        {
+            user.LastActivity = DateTime.UtcNow;
+            await userManager.UpdateAsync(user);
+        }
+    }
+    await next();
+});
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

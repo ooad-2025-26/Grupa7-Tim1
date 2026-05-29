@@ -4,6 +4,9 @@
     // Bosanski datum (npr. "Subota · 23. Maj 2026")
     var bsCulture = new System.Globalization.CultureInfo("bs-Latn-BA");
     var trenutniDatum = DateTime.Now.ToString("dddd · dd. MMMM yyyy", bsCulture);
+
+    var userName = User.Identity?.Name ?? "Korisnik";
+    var initials = userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : userName.ToUpper();
 }
 
 @section Styles {
@@ -194,9 +197,9 @@
     </nav>
     <a class="user-card" asp-controller="Account" asp-action="Login">
       <div class="top">
-        <div class="user-avatar-sm">ST</div>
+        <div class="user-avatar-sm">@initials</div>
         <div>
-          <div class="user-name">Student</div>
+          <div class="user-name">@userName</div>
           <div class="user-role">Student</div>
           <div class="logout-hint">Klikni za odjavu →</div>
         </div>
@@ -209,7 +212,7 @@
       <div style="display:flex;align-items:center;gap:12px">
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
         <div>
-          <div class="greeting" id="greeting">Dobrodošao, <span>Student</span> 👋</div>
+          <div class="greeting" id="greeting">Dobrodošao, <span>@userName</span> 👋</div>
           <div class="date-badge">@trenutniDatum</div>
         </div>
       </div>
@@ -344,7 +347,7 @@
     if (h < 12) pozdrav = 'Dobro jutro';
     else if (h < 18) pozdrav = 'Dobar dan';
     else pozdrav = 'Dobro veče';
-    document.getElementById('greeting').innerHTML = pozdrav + ', <span>Student</span> 👋';
+    document.getElementById('greeting').innerHTML = pozdrav + ', <span>@userName</span> 👋';
   })();
 
   // Sidebar mobile toggle

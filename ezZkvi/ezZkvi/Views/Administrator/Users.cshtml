@@ -4,7 +4,7 @@
     ViewData["Title"] = "Upravljanje korisnicima";
 
     var totalUsers = Model.Count;
-    var activeUsers = Model.Count(u => u.IsApproved);
+    var activeUsers = Model.Count(u => u.IsActive);
     var pendingUsers = Model.Count(u => !u.IsApproved);
     var adminUsers = Model.Count(u => !string.IsNullOrWhiteSpace(u.Role) && u.Role.Contains("Admin"));
 
@@ -386,6 +386,11 @@
             color: var(--amber);
         }
 
+        .status-inactive {
+            background: rgba(90,112,144,0.1);
+            color: var(--muted);
+        }
+
         .actions-cell {
             display: flex;
             gap: 6px;
@@ -561,6 +566,7 @@
     <select id="statusFilter" onchange="filterUsers()">
         <option value="">Svi statusi</option>
         <option value="Aktivan">Aktivan</option>
+        <option value="Neaktivan">Neaktivan</option>
         <option value="Na čekanju">Na čekanju</option>
     </select>
 </div>
@@ -584,7 +590,7 @@
         foreach (var user in Model)
         {
             var roleText = GetRoleText(user.Role);
-            var statusText = user.IsApproved ? "Aktivan" : "Na čekanju";
+            var statusText = !user.IsApproved ? "Na čekanju" : (user.IsActive ? "Aktivan" : "Neaktivan");
             var initials = GetInitials(user.Email);
             var avatarClass = GetAvatarClass(user.Role);
             var roleClass = GetRoleClass(user.Role);
@@ -603,13 +609,17 @@
                 </span>
 
                 <span>
-                    @if (user.IsApproved)
+                    @if (!user.IsApproved)
+                    {
+                        <span class="status-tag status-pending">Na čekanju</span>
+                    }
+                    else if (user.IsActive)
                     {
                         <span class="status-tag status-active">Aktivan</span>
                     }
                     else
                     {
-                        <span class="status-tag status-pending">Na čekanju</span>
+                        <span class="status-tag status-inactive">Neaktivan</span>
                     }
                 </span>
 

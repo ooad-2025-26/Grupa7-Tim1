@@ -27,6 +27,7 @@ namespace ezZkvi.Controllers
             var users = await _userManager.Users.ToListAsync();
 
             var model = new List<AdminUserViewModel>();
+            var aktivnostPrag = DateTime.UtcNow.AddMinutes(-5);
 
             foreach (var user in users)
             {
@@ -37,7 +38,8 @@ namespace ezZkvi.Controllers
                     Id = user.Id,
                     Email = user.Email,
                     Role = roles.FirstOrDefault() ?? "Nema ulogu",
-                    IsApproved = user.IsApproved
+                    IsApproved = user.IsApproved,
+                    IsActive = user.IsApproved && user.LastActivity.HasValue && user.LastActivity.Value >= aktivnostPrag
                 });
             }
 
@@ -99,13 +101,13 @@ namespace ezZkvi.Controllers
 
             if (currentUser != null && currentUser.Id == user.Id)
             {
-                TempData["Error"] = "Ne možete ukloniti pristup sami sebi.";
+                TempData["Error"] = "Ne moï¿½ete ukloniti pristup sami sebi.";
                 return RedirectToAction(nameof(Users));
             }
 
             if (await _userManager.IsInRoleAsync(user, "Admin"))
             {
-                TempData["Error"] = "Ne možete ukloniti pristup administratoru.";
+                TempData["Error"] = "Ne moï¿½ete ukloniti pristup administratoru.";
                 return RedirectToAction(nameof(Users));
             }
 
@@ -115,7 +117,7 @@ namespace ezZkvi.Controllers
 
             if (!result.Succeeded)
             {
-                TempData["Error"] = "Greška prilikom uklanjanja pristupa.";
+                TempData["Error"] = "Greï¿½ka prilikom uklanjanja pristupa.";
                 return RedirectToAction(nameof(Users));
             }
 
@@ -146,7 +148,7 @@ namespace ezZkvi.Controllers
 
             if (currentUser != null && currentUser.Id == user.Id)
             {
-                TempData["Error"] = "Ne možete mijenjati vlastitu ulogu.";
+                TempData["Error"] = "Ne moï¿½ete mijenjati vlastitu ulogu.";
                 return RedirectToAction(nameof(Users));
             }
 
@@ -158,7 +160,7 @@ namespace ezZkvi.Controllers
 
                 if (!removeResult.Succeeded)
                 {
-                    TempData["Error"] = "Greška prilikom uklanjanja stare uloge.";
+                    TempData["Error"] = "Greï¿½ka prilikom uklanjanja stare uloge.";
                     return RedirectToAction(nameof(Users));
                 }
             }
@@ -167,7 +169,7 @@ namespace ezZkvi.Controllers
 
             if (!addResult.Succeeded)
             {
-                TempData["Error"] = "Greška prilikom dodjeljivanja nove uloge.";
+                TempData["Error"] = "Greï¿½ka prilikom dodjeljivanja nove uloge.";
                 return RedirectToAction(nameof(Users));
             }
 

@@ -3,6 +3,8 @@
 
     var bsCulture = new System.Globalization.CultureInfo("bs-Latn-BA");
     var trenutniDatum = DateTime.Now.ToString("dddd · dd. MMMM yyyy", bsCulture);
+
+    var userName = User.Identity?.Name ?? "Korisnik";
 }
 
 @section Styles {
@@ -109,7 +111,7 @@
       <a class="nav-item" asp-controller="Account" asp-action="Login"><span class="ico">🚪</span> Odjava</a>
     </nav>
     <a class="user-card" asp-controller="Account" asp-action="Login">
-      <div class="user-name">Amila Duraković</div>
+      <div class="user-name">@userName</div>
       <div class="user-role">Moderator</div>
       <div class="logout-hint">Klikni za odjavu →</div>
     </a>
