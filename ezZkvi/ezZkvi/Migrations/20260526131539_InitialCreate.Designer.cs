@@ -9,7 +9,7 @@ using ezZkvi.Data;
 
 #nullable disable
 
-namespace OOAD_projekat_v2.Migrations
+namespace ezZkvi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260526131539_InitialCreate")]
