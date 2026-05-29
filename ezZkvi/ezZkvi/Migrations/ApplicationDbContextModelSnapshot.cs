@@ -8,7 +8,7 @@ using ezZkvi.Data;
 
 #nullable disable
 
-namespace OOAD_projekat_v2.Migrations
+namespace ezZkvi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot

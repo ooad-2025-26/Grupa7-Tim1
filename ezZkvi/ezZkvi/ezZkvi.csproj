@@ -4,8 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-OOAD_projekat_v2-b7e6e418-d152-4730-9319-dade2f67ade0</UserSecretsId>
-    <RootNamespace>OOAD_projekat_v2</RootNamespace>
+    <UserSecretsId>aspnet-ezZkvi-b7e6e418-d152-4730-9319-dade2f67ade0</UserSecretsId>
+    <RootNamespace>ezZkvi</RootNamespace>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>

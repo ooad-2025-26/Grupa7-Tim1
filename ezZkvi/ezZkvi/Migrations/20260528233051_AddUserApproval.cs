@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace OOAD_projekat_v2.Migrations
+namespace ezZkvi.Migrations
 {
     /// <inheritdoc />
     public partial class AddUserApproval : Migration
