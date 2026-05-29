@@ -11,7 +11,7 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["ezZkvi/ezZkvi.csproj", "OOAD projekat v2/"]
+COPY ["ezZkvi/ezZkvi.csproj", "ezZkvi/"]
 RUN dotnet restore "./ezZkvi/ezZkvi.csproj"
 COPY . .
 WORKDIR "/src/ezZkvi"
