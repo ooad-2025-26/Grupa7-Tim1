@@ -81,12 +81,23 @@ namespace ezZkvi.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
+            ViewData["ActiveTab"] = "register";
+
             if (!ModelState.IsValid)
                 return View("Login", model);
 
+            var baseUsername = model.Email.Split('@')[0];
+            var username = baseUsername;
+            int suffix = 1;
+            while (await _userManager.FindByNameAsync(username) != null)
+            {
+                username = baseUsername + suffix;
+                suffix++;
+            }
+
             var user = new Korisnik
             {
-                UserName = model.Email,
+                UserName = username,
                 Email = model.Email,
                 EmailConfirmed = true,
                 IsApproved = false
@@ -98,7 +109,7 @@ namespace ezZkvi.Controllers
             {
                 await _userManager.AddToRoleAsync(user, "Student");
 
-                TempData["Message"] = "Registracija je uspješna. Nalog čeka odobrenje administratora.";
+                TempData["Message"] = $"Registracija je uspješna. Vaš username je '{username}'. Nalog čeka odobrenje administratora.";
                 return RedirectToAction("Login", "Account");
             }
 

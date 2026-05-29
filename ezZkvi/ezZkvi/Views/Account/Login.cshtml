@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Prijava";
+    var activeTab = ViewData["ActiveTab"] as string ?? "login";
 }
 
 @section Styles {
@@ -88,6 +89,16 @@
   }
   .error-msg { font-size: 0.7rem; color: var(--danger); margin-top: 4px; display: none; }
   .error-msg.show { display: block; }
+
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 76px; }
+  .toggle-pass {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; cursor: pointer; color: var(--muted);
+    padding: 4px 10px; font-size: 0.72rem; letter-spacing: 1px;
+    text-transform: uppercase; font-family: 'Rajdhani', sans-serif; font-weight: 600;
+  }
+  .toggle-pass:hover { color: var(--accent); }
 
   .btn {
     width: 100%; padding: 13px; background: var(--accent); color: var(--bg);
@@ -179,8 +190,8 @@
   </div>
   <div class="card">
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('login')">Prijava</button>
-      <button class="tab" onclick="switchTab('register')">Registracija</button>
+      <button class="tab @(activeTab == "login" ? "active" : "")" onclick="switchTab('login')">Prijava</button>
+      <button class="tab @(activeTab == "register" ? "active" : "")" onclick="switchTab('register')">Registracija</button>
     </div>
 
 @if (TempData["Message"] != null)
@@ -191,19 +202,22 @@
 }
 
     <!-- LOGIN -->
-        <div class="panel active" id="login">
+        <div class="panel @(activeTab == "login" ? "active" : "")" id="login">
             <form asp-controller="Account" asp-action="Login" method="post">
                 @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="error-msg show"></div>
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" name="Email" placeholder="ime@etf.unsa.ba" autocomplete="username">
-                    <div class="error-msg" id="loginUserErr">Email je obavezan</div>
+                    @Html.ValidationMessage("Email", new { @class = "error-msg show" })
                 </div>
                 <div class="form-group">
                     <label>Lozinka</label>
-                    <input type="password" name="Password" placeholder="••••••••" autocomplete="current-password">
-                    <div class="error-msg" id="loginPassErr">Lozinka je obavezna</div>
+                    <div class="password-wrap">
+                        <input type="password" name="Password" placeholder="••••••••" autocomplete="current-password">
+                        <button type="button" class="toggle-pass" onclick="togglePass(this)">Prikaži</button>
+                    </div>
+                    @Html.ValidationMessage("Password", new { @class = "error-msg show" })
                 </div>
                 <button type="submit" class="btn" id="loginBtn">
                     <span class="btn-text">Prijavi se</span>
@@ -213,26 +227,32 @@
         </div>
 
     <!-- REGISTER -->
-        <div class="panel" id="register">
+        <div class="panel @(activeTab == "register" ? "active" : "")" id="register">
             <form asp-controller="Account" asp-action="Register" method="post">
                 @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="error-msg show"></div>
                 <div class="form-group">
                     <label>Email adresa</label>
                     <input type="email" name="Email" placeholder="ime@etf.unsa.ba" autocomplete="email">
-                    <div class="error-msg" id="regEmailErr">Unesite validnu email adresu</div>
+                    @Html.ValidationMessage("Email", new { @class = "error-msg show" })
                 </div>
                 <div class="form-group">
                     <label>Lozinka</label>
-                    <input type="password" name="Password" placeholder="Min. 8 znakova" autocomplete="new-password" oninput="checkStrength(this.value)">
+                    <div class="password-wrap">
+                        <input type="password" name="Password" placeholder="Min. 8 znakova" autocomplete="new-password" oninput="checkStrength(this.value)">
+                        <button type="button" class="toggle-pass" onclick="togglePass(this)">Prikaži</button>
+                    </div>
                     <div class="password-strength"><div class="strength-bar" id="strengthBar"></div></div>
                     <div class="strength-label" id="strengthLabel"></div>
-                    <div class="error-msg" id="regPassErr">Lozinka mora imati barem 8 znakova</div>
+                    @Html.ValidationMessage("Password", new { @class = "error-msg show" })
                 </div>
                 <div class="form-group">
                     <label>Potvrda lozinke</label>
-                    <input type="password" name="ConfirmPassword" placeholder="Ponovi lozinku" autocomplete="new-password">
-                    <div class="error-msg" id="regPassConfirmErr">Lozinke se ne podudaraju</div>
+                    <div class="password-wrap">
+                        <input type="password" name="ConfirmPassword" placeholder="Ponovi lozinku" autocomplete="new-password">
+                        <button type="button" class="toggle-pass" onclick="togglePass(this)">Prikaži</button>
+                    </div>
+                    @Html.ValidationMessage("ConfirmPassword", new { @class = "error-msg show" })
                 </div>
                 <button type="submit" class="btn" id="regBtn">
                     <span class="btn-text">Kreiraj nalog</span>
@@ -252,6 +272,12 @@
     'moderator': { name: 'Amila Duraković', username: 'amila', role: 'moderator', avatar: 'AD' },
     'admin':     { name: 'Zlatan Avdić',     username: 'zlatan',role: 'admin',     avatar: 'ZA' }
   };
+
+  function togglePass(btn) {
+    const input = btn.previousElementSibling;
+    if (input.type === 'password') { input.type = 'text'; btn.textContent = 'Sakrij'; }
+    else { input.type = 'password'; btn.textContent = 'Prikaži'; }
+  }
 
   function switchTab(t) {
     document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='login')||(i===1&&t==='register')));
@@ -347,5 +373,7 @@
       else handleRegister();
     }
   });
+
+  if ('@activeTab' === 'register') document.body.classList.add('compact-mode');
 </script>
 }
