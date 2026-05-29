@@ -1,4 +1,4 @@
-# 🎯 ezZkvi
+## ezZkvi
 
 Repozitorij **Tima 1 (Grupa 7)** za projekat iz predmeta **Objektno-orijentisana analiza i dizajn**, akademska 2025/2026.
 
@@ -10,7 +10,7 @@ Aplikacija je izgrađena na **.NET (C#)** backendu uz **HTML/CSS** frontend, org
 
 ---
 
-## 👥 Tim
+## Članovi tima:
 
 - Ahmed Spahić
 - Amir Džafić
@@ -19,6 +19,16 @@ Aplikacija je izgrađena na **.NET (C#)** backendu uz **HTML/CSS** frontend, org
 
 ---
 
-## 📂 Sadržaj repozitorija
+## Sadržaj repozitorija
 
 Pored izvornog koda, repozitorij sadrži kompletnu projektnu dokumentaciju, specifikaciju zahtjeva, dijagrame klasa, sekvence i aktivnosti, scenarije slučajeva upotrebe, analizu strukturnih paterna i UI dizajn.
+
+## Testni nalozi
+
+| Uloga | Email | Lozinka |
+|---|---|---|
+| Administrator | admin@ezzkvi.ba | Admin123! |
+| Moderator | moderator@ezzkvi.ba | Moderator123! |
+| Student | student@ezzkvi.ba | Student123! |
+
+Navedeni nalozi su unaprijed odobreni i mogu se koristiti odmah nakon pokretanja aplikacije.
