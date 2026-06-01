@@ -276,25 +276,6 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
         }
 
-        private static string BuildInitials(string value)
-        {
-            var parts = value
-                .Replace("@", " ")
-                .Replace(".", " ")
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length == 0)
-            {
-                return "ST";
-            }
-
-            if (parts.Length == 1)
-            {
-                return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
-            }
-
-            return string.Concat(parts.Take(2).Select(p => p[0])).ToUpper();
-        }
         private bool StudentExists(string id)
         {
             return _context.Student.Any(e => e.Id == id);
@@ -335,13 +316,24 @@ namespace ezZkvi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StartSimulation(int predmetId)
+        public async Task<IActionResult> StartSimulation(int? predmetId)
         {
-            var model = await BuildSimulationAsync(predmetId);
+            if (!predmetId.HasValue || predmetId.Value <= 0)
+            {
+                var emptyModel = new SimulacijaKvizaViewModel
+                {
+                    ErrorMessage = "Moraš odabrati predmet prije pokretanja simulacije.",
+                    Predmeti = await GetPredmetiZaSimulacijuAsync()
+                };
+
+                return View("Simulate", emptyModel);
+            }
+
+            var model = await BuildSimulationAsync(predmetId.Value);
 
             if (!string.IsNullOrWhiteSpace(model.ErrorMessage))
             {
-                model.Predmeti = await GetPredmetiZaSimulacijuAsync(predmetId);
+                model.Predmeti = await GetPredmetiZaSimulacijuAsync(predmetId.Value);
                 return View("Simulate", model);
             }
 
