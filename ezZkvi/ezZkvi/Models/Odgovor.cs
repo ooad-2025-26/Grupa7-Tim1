@@ -16,7 +16,7 @@ namespace ezZkvi.Models
 
         [ForeignKey(nameof(Pitanje))]
         public int PitanjeId { get; set; }
-        public Pitanje Pitanje { get; set; }
+        public Pitanje? Pitanje { get; set; }
 
         public Odgovor() { }
     }

@@ -16,7 +16,7 @@ namespace ezZkvi.Models
         public Tezina Tezina { get; set; }
 
         [ForeignKey(nameof(Predmet))]
-        public int? PredmetId { get; set; }
+        public int PredmetId { get; set; }
         public Predmet? Predmet { get; set; }
 
         public Pitanje() { }

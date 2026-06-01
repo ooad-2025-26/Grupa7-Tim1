@@ -4,14 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ezZkvi.Controllers
 {
-    [Authorize(Roles = "Moderator")]
+    [Authorize(Roles = "Admin,Moderator")]
     public class ModeratorController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -28,9 +24,36 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Moderator/Content
-        public IActionResult Content()
+        public async Task<IActionResult> Content(string? search, int? predmetId, Tezina? tezina)
         {
-            return View();
+            var pitanjaQuery = _context.Pitanje
+                .Include(p => p.Predmet)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.TekstPitanja.Contains(search));
+            }
+
+            if (predmetId.HasValue)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.PredmetId == predmetId);
+            }
+
+            if (tezina.HasValue)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.Tezina == tezina.Value);
+            }
+
+            ViewData["Predmeti"] = new SelectList(_context.Predmet, "Id", "Naziv", predmetId);
+            ViewData["Search"] = search;
+            ViewData["Tezina"] = tezina;
+
+            var pitanja = await pitanjaQuery
+                .OrderByDescending(p => p.Id)
+                .ToListAsync();
+
+            return View(pitanja);
         }
 
         // GET: /Moderator/Feedback
@@ -157,16 +180,21 @@ namespace ezZkvi.Controllers
         // POST: Moderator/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(string id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var moderator = await _context.Moderator.FindAsync(id);
-            if (moderator != null)
+            var odgovori = _context.Odgovor.Where(o => o.PitanjeId == id);
+            _context.Odgovor.RemoveRange(odgovori);
+
+            var pitanje = await _context.Pitanje.FindAsync(id);
+
+            if (pitanje != null)
             {
-                _context.Moderator.Remove(moderator);
+                _context.Pitanje.Remove(pitanje);
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+
+            return RedirectToAction("Content", "Moderator");
         }
 
         private bool ModeratorExists(string id)

@@ -48,7 +48,7 @@ namespace ezZkvi.Controllers
         // GET: Odgovor/Create
         public IActionResult Create()
         {
-            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "Id");
+            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "TekstPitanja");
             return View();
         }
 
@@ -57,7 +57,7 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Tekst,IsTacan,PitanjeId")] Odgovor odgovor)
+        public async Task<IActionResult> Create([Bind("Tekst,IsTacan,PitanjeId")] Odgovor odgovor)
         {
             if (ModelState.IsValid)
             {
@@ -65,7 +65,7 @@ namespace ezZkvi.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "Id", odgovor.PitanjeId);
+            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "TekstPitanja", odgovor.PitanjeId);
             return View(odgovor);
         }
 

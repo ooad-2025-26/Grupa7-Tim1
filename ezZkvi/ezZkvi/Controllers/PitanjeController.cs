@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using ezZkvi.Data;
+using ezZkvi.Models;
+using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ezZkvi.Data;
-using ezZkvi.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ezZkvi.Controllers
 {
+    [Authorize(Roles = "Admin,Moderator")]
     public class PitanjeController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -48,7 +47,7 @@ namespace ezZkvi.Controllers
         // GET: Pitanje/Create
         public IActionResult Create()
         {
-            ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Id");
+            ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Naziv");
             return View();
         }
 
@@ -57,16 +56,55 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,TekstPitanja,Tezina,PredmetId")] Pitanje pitanje)
+        public async Task<IActionResult> Create(PitanjeSaOdgovorimaViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(pitanje);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Naziv", model.PredmetId);
+                return View(model);
             }
-            ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Id", pitanje.PredmetId);
-            return View(pitanje);
+
+            var pitanje = new Pitanje
+            {
+                TekstPitanja = model.TekstPitanja,
+                PredmetId = model.PredmetId,
+                Tezina = model.Tezina
+            };
+
+            _context.Pitanje.Add(pitanje);
+            await _context.SaveChangesAsync();
+
+            _context.Odgovor.Add(new Odgovor
+            {
+                Tekst = model.Odgovor1,
+                PitanjeId = pitanje.Id,
+                IsTacan = model.TacanOdgovor == 1
+            });
+
+            _context.Odgovor.Add(new Odgovor
+            {
+                Tekst = model.Odgovor2,
+                PitanjeId = pitanje.Id,
+                IsTacan = model.TacanOdgovor == 2
+            });
+
+            _context.Odgovor.Add(new Odgovor
+            {
+                Tekst = model.Odgovor3,
+                PitanjeId = pitanje.Id,
+                IsTacan = model.TacanOdgovor == 3
+            });
+
+            _context.Odgovor.Add(new Odgovor
+            {
+                Tekst = model.Odgovor4,
+                PitanjeId = pitanje.Id,
+                IsTacan = model.TacanOdgovor == 4
+            });
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Pitanje/Edit/5
@@ -147,13 +185,75 @@ namespace ezZkvi.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var pitanje = await _context.Pitanje.FindAsync(id);
-            if (pitanje != null)
+
+            if (pitanje == null)
             {
-                _context.Pitanje.Remove(pitanje);
+                return NotFound();
             }
 
+            var odgovori = _context.Odgovor.Where(o => o.PitanjeId == id);
+            _context.Odgovor.RemoveRange(odgovori);
+
+            _context.Pitanje.Remove(pitanje);
+
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFromContent(PitanjeSaOdgovorimaViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Pitanje nije sačuvano. Provjerite unesene podatke.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            var pitanje = new Pitanje
+            {
+                TekstPitanja = model.TekstPitanja,
+                PredmetId = model.PredmetId,
+                Tezina = model.Tezina
+            };
+
+            _context.Pitanje.Add(pitanje);
+            await _context.SaveChangesAsync();
+
+            var odgovori = new List<Odgovor>
+    {
+        new Odgovor
+        {
+            Tekst = model.Odgovor1,
+            PitanjeId = pitanje.Id,
+            IsTacan = model.TacanOdgovor == 1
+        },
+        new Odgovor
+        {
+            Tekst = model.Odgovor2,
+            PitanjeId = pitanje.Id,
+            IsTacan = model.TacanOdgovor == 2
+        },
+        new Odgovor
+        {
+            Tekst = model.Odgovor3,
+            PitanjeId = pitanje.Id,
+            IsTacan = model.TacanOdgovor == 3
+        },
+        new Odgovor
+        {
+            Tekst = model.Odgovor4,
+            PitanjeId = pitanje.Id,
+            IsTacan = model.TacanOdgovor == 4
+        }
+    };
+
+            _context.Odgovor.AddRange(odgovori);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Pitanje je uspješno dodano.";
+            return RedirectToAction("Content", "Moderator");
         }
 
         private bool PitanjeExists(int id)
