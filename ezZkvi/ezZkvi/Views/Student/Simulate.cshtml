@@ -2,551 +2,196 @@
 
 @{
     ViewData["Title"] = "Simulacija kviza";
-
-    var hasQuestions = Model.Questions != null && Model.Questions.Any();
-    var totalSeconds = Model.VremenskoOgranicenjeMinuta * 60;
-    var letters = new[] { "A", "B", "C", "D", "E", "F" };
 }
 
-<style>
-    body {
-        background: #070B12;
-        color: #E8EDF5;
-    }
-
-    .quiz-page {
-        min-height: calc(100vh - 80px);
-        padding: 32px 16px;
-        display: flex;
-        justify-content: center;
-    }
-
-    .quiz-wrap {
-        width: 100%;
-        max-width: 640px;
-    }
-
-    .quiz-top {
-        background: #111A28;
-        border: 1px solid #22324A;
-        border-radius: 9px;
-        padding: 14px 20px;
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        align-items: center;
-        margin-bottom: 18px;
-        box-shadow: 0 10px 28px rgba(0,0,0,.25);
-    }
-
-    .quiz-title {
-        font-weight: 700;
-        font-size: 13px;
-        color: #ffffff;
-    }
-
-    .quiz-subtitle {
-        font-size: 11px;
-        color: #6F84A4;
-        margin-top: 2px;
-    }
-
-    .quiz-timer {
-        color: #00D9FF;
-        font-size: 20px;
-        font-weight: 800;
-        letter-spacing: .3px;
-    }
-
-    .quiz-counter {
-        text-align: right;
-        font-size: 12px;
-        color: #7C90AD;
-    }
-
-    .quiz-counter strong {
-        display: block;
-        color: #ffffff;
-        font-size: 14px;
-    }
-
-    .quiz-card {
-        background: #111A28;
-        border: 1px solid #22324A;
-        border-radius: 10px;
-        padding: 26px 24px;
-        margin-bottom: 16px;
-        box-shadow: 0 10px 28px rgba(0,0,0,.25);
-    }
-
-    .question-box {
-        display: none;
-    }
-
-    .question-box.active {
-        display: block;
-    }
-
-    .question-label {
-        color: #FFB000;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        margin-bottom: 14px;
-    }
-
-    .question-text {
-        font-size: 14px;
-        font-weight: 700;
-        line-height: 1.55;
-        margin-bottom: 20px;
-        color: #ffffff;
-    }
-
-    .option-item {
-        border: 1px solid #21314A;
-        background: #0C1420;
-        border-radius: 7px;
-        padding: 11px 13px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        transition: .15s ease;
-    }
-
-    .option-item:hover {
-        border-color: #2E80FF;
-        background: #0F1B2C;
-    }
-
-    .option-item.selected {
-        border-color: #00D9FF;
-        background: rgba(0,217,255,.08);
-    }
-
-    .option-letter {
-        width: 23px;
-        height: 23px;
-        border-radius: 6px;
-        background: #14233A;
-        color: #C7D6EA;
-        font-size: 11px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .option-text {
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .option-radio {
-        display: none;
-    }
-
-    .quiz-footer {
-        background: #111A28;
-        border: 1px solid #22324A;
-        border-radius: 9px;
-        padding: 12px 18px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .quiz-dots {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-    }
-
-    .quiz-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #23344D;
-    }
-
-    .quiz-dot.active {
-        width: 11px;
-        height: 11px;
-        background: #00D9FF;
-    }
-
-    .quiz-dot.answered {
-        background: #2E80FF;
-    }
-
-    .quiz-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .quiz-btn {
-        border: 1px solid #263955;
-        background: #0C1420;
-        color: #7E91AD;
-        padding: 8px 16px;
-        border-radius: 7px;
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .quiz-btn:hover {
-        color: #ffffff;
-        border-color: #2E80FF;
-    }
-
-    .quiz-btn:disabled {
-        opacity: .45;
-        cursor: not-allowed;
-    }
-
-    .quiz-btn-finish {
-        background: #FFB000;
-        border-color: #FFB000;
-        color: #101010;
-    }
-
-    .quiz-btn-finish:hover {
-        color: #101010;
-        filter: brightness(1.05);
-    }
-
-    .start-card,
-    .result-card {
-        background: #111A28;
-        border: 1px solid #22324A;
-        border-radius: 10px;
-        padding: 24px;
-        box-shadow: 0 10px 28px rgba(0,0,0,.25);
-    }
-
-    .start-card h2,
-    .result-card h2 {
-        font-size: 22px;
-        margin-bottom: 8px;
-    }
-
-    .start-card p,
-    .result-card p {
-        color: #8EA2BF;
-        font-size: 14px;
-    }
-
-    .quiz-select {
-        width: 100%;
-        background: #0C1420;
-        color: #ffffff;
-        border: 1px solid #22324A;
-        border-radius: 8px;
-        padding: 12px;
-        margin: 14px 0;
-    }
-
-    .start-btn {
-        width: 100%;
-        border: none;
-        background: #FFB000;
-        color: #101010;
-        padding: 12px;
-        border-radius: 8px;
-        font-weight: 800;
-    }
-
-    .error-box {
-        background: rgba(255,82,82,.08);
-        border: 1px solid #FF5252;
-        color: #FF9B9B;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 14px;
-        font-size: 13px;
-    }
-
-    .result-score {
-        font-size: 42px;
-        font-weight: 900;
-        color: #00D9FF;
-        margin: 16px 0;
-    }
-
-    .review-item {
-        background: #0C1420;
-        border: 1px solid #22324A;
-        border-radius: 8px;
-        padding: 14px;
-        margin-top: 10px;
-    }
-
-    .review-q {
-        font-weight: 700;
-        margin-bottom: 8px;
-    }
-
-    .correct {
-        color: #00E676;
-    }
-
-    .wrong {
-        color: #FF5252;
-    }
-
-    .skipped {
-        color: #FFB000;
-    }
-</style>
-
-<div class="quiz-page">
-    <div class="quiz-wrap">
-
-        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-        {
-            <div class="error-box">
-                @Model.ErrorMessage
-            </div>
+@section Styles {
+    <style>
+        body {
+            background-color: #070b12;
+            color: #ffffff;
         }
 
-        @if (Model.Result != null)
-        {
-            <div class="result-card">
-                <h2>Rezultat simulacije</h2>
-                <p>@Model.PredmetNaziv</p>
+        .simulation-page {
+            min-height: calc(100vh - 100px);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 45px;
+        }
 
-                <div class="result-score">@Model.Result.Procenat%</div>
+        .simulation-card {
+            width: 100%;
+            max-width: 560px;
+            background-color: #111c2e;
+            border: 1px solid #263b5c;
+            border-radius: 10px;
+            padding: 26px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+        }
 
-                <p><strong>Tačno:</strong> @Model.Result.TacnihOdgovora / @Model.Result.UkupnoPitanja</p>
-                <p><strong>Netačno:</strong> @Model.Result.NetacnihOdgovora</p>
-                <p><strong>Neodgovoreno:</strong> @Model.Result.Neodgovorenih</p>
-                <p><strong>Vrijeme:</strong> @Model.Result.UtrosenoSekundi sekundi</p>
+        .simulation-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: #ffffff;
+        }
 
-                <a asp-controller="Student" asp-action="Simulate" class="start-btn d-block text-center text-decoration-none mt-3">
-                    Nova simulacija
+        .simulation-description {
+            font-size: 14px;
+            color: #9db7d7;
+            margin-bottom: 22px;
+        }
+
+        .simulation-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #dbeafe;
+        }
+
+        .simulation-select {
+            width: 100%;
+            height: 44px;
+            background-color: #08111f;
+            color: #ffffff;
+            border: 1px solid #2c4568;
+            border-radius: 7px;
+            padding: 0 12px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+
+            .simulation-select:focus {
+                border-color: #22d3ee;
+                box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
+            }
+
+        .validation-message {
+            display: block;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #ff6b6b;
+        }
+
+        .simulation-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-start-simulation {
+            flex: 1;
+            height: 44px;
+            border: none;
+            border-radius: 7px;
+            background-color: #22d3ee;
+            color: #020617;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            z-index: 5;
+            transition: 0.15s ease-in-out;
+        }
+
+            .btn-start-simulation:hover {
+                background-color: #67e8f9;
+                color: #020617;
+            }
+
+            .btn-start-simulation:active {
+                transform: translateY(1px);
+            }
+
+        .btn-back-dashboard {
+            flex: 1;
+            height: 44px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #2c4568;
+            border-radius: 7px;
+            background-color: transparent;
+            color: #dbeafe;
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition: 0.15s ease-in-out;
+        }
+
+            .btn-back-dashboard:hover {
+                background-color: #17263d;
+                color: #ffffff;
+                text-decoration: none;
+            }
+
+            .btn-back-dashboard:active {
+                transform: translateY(1px);
+            }
+
+        form {
+            position: relative;
+            z-index: 2;
+        }
+
+        @@media (max-width: 576px) {
+            .simulation-page {
+                padding: 25px 14px;
+            }
+
+            .simulation-card {
+                padding: 20px;
+            }
+
+            .simulation-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+}
+
+<div class="simulation-page">
+    <div class="simulation-card">
+        <h2 class="simulation-title">Simulacija kviza</h2>
+
+        <p class="simulation-description">
+            Odaberi predmet. Sistem će iz baze nasumično uzeti pitanja za simulaciju.
+        </p>
+
+        <form asp-controller="Student" asp-action="SubmitSimulation" method="post">
+            @Html.AntiForgeryToken()
+
+            <label asp-for="PredmetId" class="simulation-label">Predmet</label>
+
+            <select asp-for="PredmetId"
+                    asp-items="Model.Predmeti"
+                    class="simulation-select">
+                <option value="">-- Odaberi predmet --</option>
+            </select>
+
+            <span asp-validation-for="PredmetId" class="validation-message"></span>
+
+            <div class="simulation-actions">
+                <a asp-controller="Student"
+                   asp-action="Dashboard"
+                   class="btn-back-dashboard">
+                    Nazad na dashboard
                 </a>
 
-                <h3 class="mt-4">Pregled odgovora</h3>
-
-                @for (var i = 0; i < Model.Result.Pregled.Count; i++)
-                {
-                    var item = Model.Result.Pregled[i];
-
-                    <div class="review-item">
-                        <div class="review-q">@(i + 1). @item.TekstPitanja</div>
-
-                        @if (!item.JeOdgovoreno)
-                        {
-                            <div>Tvoj odgovor: <span class="skipped">Nije odgovoreno</span></div>
-                        }
-                        else if (item.JeTacno)
-                        {
-                            <div>Tvoj odgovor: <span class="correct">@item.KorisnickiOdgovor</span></div>
-                        }
-                        else
-                        {
-                            <div>Tvoj odgovor: <span class="wrong">@item.KorisnickiOdgovor</span></div>
-                        }
-
-                        <div>Tačan odgovor: <span class="correct">@item.TacanOdgovor</span></div>
-                    </div>
-                }
+                <button type="submit" class="btn-start-simulation">
+                    Pokreni simulaciju →
+                </button>
             </div>
-        }
-        else if (!hasQuestions)
-        {
-            <div class="start-card">
-                <h2>Simulacija kviza</h2>
-                <p>Odaberi predmet. Sistem će iz baze nasumično uzeti pitanja za simulaciju.</p>
-
-                <form asp-controller="Student" asp-action="StartSimulation" method="post">
-                    @Html.AntiForgeryToken()
-
-                    <select name="predmetId" class="quiz-select" asp-items="Model.Predmeti" required>
-                        <option value="">-- Odaberi predmet --</option>
-                    </select>
-
-                    <button type="submit" class="start-btn">
-                        Pokreni simulaciju
-                    </button>
-                </form>
-            </div>
-        }
-        else
-        {
-            <div class="quiz-top">
-                <div>
-                    <div class="quiz-title">@Model.PredmetNaziv - Simulacija</div>
-                    <div class="quiz-subtitle">Pitanja se učitavaju iz baze</div>
-                </div>
-
-                <div class="quiz-timer" id="timer">
-                    @Model.VremenskoOgranicenjeMinuta:00
-                </div>
-
-                <div class="quiz-counter">
-                    Pitanje
-                    <strong><span id="currentQuestion">1</span> / @Model.Questions.Count</strong>
-                </div>
-            </div>
-
-            <form asp-controller="Student" asp-action="SubmitSimulation" method="post" id="quizForm">
-                @Html.AntiForgeryToken()
-
-                <input type="hidden" name="PredmetId" value="@Model.PredmetId" />
-                <input type="hidden" name="StartedAtUtcTicks" value="@Model.StartedAtUtcTicks" />
-                <input type="hidden" name="TotalSeconds" value="@totalSeconds" />
-
-                <div class="quiz-card">
-                    @for (var i = 0; i < Model.Questions.Count; i++)
-                    {
-                        var pitanje = Model.Questions[i];
-
-                        <div class="question-box @(i == 0 ? "active" : "")" data-question-index="@i">
-                            <input type="hidden" name="Odgovori[@i].PitanjeId" value="@pitanje.Id" />
-
-                            <div class="question-label">
-                                Pitanje @(i + 1) od @Model.Questions.Count
-                            </div>
-
-                            <div class="question-text">
-                                @pitanje.TekstPitanja
-                            </div>
-
-                            @for (var j = 0; j < pitanje.Odgovori.Count; j++)
-                            {
-                                var odgovor = pitanje.Odgovori[j];
-                                var letter = j < letters.Length ? letters[j] : "?";
-
-                                <label class="option-item" data-question="@i">
-                                    <input class="option-radio"
-                                           type="radio"
-                                           name="Odgovori[@i].OdgovorId"
-                                           value="@odgovor.Id" />
-
-                                    <span class="option-letter">@letter</span>
-                                    <span class="option-text">@odgovor.Tekst</span>
-                                </label>
-                            }
-                        </div>
-                    }
-                </div>
-
-                <div class="quiz-footer">
-                    <div class="quiz-dots">
-                        @for (var i = 0; i < Model.Questions.Count; i++)
-                        {
-                            <span class="quiz-dot @(i == 0 ? "active" : "")" data-dot-index="@i"></span>
-                        }
-                    </div>
-
-                    <div class="quiz-actions">
-                        <button type="button" class="quiz-btn" id="prevBtn" onclick="previousQuestion()" disabled>
-                            ← Preth.
-                        </button>
-
-                        <button type="button" class="quiz-btn" id="nextBtn" onclick="nextQuestion()">
-                            Sljedeće →
-                        </button>
-
-                        <button type="button" class="quiz-btn quiz-btn-finish" onclick="finishQuiz()">
-                            Završi
-                        </button>
-                    </div>
-                </div>
-            </form>
-        }
+        </form>
     </div>
 </div>
 
 @section Scripts {
-    @if (hasQuestions && Model.Result == null)
-    {
-        <script>
-            let currentIndex = 0;
-            let remainingSeconds = @totalSeconds;
-            const totalQuestions = @Model.Questions.Count;
-
-            const timerElement = document.getElementById("timer");
-            const currentQuestionElement = document.getElementById("currentQuestion");
-            const quizForm = document.getElementById("quizForm");
-            const prevBtn = document.getElementById("prevBtn");
-            const nextBtn = document.getElementById("nextBtn");
-
-            function showQuestion(index) {
-                document.querySelectorAll(".question-box").forEach(q => {
-                    q.classList.remove("active");
-                });
-
-                document.querySelector(`.question-box[data-question-index="${index}"]`).classList.add("active");
-
-                document.querySelectorAll(".quiz-dot").forEach(dot => {
-                    dot.classList.remove("active");
-                });
-
-                document.querySelector(`.quiz-dot[data-dot-index="${index}"]`).classList.add("active");
-
-                currentQuestionElement.textContent = index + 1;
-
-                prevBtn.disabled = index === 0;
-                nextBtn.disabled = index === totalQuestions - 1;
-            }
-
-            function previousQuestion() {
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    showQuestion(currentIndex);
-                }
-            }
-
-            function nextQuestion() {
-                if (currentIndex < totalQuestions - 1) {
-                    currentIndex++;
-                    showQuestion(currentIndex);
-                }
-            }
-
-            function finishQuiz() {
-                quizForm.submit();
-            }
-
-            document.querySelectorAll(".option-item").forEach(option => {
-                option.addEventListener("click", function () {
-                    const questionIndex = this.dataset.question;
-
-                    document.querySelectorAll(`.option-item[data-question="${questionIndex}"]`).forEach(item => {
-                        item.classList.remove("selected");
-                    });
-
-                    this.classList.add("selected");
-
-                    const dot = document.querySelector(`.quiz-dot[data-dot-index="${questionIndex}"]`);
-                    dot.classList.add("answered");
-                });
-            });
-
-            function updateTimer() {
-                const minutes = Math.floor(remainingSeconds / 60);
-                const seconds = remainingSeconds % 60;
-
-                timerElement.textContent =
-                    minutes.toString() + ":" + seconds.toString().padStart(2, "0");
-
-                if (remainingSeconds <= 0) {
-                    quizForm.submit();
-                    return;
-                }
-
-                remainingSeconds--;
-            }
-
-            updateTimer();
-            setInterval(updateTimer, 1000);
-        </script>
-    }
+    <partial name="_ValidationScriptsPartial" />
 }
