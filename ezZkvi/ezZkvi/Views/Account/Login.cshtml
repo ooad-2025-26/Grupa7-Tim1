@@ -175,6 +175,30 @@
     .logo { font-size: 1.8rem; }
     .demo-btns { flex-direction: column; }
   }
+
+.password-help {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.45;
+}
+
+.password-help span {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.form-note {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(0,229,255,0.06);
+    border: 1px solid rgba(0,229,255,0.18);
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
 </style>
 }
 
@@ -208,13 +232,13 @@
                 <div asp-validation-summary="ModelOnly" class="error-msg show"></div>
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" name="Email" placeholder="ime@etf.unsa.ba" autocomplete="username">
+                    <input type="email" name="Email" placeholder="username@gmail.com" autocomplete="username">
                     @Html.ValidationMessage("Email", new { @class = "error-msg show" })
                 </div>
                 <div class="form-group">
                     <label>Lozinka</label>
                     <div class="password-wrap">
-                        <input type="password" name="Password" placeholder="••••••••" autocomplete="current-password">
+                        <input type="password" name="Password" placeholder="Unesite lozinku" autocomplete="current-password">
                         <button type="button" class="toggle-pass" onclick="togglePass(this)">Prikaži</button>
                     </div>
                     @Html.ValidationMessage("Password", new { @class = "error-msg show" })
@@ -233,25 +257,50 @@
                 <div asp-validation-summary="ModelOnly" class="error-msg show"></div>
                 <div class="form-group">
                     <label>Email adresa</label>
-                    <input type="email" name="Email" placeholder="ime@etf.unsa.ba" autocomplete="email">
+                    <input type="email" name="Email" placeholder="username@gmail.com" autocomplete="email">
                     @Html.ValidationMessage("Email", new { @class = "error-msg show" })
                 </div>
                 <div class="form-group">
                     <label>Lozinka</label>
+
                     <div class="password-wrap">
-                        <input type="password" name="Password" placeholder="Min. 8 znakova" autocomplete="new-password" oninput="checkStrength(this.value)">
-                        <button type="button" class="toggle-pass" onclick="togglePass(this)">Prikaži</button>
+                        <input type="password"
+                               name="Password"
+                               placeholder="Unesite lozinku"
+                               autocomplete="new-password"
+                               oninput="checkStrength(this.value)" />
+
+                        <button type="button" class="toggle-pass" onclick="togglePass(this)">
+                            Prikaži
+                        </button>
                     </div>
-                    <div class="password-strength"><div class="strength-bar" id="strengthBar"></div></div>
+
+                    <div class="password-help">
+                        Lozinka mora imati najmanje <span>6 znakova</span>, veliko slovo, malo slovo, broj i specijalni znak.
+                    </div>
+
+                    <div class="password-strength">
+                        <div class="strength-bar" id="strengthBar"></div>
+                    </div>
+
                     <div class="strength-label" id="strengthLabel"></div>
+
                     @Html.ValidationMessage("Password", new { @class = "error-msg show" })
                 </div>
                 <div class="form-group">
                     <label>Potvrda lozinke</label>
+
                     <div class="password-wrap">
-                        <input type="password" name="ConfirmPassword" placeholder="Ponovi lozinku" autocomplete="new-password">
-                        <button type="button" class="toggle-pass" onclick="togglePass(this)">Prikaži</button>
+                        <input type="password"
+                               name="ConfirmPassword"
+                               placeholder="Ponovite lozinku"
+                               autocomplete="new-password" />
+
+                        <button type="button" class="toggle-pass" onclick="togglePass(this)">
+                            Prikaži
+                        </button>
                     </div>
+
                     @Html.ValidationMessage("ConfirmPassword", new { @class = "error-msg show" })
                 </div>
                 <button type="submit" class="btn" id="regBtn">
@@ -260,7 +309,7 @@
                 </button>
                 <div class="info-box">
                     <span>ℹ</span>
-                    <span>Nalog čeka odobrenje administratora prije aktivacije.</span>
+                    <span> Nalog postaje aktivan nakon odobrenja administratora.</span>
                 </div>
             </form>
         </div>

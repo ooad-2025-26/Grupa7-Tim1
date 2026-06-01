@@ -33,10 +33,6 @@
 
   .menu-toggle{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:1.2rem;cursor:pointer;}
 
-  .notif-btn{position:relative;padding:9px 18px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);font-size:0.85rem;transition:all 0.2s;display:flex;align-items:center;gap:8px;}
-  .notif-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .notif-dot{width:8px;height:8px;background:var(--danger);border-radius:50%;}
-
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
   .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;animation:fadeUp 0.5s ease both;cursor:pointer;transition:all 0.2s;text-decoration:none;display:block;color:var(--text);}
   .stat:hover{border-color:var(--accent);transform:translateY(-2px);}
@@ -51,14 +47,6 @@
   .sec-title{font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
   .sec-title::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;}
 
-  .notif-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;animation:fadeUp 0.5s ease 0.3s both;}
-  .notif-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
-  select.inp,input.inp,textarea.inp{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.85rem;outline:none;width:100%;transition:border-color 0.2s;}
-  select.inp:focus,input.inp:focus,textarea.inp:focus{border-color:var(--accent);}
-  textarea.inp{resize:vertical;min-height:70px;}
-  label.lbl{display:block;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-  .btn-send{padding:10px 22px;background:var(--accent);color:var(--bg);border:none;border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.88rem;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;margin-top:12px;}
-  .btn-send:hover{background:#fff;}
 
   .item-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
   .item-row:last-child{border-bottom:none;}
@@ -116,7 +104,7 @@
       <a class="nav-item" asp-controller="Administrator" asp-action="Users"><span class="ico">👥</span> Korisnici <span class="badge">3</span></a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback <span class="badge">3</span></a>
-      <a class="nav-item" href="#"><span class="ico">📧</span> Obavijesti</a>
+      <a class="nav-item" asp-controller="Administrator" asp-action="EmailObavijest"> <span class="ico">📧</span> Obavijesti</a>
       <a class="nav-item" asp-controller="Account" asp-action="Login"><span class="ico">🚪</span> Odjava</a>
     </nav>
     <a class="user-card" asp-controller="Account" asp-action="Login">
@@ -160,32 +148,6 @@
       </a>
     </div>
 
-    <div class="notif-panel">
-      <div class="sec-title">📧 Slanje obavijesti</div>
-      <div class="notif-form">
-        <div>
-          <label class="lbl">Primatelji</label>
-          <select class="inp"><option>Svi korisnici</option><option>Samo studenti</option><option>Moderatori i admini</option></select>
-        </div>
-        <div>
-          <label class="lbl">Tip obavijesti</label>
-          <select class="inp"><option>Novi sadržaj</option><option>Sistemska poruka</option><option>Ažuriranje platforme</option></select>
-        </div>
-        <div>
-          <label class="lbl">Naslov</label>
-          <input type="text" class="inp" placeholder="npr. Dodana nova pitanja – OOAD" id="notifTitle">
-        </div>
-        <div>
-          <label class="lbl">Predmet (opciono)</label>
-          <select class="inp"><option>– Svi predmeti –</option><option>OOAD</option><option>OS</option><option>ASP</option></select>
-        </div>
-      </div>
-      <div>
-        <label class="lbl" style="margin-top:12px;display:block">Poruka</label>
-        <textarea class="inp" placeholder="Sadržaj obavijesti koja će biti poslana emailom..." id="notifMsg"></textarea>
-      </div>
-      <button class="btn-send" onclick="sendNotification()">📨 Pošalji obavijest</button>
-    </div>
 
     <div class="row2">
       <div class="section-card">
@@ -260,18 +222,6 @@
     t.className = 'toast ' + type;
     setTimeout(() => t.classList.add('show'), 10);
     setTimeout(() => t.classList.remove('show'), 3500);
-  }
-
-  function sendNotification() {
-    const title = document.getElementById('notifTitle').value;
-    const msg = document.getElementById('notifMsg').value;
-    if (!title || !msg) {
-      alert('Molimo popunite naslov i poruku.');
-      return;
-    }
-    showToast('Obavijest uspješno poslana!', 'success');
-    document.getElementById('notifTitle').value = '';
-    document.getElementById('notifMsg').value = '';
   }
 
   function approvePending(id) {

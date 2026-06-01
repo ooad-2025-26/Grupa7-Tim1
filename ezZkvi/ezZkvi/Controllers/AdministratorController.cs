@@ -1,5 +1,6 @@
 using ezZkvi.Data;
 using ezZkvi.Models;
+using ezZkvi.Services;
 using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -14,11 +15,16 @@ namespace ezZkvi.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<Korisnik> _userManager;
+        private readonly IEmailService _emailService;
 
-        public AdministratorController(ApplicationDbContext context, UserManager<Korisnik> userManager)
+        public AdministratorController(
+            ApplicationDbContext context,
+            UserManager<Korisnik> userManager,
+            IEmailService emailService)
         {
             _context = context;
             _userManager = userManager;
+            _emailService = emailService;
         }
 
         // GET: /Administrator/Users
@@ -61,11 +67,55 @@ namespace ezZkvi.Controllers
             var result = await _userManager.UpdateAsync(user);
 
             if (!result.Succeeded)
-                return BadRequest(result.Errors);
+            {
+                TempData["Error"] = "Greška prilikom odobravanja korisnika.";
+                return RedirectToAction(nameof(Users));
+            }
 
             if (!await _userManager.IsInRoleAsync(user, "Student"))
             {
-                await _userManager.AddToRoleAsync(user, "Student");
+                var roleResult = await _userManager.AddToRoleAsync(user, "Student");
+
+                if (!roleResult.Succeeded)
+                {
+                    TempData["Error"] = "Korisnik je odobren, ali uloga nije dodijeljena.";
+                    return RedirectToAction(nameof(Users));
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                try
+                {
+                    var loginUrl = Url.Action("Login", "Account", null, Request.Scheme);
+
+                    var subject = "Vaš eZkvi nalog je odobren";
+
+                    var body = $@"
+                            Poštovani,
+
+                            Vaš korisnički nalog na eZkvi platformi je odobren.
+
+                            Sada se možete prijaviti u sistem koristeći svoju email adresu:
+                            {user.Email}
+                            ";
+
+                    await _emailService.SendEmailAsync(
+                        user.Email,
+                        subject,
+                        body
+                    );
+
+                    TempData["Message"] = $"Korisnik {user.Email} je odobren i poslan mu je email.";
+                }
+                catch
+                {
+                    TempData["Message"] = $"Korisnik {user.Email} je odobren, ali email obavijest nije poslana.";
+                }
+            }
+            else
+            {
+                TempData["Message"] = "Korisnik je odobren, ali nema registrovanu email adresu.";
             }
 
             return RedirectToAction(nameof(Users));
@@ -320,6 +370,70 @@ namespace ezZkvi.Controllers
         private bool AdministratorExists(string id)
         {
             return _context.Administrator.Any(e => e.Id == id);
+        }
+
+        // GET: /Administrator/EmailObavijest
+        public IActionResult EmailObavijest()
+        {
+            return View(new AdminEmailObavijestViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EmailObavijest(AdminEmailObavijestViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            List<Korisnik> korisnici;
+
+            if (model.Primaoci == "Studenti")
+            {
+                korisnici = (await _userManager.GetUsersInRoleAsync("Student"))
+                    .Where(u => u.Email != null && u.IsApproved)
+                    .ToList();
+            }
+            else if (model.Primaoci == "AdminiModeratori")
+            {
+                var admini = await _userManager.GetUsersInRoleAsync("Admin");
+                var moderatori = await _userManager.GetUsersInRoleAsync("Moderator");
+
+                korisnici = admini
+                    .Concat(moderatori)
+                    .Where(u => u.Email != null && u.IsApproved)
+                    .DistinctBy(u => u.Id)
+                    .ToList();
+            }
+            else
+            {
+                TempData["Error"] = "Odabrana grupa primalaca nije validna.";
+                return RedirectToAction(nameof(EmailObavijest));
+            }
+
+            if (!korisnici.Any())
+            {
+                TempData["Error"] = "Nema korisnika za odabranu grupu primalaca.";
+                return RedirectToAction(nameof(EmailObavijest));
+            }
+
+            foreach (var korisnik in korisnici)
+            {
+                await _emailService.SendEmailAsync(
+                    korisnik.Email!,
+                    model.Naslov,
+                    model.Poruka
+                );
+            }
+
+            string grupa = model.Primaoci == "Studenti"
+                ? "studentima"
+                : "adminima i moderatorima";
+
+            TempData["Message"] = $"Email obavijest je poslana {grupa}. Broj primalaca: {korisnici.Count}";
+
+            return RedirectToAction(nameof(EmailObavijest));
         }
     }
 }
