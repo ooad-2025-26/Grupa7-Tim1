@@ -86,6 +86,16 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 
+    if (!db.Predmet.Any(p => p.Naziv == "Tehnike programiranja"))
+    {
+        db.Predmet.Add(new Predmet
+        {
+            Naziv = "Tehnike programiranja"
+        });
+
+        db.SaveChanges();
+    }
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     string[] roles = { "Admin", "Moderator", "Student" };
 
