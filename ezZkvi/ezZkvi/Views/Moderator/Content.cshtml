@@ -209,7 +209,7 @@
 
         .t-header {
             display: grid;
-            grid-template-columns: 1fr 160px 120px 130px;
+            grid-template-columns: minmax(0, 1fr) 220px 100px 120px;
             padding: 12px 20px;
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -221,7 +221,7 @@
 
         .t-row {
             display: grid;
-            grid-template-columns: 1fr 160px 120px 130px;
+            grid-template-columns: minmax(0, 1fr) 220px 100px 120px;
             padding: 14px 20px;
             border-bottom: 1px solid var(--border);
             align-items: center;
@@ -246,19 +246,25 @@
         }
 
         .tag {
-            display: inline-block;
-            padding: 3px 10px;
+            display: inline-flex;
+            align-items: center;
+            max-width: 190px;
+            padding: 4px 10px;
             border-radius: 10px;
-            font-size: 0.72rem;
-            letter-spacing: 1px;
+            font-size: 0.68rem;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
             background: rgba(0,229,255,0.1);
             color: var(--accent);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .diff {
-            font-size: 0.8rem;
-            font-weight: 700;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
         }
 
         .diff-easy {
@@ -275,21 +281,24 @@
 
         .actions-cell {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
+            justify-content: flex-start;
         }
 
         .act-btn {
+            min-width: 52px;
             padding: 6px 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.75rem;
+            font-size: 0.74rem;
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--muted);
             transition: all 0.2s;
             text-decoration: none;
             font-family: 'Nunito Sans',sans-serif;
+            text-align: center;
         }
 
             .act-btn.edit:hover {
@@ -509,7 +518,7 @@
 
             .t-header,
             .t-row {
-                grid-template-columns: 1fr 110px 110px;
+                grid-template-columns: 1fr 90px 100px;
             }
 
                 .t-header > :nth-child(3),
