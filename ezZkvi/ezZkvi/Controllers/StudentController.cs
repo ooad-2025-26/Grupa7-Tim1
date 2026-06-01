@@ -1,13 +1,11 @@
 using ezZkvi.Data;
 using ezZkvi.Models;
+using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace ezZkvi.Controllers
 {
@@ -15,6 +13,292 @@ namespace ezZkvi.Controllers
     public class StudentController : Controller
     {
         private readonly ApplicationDbContext _context;
+
+        private const int SistemskiBrojPitanja = 10;
+        private const int VremenskoOgranicenjeMinuta = 15;
+
+        private async Task<List<SelectListItem>> GetPredmetiZaSimulacijuAsync(int? selectedPredmetId = null)
+        {
+            return await _context.Predmet
+                .OrderBy(p => p.Naziv)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Id.ToString(),
+                    Text = p.Naziv,
+                    Selected = selectedPredmetId.HasValue && p.Id == selectedPredmetId.Value
+                })
+                .ToListAsync();
+        }
+
+        private async Task<SimulacijaKvizaViewModel> BuildSimulationAsync(int predmetId)
+        {
+            var predmet = await _context.Predmet.FindAsync(predmetId);
+
+            var model = new SimulacijaKvizaViewModel
+            {
+                PredmetId = predmetId,
+                PredmetNaziv = predmet?.Naziv ?? "Odabrani predmet",
+                BrojPitanja = SistemskiBrojPitanja,
+                VremenskoOgranicenjeMinuta = VremenskoOgranicenjeMinuta,
+                StartedAtUtcTicks = DateTime.UtcNow.Ticks
+            };
+
+            if (predmet == null)
+            {
+                model.ErrorMessage = "Odabrani predmet ne postoji.";
+                return model;
+            }
+
+            var svaPitanja = await _context.Pitanje
+                .Where(p => p.PredmetId == predmetId)
+                .ToListAsync();
+
+            var pitanjeIds = svaPitanja.Select(p => p.Id).ToList();
+
+            var sviOdgovori = await _context.Odgovor
+                .Where(o => pitanjeIds.Contains(o.PitanjeId))
+                .ToListAsync();
+
+            var odgovoriPoPitanju = sviOdgovori
+                .GroupBy(o => o.PitanjeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var validnaPitanja = svaPitanja
+                .Where(p => odgovoriPoPitanju.ContainsKey(p.Id)
+                            && odgovoriPoPitanju[p.Id].Count >= 2
+                            && odgovoriPoPitanju[p.Id].Count(o => o.IsTacan) == 1)
+                .ToList();
+
+            if (validnaPitanja.Count == 0)
+            {
+                model.ErrorMessage = "Za odabrani predmet nema validnih pitanja. Svako pitanje mora imati najmanje dva odgovora i tačno jedan tačan odgovor.";
+                return model;
+            }
+
+            var odabranaPitanja = SelectQuestionsByDifficulty(validnaPitanja, SistemskiBrojPitanja);
+
+            model.BrojPitanja = odabranaPitanja.Count;
+
+            model.Questions = odabranaPitanja
+                .Select(p => new SimulacijaPitanjeViewModel
+                {
+                    Id = p.Id,
+                    TekstPitanja = p.TekstPitanja,
+                    Tezina = p.Tezina,
+                    Odgovori = Shuffle(odgovoriPoPitanju[p.Id])
+                        .Select(o => new SimulacijaOdgovorViewModel
+                        {
+                            Id = o.Id,
+                            Tekst = o.Tekst
+                        })
+                        .ToList()
+                })
+                .ToList();
+
+            return model;
+        }
+
+        private static List<Pitanje> SelectQuestionsByDifficulty(List<Pitanje> svaPitanja, int maxBrojPitanja)
+        {
+            var quotas = new Dictionary<Tezina, int>
+            {
+                [Tezina.LAKO] = 5,
+                [Tezina.SREDNJE] = 3,
+                [Tezina.TESKO] = 2
+            };
+
+            var selected = new List<Pitanje>();
+
+            foreach (var quota in quotas)
+            {
+                selected.AddRange(
+                    Shuffle(svaPitanja.Where(p => p.Tezina == quota.Key))
+                        .Take(quota.Value)
+                );
+            }
+
+            if (selected.Count < maxBrojPitanja)
+            {
+                var selectedIds = selected.Select(p => p.Id).ToHashSet();
+
+                var remaining = Shuffle(svaPitanja.Where(p => !selectedIds.Contains(p.Id)))
+                    .Take(maxBrojPitanja - selected.Count);
+
+                selected.AddRange(remaining);
+            }
+
+            return Shuffle(selected).Take(maxBrojPitanja).ToList();
+        }
+
+        private static List<T> Shuffle<T>(IEnumerable<T> source)
+        {
+            return source
+                .OrderBy(_ => Random.Shared.Next())
+                .ToList();
+        }
+
+        private static SimulacijaRezultatViewModel CalculateResult(
+            SimulacijaSubmitViewModel submitModel,
+            List<Pitanje> pitanja,
+            List<Odgovor> odgovori)
+        {
+            var pitanjaPoId = pitanja.ToDictionary(p => p.Id);
+
+            var odgovoriPoId = odgovori.ToDictionary(o => o.Id);
+
+            var odgovoriPoPitanju = odgovori
+                .GroupBy(o => o.PitanjeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var pregled = new List<SimulacijaPregledOdgovoraViewModel>();
+
+            var tacno = 0;
+            var netacno = 0;
+            var neodgovoreno = 0;
+
+            foreach (var korisnickiOdgovor in submitModel.Odgovori)
+            {
+                if (!pitanjaPoId.TryGetValue(korisnickiOdgovor.PitanjeId, out var pitanje))
+                {
+                    continue;
+                }
+
+                odgovoriPoPitanju.TryGetValue(pitanje.Id, out var ponudjeniOdgovori);
+                ponudjeniOdgovori ??= new List<Odgovor>();
+
+                var tacanOdgovor = ponudjeniOdgovori.FirstOrDefault(o => o.IsTacan);
+
+                Odgovor? odabraniOdgovor = null;
+
+                if (korisnickiOdgovor.OdgovorId.HasValue)
+                {
+                    odgovoriPoId.TryGetValue(korisnickiOdgovor.OdgovorId.Value, out odabraniOdgovor);
+
+                    if (odabraniOdgovor?.PitanjeId != pitanje.Id)
+                    {
+                        odabraniOdgovor = null;
+                    }
+                }
+
+                var jeOdgovoreno = odabraniOdgovor != null;
+                var jeTacno = jeOdgovoreno && odabraniOdgovor!.IsTacan;
+
+                if (jeTacno)
+                {
+                    tacno++;
+                }
+                else if (jeOdgovoreno)
+                {
+                    netacno++;
+                }
+                else
+                {
+                    neodgovoreno++;
+                }
+
+                pregled.Add(new SimulacijaPregledOdgovoraViewModel
+                {
+                    TekstPitanja = pitanje.TekstPitanja,
+                    KorisnickiOdgovor = odabraniOdgovor?.Tekst,
+                    TacanOdgovor = tacanOdgovor?.Tekst ?? "Nije definisan tačan odgovor",
+                    JeTacno = jeTacno,
+                    JeOdgovoreno = jeOdgovoreno
+                });
+            }
+
+            var ukupno = pregled.Count;
+
+            var procenat = ukupno == 0
+                ? 0
+                : (int)Math.Round((double)tacno / ukupno * 100);
+
+            var elapsedSeconds = CalculateElapsedSeconds(
+                submitModel.StartedAtUtcTicks,
+                submitModel.TotalSeconds
+            );
+
+            return new SimulacijaRezultatViewModel
+            {
+                UkupnoPitanja = ukupno,
+                TacnihOdgovora = tacno,
+                NetacnihOdgovora = netacno,
+                Neodgovorenih = neodgovoreno,
+                Procenat = procenat,
+                UtrosenoSekundi = elapsedSeconds,
+                Pregled = pregled
+            };
+        }
+        private static int CalculateElapsedSeconds(long startedAtUtcTicks, int totalSeconds)
+        {
+            if (startedAtUtcTicks <= 0)
+            {
+                return 0;
+            }
+
+            var startedAt = new DateTime(startedAtUtcTicks, DateTimeKind.Utc);
+            var elapsed = (int)Math.Round((DateTime.UtcNow - startedAt).TotalSeconds);
+
+            if (elapsed < 0)
+            {
+                return 0;
+            }
+
+            if (totalSeconds > 0 && elapsed > totalSeconds)
+            {
+                return totalSeconds;
+            }
+
+            return elapsed;
+        }
+
+        private async Task SaveSimulationResultAsync(SimulacijaRezultatViewModel rezultat)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
+
+                if (student != null)
+                {
+                    student.BrojOdgovorenihPitanja += rezultat.UkupnoPitanja;
+                    student.BrojTacnihOdgovora += rezultat.TacnihOdgovora;
+                }
+            }
+
+            _context.KvizSesije.Add(new KvizSesija
+            {
+                TraziBrojPitanja = rezultat.UkupnoPitanja,
+                VremenskoOgranicenje = VremenskoOgranicenjeMinuta,
+                Status = StatusSesije.ZAVRSEN
+            });
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static string BuildInitials(string value)
+        {
+            var parts = value
+                .Replace("@", " ")
+                .Replace(".", " ")
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length == 0)
+            {
+                return "ST";
+            }
+
+            if (parts.Length == 1)
+            {
+                return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
+            }
+
+            return string.Concat(parts.Take(2).Select(p => p[0])).ToUpper();
+        }
+        private bool StudentExists(string id)
+        {
+            return _context.Student.Any(e => e.Id == id);
+        }
 
         public StudentController(ApplicationDbContext context)
         {
@@ -34,10 +318,84 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Student/Simulate
-        public IActionResult Simulate()
+        public async Task<IActionResult> Simulate()
         {
-            return View();
+            var model = new SimulacijaKvizaViewModel
+            {
+                Predmeti = await GetPredmetiZaSimulacijuAsync()
+            };
+
+            if (TempData["SimulationError"] is string error)
+            {
+                model.ErrorMessage = error;
+            }
+
+            return View(model);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StartSimulation(int predmetId)
+        {
+            var model = await BuildSimulationAsync(predmetId);
+
+            if (!string.IsNullOrWhiteSpace(model.ErrorMessage))
+            {
+                model.Predmeti = await GetPredmetiZaSimulacijuAsync(predmetId);
+                return View("Simulate", model);
+            }
+
+            return View("Simulate", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitSimulation(SimulacijaSubmitViewModel submitModel)
+        {
+            if (submitModel.Odgovori.Count == 0)
+            {
+                TempData["SimulationError"] = "Simulacija nije validna jer nema odabranih pitanja.";
+                return RedirectToAction(nameof(Simulate));
+            }
+
+            var selectedQuestionIds = submitModel.Odgovori
+                .Select(o => o.PitanjeId)
+                .Distinct()
+                .ToList();
+
+            var pitanja = await _context.Pitanje
+                .Where(p => selectedQuestionIds.Contains(p.Id) && p.PredmetId == submitModel.PredmetId)
+                .ToListAsync();
+
+            var odgovori = await _context.Odgovor
+                .Where(o => selectedQuestionIds.Contains(o.PitanjeId))
+                .ToListAsync();
+
+            if (pitanja.Count == 0)
+            {
+                TempData["SimulationError"] = "Pitanja za ovu simulaciju nisu pronađena.";
+                return RedirectToAction(nameof(Simulate));
+            }
+
+            var rezultat = CalculateResult(submitModel, pitanja, odgovori);
+
+            await SaveSimulationResultAsync(rezultat);
+
+            var predmet = await _context.Predmet.FindAsync(submitModel.PredmetId);
+
+            var model = new SimulacijaKvizaViewModel
+            {
+                PredmetId = submitModel.PredmetId,
+                PredmetNaziv = predmet?.Naziv ?? "Odabrani predmet",
+                BrojPitanja = rezultat.UkupnoPitanja,
+                VremenskoOgranicenjeMinuta = submitModel.TotalSeconds > 0 ? submitModel.TotalSeconds / 60 : 15,
+                Result = rezultat,
+                Predmeti = await GetPredmetiZaSimulacijuAsync(submitModel.PredmetId)
+            };
+
+            return View("Simulate", model);
+        }
+
 
         // GET: /Student/Leaderboard
         public IActionResult Leaderboard()
@@ -175,9 +533,5 @@ namespace ezZkvi.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool StudentExists(string id)
-        {
-            return _context.Student.Any(e => e.Id == id);
-        }
     }
 }
