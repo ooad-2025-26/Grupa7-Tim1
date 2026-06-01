@@ -172,9 +172,9 @@
 
         .inline-error {
             display: none;
-            margin-top: 8px;
+            margin-top: 10px;
             color: #ff8a8a;
-            font-size: 0.82rem;
+            font-size: 0.84rem;
         }
 
         .actions {
@@ -270,20 +270,64 @@
             line-height: 1;
         }
 
+        .quiz-progress {
+            margin-bottom: 18px;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--muted);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #0a111d;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            border-radius: 999px;
+            transition: width 0.25s ease;
+        }
+
         .question-card {
+            display: none;
             background: var(--card2);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 18px;
+            padding: 20px;
             margin-bottom: 14px;
+            animation: fadeQuestion 0.25s ease both;
         }
+
+            .question-card.active {
+                display: block;
+            }
+
+            .question-card.answered {
+                border-color: rgba(0, 230, 118, 0.28);
+            }
 
         .question-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             gap: 12px;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
 
         .question-number {
@@ -298,9 +342,9 @@
 
         .question-text {
             color: #ffffff;
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 800;
-            line-height: 1.45;
+            line-height: 1.5;
         }
 
         .difficulty {
@@ -343,6 +387,24 @@
                 accent-color: var(--accent);
                 cursor: pointer;
             }
+
+            .answer-option:has(input:checked) {
+                border-color: var(--accent);
+                background: rgba(0, 229, 255, 0.1);
+                color: #ffffff;
+            }
+
+        .locked-note {
+            display: none;
+            margin-top: 12px;
+            color: var(--success);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .question-card.answered .locked-note {
+            display: block;
+        }
 
         .result-grid {
             display: grid;
@@ -438,6 +500,18 @@
                 background: rgba(255, 82, 82, 0.08);
                 border: 1px solid rgba(255, 82, 82, 0.3);
             }
+
+        @@keyframes fadeQuestion {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         @@media (max-width: 768px) {
             .simulation-page {
@@ -585,6 +659,17 @@
                 </div>
             </div>
 
+            <div class="quiz-progress">
+                <div class="progress-text">
+                    <span id="progressCurrent">Pitanje 1</span>
+                    <span id="progressTotal">od @Model.Questions.Count</span>
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
             <form asp-controller="Student" asp-action="SubmitSimulation" method="post" id="quizForm">
                 @Html.AntiForgeryToken()
 
@@ -596,7 +681,7 @@
                 {
                     var pitanje = Model.Questions[i];
 
-                    <div class="question-card">
+                    <div class="question-card @(i == 0 ? "active" : "")" data-question-index="@i">
                         <input type="hidden" name="@($"Odgovori[{i}].PitanjeId")" value="@pitanje.Id" />
 
                         <div class="question-header">
@@ -624,6 +709,14 @@
                                 </label>
                             }
                         </div>
+
+                        <div class="inline-error question-error">
+                            Moraš odabrati odgovor prije nastavka.
+                        </div>
+
+                        <div class="locked-note">
+                            Odgovor je potvrđen. Ne možeš ga više mijenjati.
+                        </div>
                     </div>
                 }
 
@@ -632,8 +725,8 @@
                         Prekini simulaciju
                     </a>
 
-                    <button type="submit" class="btn-main">
-                        Završi simulaciju
+                    <button type="button" class="btn-main" id="nextQuestionBtn">
+                        Potvrdi odgovor
                     </button>
                 </div>
             </form>
@@ -699,8 +792,73 @@
             });
         }
 
-        const timer = document.getElementById('timer');
         const quizForm = document.getElementById('quizForm');
+        const questionCards = Array.from(document.querySelectorAll('.question-card'));
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+        const progressCurrent = document.getElementById('progressCurrent');
+        const progressFill = document.getElementById('progressFill');
+
+        let currentQuestionIndex = 0;
+
+        function updateQuestionProgress() {
+            if (!questionCards.length || !progressCurrent || !progressFill || !nextQuestionBtn) {
+                return;
+            }
+
+            const currentNumber = currentQuestionIndex + 1;
+            const total = questionCards.length;
+            const percent = (currentNumber / total) * 100;
+
+            progressCurrent.textContent = 'Pitanje ' + currentNumber;
+            progressFill.style.width = percent + '%';
+
+            if (currentQuestionIndex === total - 1) {
+                nextQuestionBtn.textContent = 'Završi simulaciju';
+            } else {
+                nextQuestionBtn.textContent = 'Potvrdi odgovor';
+            }
+        }
+
+        function showQuestion(index) {
+            questionCards.forEach(function (card, cardIndex) {
+                card.classList.toggle('active', cardIndex === index);
+            });
+
+            updateQuestionProgress();
+        }
+
+        if (nextQuestionBtn && quizForm && questionCards.length) {
+            updateQuestionProgress();
+
+            nextQuestionBtn.addEventListener('click', function () {
+                const currentCard = questionCards[currentQuestionIndex];
+                const selectedAnswer = currentCard.querySelector('input[type="radio"]:checked');
+                const errorMessage = currentCard.querySelector('.question-error');
+
+                if (!selectedAnswer) {
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+
+                errorMessage.style.display = 'none';
+                currentCard.classList.add('answered');
+
+                currentCard.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+                    if (!radio.checked) {
+                        radio.disabled = true;
+                    }
+                });
+
+                if (currentQuestionIndex < questionCards.length - 1) {
+                    currentQuestionIndex++;
+                    showQuestion(currentQuestionIndex);
+                } else {
+                    quizForm.submit();
+                }
+            });
+        }
+
+        const timer = document.getElementById('timer');
 
         if (timer && quizForm) {
             let remaining = parseInt(timer.dataset.seconds || '900');
