@@ -418,13 +418,26 @@ namespace ezZkvi.Controllers
                 return RedirectToAction(nameof(EmailObavijest));
             }
 
-            foreach (var korisnik in korisnici)
+            try
             {
-                await _emailService.SendEmailAsync(
-                    korisnik.Email!,
-                    model.Naslov,
-                    model.Poruka
-                );
+                foreach (var korisnik in korisnici)
+                {
+                    await _emailService.SendEmailAsync(
+                        korisnik.Email!,
+                        model.Naslov,
+                        model.Poruka
+                    );
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(EmailObavijest));
+            }
+            catch
+            {
+                TempData["Error"] = "Došlo je do greške prilikom slanja email obavijesti.";
+                return RedirectToAction(nameof(EmailObavijest));
             }
 
             string grupa = model.Primaoci == "Studenti"

@@ -10,6 +10,20 @@ namespace ezZkvi.Services
     {
         private readonly EmailSettings _settings;
 
+        private void ValidateEmailSettings()
+        {
+            if (string.IsNullOrWhiteSpace(_settings.SmtpServer) ||
+                _settings.SmtpPort == 0 ||
+                string.IsNullOrWhiteSpace(_settings.SenderEmail) ||
+                string.IsNullOrWhiteSpace(_settings.Username) ||
+                string.IsNullOrWhiteSpace(_settings.Password))
+            {
+                throw new InvalidOperationException(
+                    "Email konfiguracija nije ispravno podešena. Provjerite SMTP podatke u appsettings.json ili Render Environment Variables."
+                );
+            }
+        }
+
         public EmailService(IOptions<EmailSettings> settings)
         {
             _settings = settings.Value;
@@ -17,29 +31,46 @@ namespace ezZkvi.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var message = new MimeMessage();
+            ValidateEmailSettings();
 
-            message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
-            message.To.Add(MailboxAddress.Parse(toEmail));
-            message.Subject = subject;
-
-            message.Body = new TextPart("html")
+            try
             {
-                Text = BuildEmailTemplate(subject, body)
-            };
+                var message = new MimeMessage();
 
-            using var client = new SmtpClient();
+                message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
+                message.To.Add(MailboxAddress.Parse(toEmail));
+                message.Subject = subject;
 
-            await client.ConnectAsync(
-                _settings.SmtpServer,
-                _settings.SmtpPort,
-                SecureSocketOptions.StartTls
-            );
+                message.Body = new TextPart("html")
+                {
+                    Text = BuildEmailTemplate(subject, body)
+                };
 
-            await client.AuthenticateAsync(_settings.Username, _settings.Password);
-            await client.SendAsync(message);
-            await client.DisconnectAsync(true);
+                using var client = new SmtpClient();
+
+                await client.ConnectAsync(
+                    _settings.SmtpServer,
+                    _settings.SmtpPort,
+                    SecureSocketOptions.StartTls
+                );
+
+                await client.AuthenticateAsync(_settings.Username, _settings.Password);
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Email nije poslan. Provjerite SMTP email, username i Gmail App Password.",
+                    ex
+                );
+            }
         }
+
         private string BuildEmailTemplate(string naslov, string poruka)
         {
             var safeNaslov = System.Net.WebUtility.HtmlEncode(naslov);
