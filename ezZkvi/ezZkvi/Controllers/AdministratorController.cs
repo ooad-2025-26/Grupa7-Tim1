@@ -30,7 +30,9 @@ namespace ezZkvi.Controllers
         // GET: /Administrator/Users
         public async Task<IActionResult> Users()
         {
-            var users = await _userManager.Users.ToListAsync();
+            var users = await _userManager.Users
+            .Where(u => u.EmailConfirmed)
+            .ToListAsync();
 
             var model = new List<AdminUserViewModel>();
             var aktivnostPrag = DateTime.UtcNow.AddMinutes(-5);
@@ -61,8 +63,13 @@ namespace ezZkvi.Controllers
             if (user == null)
                 return NotFound();
 
+            if (!user.EmailConfirmed)
+            {
+                TempData["Error"] = "Korisnik ne može biti odobren dok ne potvrdi email adresu.";
+                return RedirectToAction(nameof(Users));
+            }
+
             user.IsApproved = true;
-            user.EmailConfirmed = true;
 
             var result = await _userManager.UpdateAsync(user);
 
@@ -194,6 +201,12 @@ namespace ezZkvi.Controllers
             if (user == null)
                 return NotFound();
 
+            if (!user.EmailConfirmed)
+            {
+                TempData["Error"] = "Korisniku se ne može mijenjati uloga dok ne potvrdi email adresu.";
+                return RedirectToAction(nameof(Users));
+            }
+
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser != null && currentUser.Id == user.Id)
@@ -235,7 +248,7 @@ namespace ezZkvi.Controllers
         public async Task<IActionResult> Dashboard()
         {
             // Statistike (kartice)
-            ViewBag.BrojKorisnika = await _context.Users.CountAsync();
+            ViewBag.BrojKorisnika = await _context.Users.CountAsync(u => u.EmailConfirmed);
             ViewBag.BrojPitanja = await _context.Pitanje.CountAsync();
             ViewBag.BrojKvizova = await _context.KvizSesije.CountAsync();
             ViewBag.NeobradeniFeedback = await _context.Feedback
@@ -243,8 +256,8 @@ namespace ezZkvi.Controllers
 
             // Na čekanju – neodobreni korisnici
             var neodobreni = await _context.Users
-                .Where(u => !u.IsApproved)
-                .ToListAsync();
+               .Where(u => u.EmailConfirmed && !u.IsApproved)
+               .ToListAsync();
 
             ViewBag.NaCekanju = neodobreni.Select(u =>
             {

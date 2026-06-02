@@ -48,15 +48,10 @@ namespace ezZkvi.Services
 
                 using var client = new SmtpClient();
 
-                // Port 465 koristi SSL odmah, port 587 koristi StartTls
-                var secureOption = _settings.SmtpPort == 465
-                    ? SecureSocketOptions.SslOnConnect
-                    : SecureSocketOptions.StartTls;
-
                 await client.ConnectAsync(
                     _settings.SmtpServer,
                     _settings.SmtpPort,
-                    secureOption
+                    SecureSocketOptions.StartTls
                 );
 
                 await client.AuthenticateAsync(_settings.Username, _settings.Password);
@@ -104,10 +99,6 @@ namespace ezZkvi.Services
                         <p style='font-size: 14px; color: #555;'>
                             Srdačan pozdrav,<br>
                             <strong>eZkvi tim</strong>
-                        </p>
-
-                        <p style='font-size: 12px; color: #888;'>
-                            Ovo je automatska obavijest poslana putem eZkvi sistema.
                         </p>
                     </div>
                 </body>

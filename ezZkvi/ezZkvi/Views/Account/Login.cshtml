@@ -225,6 +225,13 @@
             </div>
 }
 
+@if (TempData["Error"] != null)
+{
+            <div style="padding:12px; margin-bottom:15px; border:1px solid #FF5252; color:#FF5252; border-radius:8px;">
+                @TempData["Error"]
+            </div>
+}
+
     <!-- LOGIN -->
         <div class="panel @(activeTab == "login" ? "active" : "")" id="login">
             <form asp-controller="Account" asp-action="Login" method="post">
