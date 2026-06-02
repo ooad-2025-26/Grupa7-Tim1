@@ -5,7 +5,12 @@
 
     var imaRezultat = Model.Result != null;
     var imaPitanja = Model.Questions != null && Model.Questions.Any() && !imaRezultat;
-    var totalSeconds = Model.VremenskoOgranicenjeMinuta * 60;
+
+    var totalSeconds = Model.PreostaloSekundi > 0
+        ? Model.PreostaloSekundi
+        : Model.VremenskoOgranicenjeMinuta * 60;
+
+    var pocetniIndex = Model.PocetniIndex;
 }
 
 @section Styles {
@@ -106,6 +111,49 @@
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+        }
+
+            .simulation-card + .simulation-card {
+                margin-top: 18px;
+            }
+
+        .active-session-note {
+            background: rgba(0, 229, 255, 0.06);
+            border: 1px solid rgba(0, 229, 255, 0.28);
+        }
+
+        .active-session-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 14px;
+            flex-wrap: nowrap;
+            margin-top: 18px;
+}
+
+        .active-session-time {
+            min-width: 140px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 204, 0, 0.35);
+            background: rgba(255, 204, 0, 0.08);
+            text-align: center;
+        }
+
+        .active-session-time-label {
+            color: var(--muted);
+            font-size: 0.67rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .active-session-time-value {
+            color: var(--yellow);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1;
         }
 
         .section-label {
@@ -214,6 +262,12 @@
                 color: #06101a;
                 text-decoration: none;
                 transform: translateY(-1px);
+            }
+
+            .btn-main:disabled {
+                opacity: 0.65;
+                cursor: not-allowed;
+                transform: none;
             }
 
         .btn-secondary {
@@ -394,6 +448,10 @@
                 color: #ffffff;
             }
 
+            .answer-option:has(input:disabled) {
+                cursor: default;
+            }
+
         .locked-note {
             display: none;
             margin-top: 12px;
@@ -534,6 +592,10 @@
             .btn-secondary {
                 width: 100%;
             }
+
+            .active-session-time {
+                width: 100%;
+            }
         }
 
         @@media (max-width: 520px) {
@@ -655,13 +717,13 @@
 
                 <div class="timer-box">
                     <div class="timer-label">Vrijeme</div>
-                    <div class="timer-value" id="timer" data-seconds="@totalSeconds">15:00</div>
+                    <div class="timer-value" id="timer" data-seconds="@totalSeconds">00:00</div>
                 </div>
             </div>
 
             <div class="quiz-progress">
                 <div class="progress-text">
-                    <span id="progressCurrent">Pitanje 1</span>
+                    <span id="progressCurrent">Pitanje @(pocetniIndex + 1)</span>
                     <span id="progressTotal">od @Model.Questions.Count</span>
                 </div>
 
@@ -673,6 +735,7 @@
             <form asp-controller="Student" asp-action="SubmitSimulation" method="post" id="quizForm">
                 @Html.AntiForgeryToken()
 
+                <input type="hidden" name="KvizSesijaId" id="kvizSesijaId" value="@Model.KvizSesijaId" />
                 <input type="hidden" name="PredmetId" value="@Model.PredmetId" />
                 <input type="hidden" name="StartedAtUtcTicks" value="@Model.StartedAtUtcTicks" />
                 <input type="hidden" name="TotalSeconds" value="@totalSeconds" />
@@ -681,7 +744,10 @@
                 {
                     var pitanje = Model.Questions[i];
 
-                    <div class="question-card @(i == 0 ? "active" : "")" data-question-index="@i">
+                    <div class="question-card @(i == pocetniIndex ? "active" : "") @(pitanje.JeOdgovoreno ? "answered" : "")"
+                         data-question-index="@i"
+                         data-pitanje-id="@pitanje.Id">
+
                         <input type="hidden" name="@($"Odgovori[{i}].PitanjeId")" value="@pitanje.Id" />
 
                         <div class="question-header">
@@ -689,8 +755,7 @@
                                 <div class="question-number">Pitanje @(i + 1)</div>
                                 <div class="question-text">@pitanje.TekstPitanja</div>
                             </div>
-
-                            <div class="difficulty">@pitanje.Tezina</div>
+       
                         </div>
 
                         <div class="answers">
@@ -698,12 +763,16 @@
                             {
                                 var odgovor = pitanje.Odgovori[j];
                                 var radioId = $"q{i}_a{j}";
+                                var isChecked = pitanje.OdabraniOdgovorId == odgovor.Id;
+                                var isDisabled = pitanje.JeOdgovoreno;
 
                                 <label class="answer-option" for="@radioId">
                                     <input type="radio"
                                            id="@radioId"
                                            name="@($"Odgovori[{i}].OdgovorId")"
-                                           value="@odgovor.Id" />
+                                           value="@odgovor.Id"
+                                           checked="@isChecked"
+                                           disabled="@isDisabled" />
 
                                     <span>@odgovor.Tekst</span>
                                 </label>
@@ -721,10 +790,6 @@
                 }
 
                 <div class="actions">
-                    <a asp-controller="Student" asp-action="Simulate" class="btn-secondary">
-                        Prekini simulaciju
-                    </a>
-
                     <button type="button" class="btn-main" id="nextQuestionBtn">
                         Potvrdi odgovor
                     </button>
@@ -734,6 +799,36 @@
     }
     else
     {
+        @if (Model.AktivnaSesijaId.HasValue)
+        {
+            <div class="simulation-card active-session-note">
+                <div class="section-label">Aktivna simulacija</div>
+
+                <p class="form-description">
+                    Imaš započetu simulaciju iz predmeta @Model.AktivnaSesijaPredmetNaziv.
+                    Možeš nastaviti dok vrijeme ne istekne.
+                </p>
+
+                <a asp-controller="Student"
+                   asp-action="ContinueSimulation"
+                   asp-route-kvizSesijaId="@Model.AktivnaSesijaId"
+                   class="btn-main">
+                    Nastavi kviz
+                </a>
+
+                <div class="active-session-row">
+                    <div class="active-session-time">
+                        <div class="active-session-time-label">Preostalo vrijeme</div>
+                        <div class="active-session-time-value"
+                             data-remaining-timer="@Model.PreostaloSekundi">
+                            00:00
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+
         <div class="simulation-card">
             <div class="section-label">Pokretanje simulacije</div>
 
@@ -760,10 +855,6 @@
                 </div>
 
                 <div class="actions">
-                    <a asp-controller="Student" asp-action="Dashboard" class="btn-secondary">
-                        Nazad na dashboard
-                    </a>
-
                     <button type="submit" class="btn-main">
                         Pokreni simulaciju
                     </button>
@@ -798,7 +889,7 @@
         const progressCurrent = document.getElementById('progressCurrent');
         const progressFill = document.getElementById('progressFill');
 
-        let currentQuestionIndex = 0;
+        let currentQuestionIndex = @pocetniIndex;
 
         function updateQuestionProgress() {
             if (!questionCards.length || !progressCurrent || !progressFill || !nextQuestionBtn) {
@@ -827,16 +918,56 @@
             updateQuestionProgress();
         }
 
-        if (nextQuestionBtn && quizForm && questionCards.length) {
-            updateQuestionProgress();
+        function moveToNextQuestionOrSubmit() {
+            if (currentQuestionIndex < questionCards.length - 1) {
+                currentQuestionIndex++;
+                showQuestion(currentQuestionIndex);
+                nextQuestionBtn.disabled = false;
+            } else {
+                quizForm.submit();
+            }
+        }
 
-            nextQuestionBtn.addEventListener('click', function () {
+        if (nextQuestionBtn && quizForm && questionCards.length) {
+            showQuestion(currentQuestionIndex);
+
+            nextQuestionBtn.addEventListener('click', async function () {
                 const currentCard = questionCards[currentQuestionIndex];
                 const selectedAnswer = currentCard.querySelector('input[type="radio"]:checked');
                 const errorMessage = currentCard.querySelector('.question-error');
 
+                if (currentCard.classList.contains('answered')) {
+                    moveToNextQuestionOrSubmit();
+                    return;
+                }
+
                 if (!selectedAnswer) {
+                    errorMessage.textContent = 'Moraš odabrati odgovor prije nastavka.';
                     errorMessage.style.display = 'block';
+                    return;
+                }
+
+                nextQuestionBtn.disabled = true;
+
+                const token = quizForm.querySelector('input[name="__RequestVerificationToken"]').value;
+                const kvizSesijaId = document.getElementById('kvizSesijaId').value;
+
+                const formData = new FormData();
+                formData.append('__RequestVerificationToken', token);
+                formData.append('KvizSesijaId', kvizSesijaId);
+                formData.append('PitanjeId', currentCard.dataset.pitanjeId);
+                formData.append('OdgovorId', selectedAnswer.value);
+
+                const response = await fetch('@Url.Action("SaveSimulationAnswer", "Student")', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    errorMessage.textContent = 'Odgovor nije snimljen. Vrijeme je možda isteklo.';
+                    errorMessage.style.display = 'block';
+                    nextQuestionBtn.disabled = false;
                     return;
                 }
 
@@ -844,24 +975,17 @@
                 currentCard.classList.add('answered');
 
                 currentCard.querySelectorAll('input[type="radio"]').forEach(function (radio) {
-                    if (!radio.checked) {
-                        radio.disabled = true;
-                    }
+                    radio.disabled = true;
                 });
 
-                if (currentQuestionIndex < questionCards.length - 1) {
-                    currentQuestionIndex++;
-                    showQuestion(currentQuestionIndex);
-                } else {
-                    quizForm.submit();
-                }
+                moveToNextQuestionOrSubmit();
             });
         }
 
         const timer = document.getElementById('timer');
 
         if (timer && quizForm) {
-            let remaining = parseInt(timer.dataset.seconds || '900');
+            let remaining = parseInt(timer.dataset.seconds || '600');
 
             function renderTimer() {
                 const minutes = Math.floor(remaining / 60);
@@ -886,5 +1010,35 @@
                 renderTimer();
             }, 1000);
         }
+
+        function formatRemainingTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            return minutes.toString().padStart(2, '0') + ':' +
+                seconds.toString().padStart(2, '0');
+        }
+
+        document.querySelectorAll('[data-remaining-timer]').forEach(function (timerElement) {
+            let remaining = parseInt(timerElement.dataset.remainingTimer || '0');
+
+            function renderRemainingTimer() {
+                timerElement.textContent = formatRemainingTime(Math.max(remaining, 0));
+            }
+
+            renderRemainingTimer();
+
+            const interval = setInterval(function () {
+                remaining--;
+
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    timerElement.textContent = 'Isteklo';
+                    return;
+                }
+
+                renderRemainingTimer();
+            }, 1000);
+        });
     </script>
 }

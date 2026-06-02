@@ -113,6 +113,95 @@
     margin-bottom:16px; display:flex; align-items:center; gap:8px;
   }
   .section-title::before { content:''; width:3px; height:14px; background:var(--accent); border-radius:2px; }
+  .active-quiz-banner {
+    background: rgba(0, 229, 255, 0.06);
+    border: 1px solid rgba(0, 229, 255, 0.28);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.5s ease both;
+}
+
+    .active-quiz-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .active-quiz-title {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 8px;
+    }
+
+    .active-quiz-text {
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+
+    .active-quiz-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .active-quiz-time {
+        min-width: 100px;
+        padding: 9px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 179, 0, 0.35);
+        background: rgba(255, 179, 0, 0.08);
+        text-align: center;
+    }
+
+    .active-quiz-time-label {
+        font-size: 0.65rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 2px;
+    }
+
+    .active-quiz-time-value {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--amber);
+        line-height: 1;
+    }
+
+    .active-quiz-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: 9px;
+        background: var(--accent);
+        color: var(--bg);
+        text-decoration: none;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 800;
+        font-size: 0.82rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+
+    .active-quiz-btn:hover {
+        background: #ffffff;
+        color: var(--bg);
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
 
   .action-btn {
     display:flex; align-items:center; gap:14px; padding:14px;
@@ -221,6 +310,38 @@
         </div>
       </div>
     </div>
+
+        @if (Model.ImaAktivnuSesiju)
+        {
+            <div class="active-quiz-banner">
+                <div class="active-quiz-top">
+                    <div>
+                        <div class="active-quiz-title">Aktivna simulacija</div>
+                        <div class="active-quiz-text">
+                            Imaš pokrenut kviz iz predmeta <strong>@Model.AktivnaSesijaPredmetNaziv</strong>.
+                            Kviz možeš nastaviti dok vrijeme ne istekne.
+                        </div>
+                    </div>
+
+                    <div class="active-quiz-actions">
+                        <div class="active-quiz-time">
+                            <div class="active-quiz-time-label">Preostalo</div>
+                            <div class="active-quiz-time-value"
+                                 data-remaining-timer="@Model.AktivnaSesijaPreostaloSekundi">
+                                00:00
+                            </div>
+                        </div>
+
+                        <a class="active-quiz-btn"
+                           asp-controller="Student"
+                           asp-action="ContinueSimulation"
+                           asp-route-kvizSesijaId="@Model.AktivnaSesijaId">
+                            Nastavi kviz
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
 
     <div class="stats">
       <div class="stat-card">
@@ -364,5 +485,34 @@
     document.getElementById('sidebar').classList.toggle('open');
     document.getElementById('sidebarOverlay').classList.toggle('open');
   }
+          function formatRemainingTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            return minutes.toString().padStart(2, '0') + ':' +
+                   seconds.toString().padStart(2, '0');
+        }
+
+        document.querySelectorAll('[data-remaining-timer]').forEach(function (timerElement) {
+            let remaining = parseInt(timerElement.dataset.remainingTimer || '0');
+
+            function render() {
+                timerElement.textContent = formatRemainingTime(Math.max(remaining, 0));
+            }
+
+            render();
+
+            const interval = setInterval(function () {
+                remaining--;
+
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    timerElement.textContent = 'Isteklo';
+                    return;
+                }
+
+                render();
+            }, 1000);
+        });
 </script>
 }

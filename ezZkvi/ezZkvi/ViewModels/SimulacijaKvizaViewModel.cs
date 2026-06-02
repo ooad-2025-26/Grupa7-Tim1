@@ -5,6 +5,13 @@ namespace ezZkvi.ViewModels
 {
     public class SimulacijaKvizaViewModel
     {
+        public int? KvizSesijaId { get; set; }
+
+        public int? AktivnaSesijaId { get; set; }
+        public string? AktivnaSesijaPredmetNaziv { get; set; }
+        public int PreostaloSekundi { get; set; }
+
+        public int PocetniIndex { get; set; }
         public int? PredmetId { get; set; }
         public string? PredmetNaziv { get; set; }
 
@@ -27,6 +34,9 @@ namespace ezZkvi.ViewModels
         public string TekstPitanja { get; set; } = string.Empty;
         public Tezina Tezina { get; set; }
 
+        public int? OdabraniOdgovorId { get; set; }
+        public bool JeOdgovoreno { get; set; }
+
         public List<SimulacijaOdgovorViewModel> Odgovori { get; set; } = new();
     }
 
@@ -38,6 +48,7 @@ namespace ezZkvi.ViewModels
 
     public class SimulacijaSubmitViewModel
     {
+        public int KvizSesijaId { get; set; }
         public int PredmetId { get; set; }
         public long StartedAtUtcTicks { get; set; }
         public int TotalSeconds { get; set; }
@@ -71,5 +82,11 @@ namespace ezZkvi.ViewModels
 
         public bool JeTacno { get; set; }
         public bool JeOdgovoreno { get; set; }
+    }
+    public class SaveSimulationAnswerViewModel
+    {
+        public int KvizSesijaId { get; set; }
+        public int PitanjeId { get; set; }
+        public int? OdgovorId { get; set; }
     }
 }

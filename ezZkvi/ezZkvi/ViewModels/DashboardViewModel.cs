@@ -16,6 +16,12 @@ namespace ezZkvi.ViewModels
 
         public List<NedavnaAktivnostViewModel> NedavneAktivnosti { get; set; } = new();
         public List<PredmetNapredakViewModel> MojiPredmeti { get; set; } = new();
+
+        public int? AktivnaSesijaId { get; set; }
+        public string? AktivnaSesijaPredmetNaziv { get; set; }
+        public int AktivnaSesijaPreostaloSekundi { get; set; }
+
+        public bool ImaAktivnuSesiju => AktivnaSesijaId.HasValue && AktivnaSesijaPreostaloSekundi > 0;
     }
 
     public class NedavnaAktivnostViewModel
