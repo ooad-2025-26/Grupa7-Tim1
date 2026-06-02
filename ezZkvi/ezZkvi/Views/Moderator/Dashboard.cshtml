@@ -1,3 +1,4 @@
+@using ezZkvi.Models
 @{
     ViewData["Title"] = "Moderator Panel";
 
@@ -131,84 +132,92 @@
 
     <div class="stats">
       <a class="stat clickable" asp-controller="Moderator" asp-action="Content">
-        <div class="stat-val" style="color:var(--accent)">450</div>
+        <div class="stat-val" style="color:var(--accent)">@ViewBag.BrojPitanja</div>
         <div class="stat-label">Pitanja u bazi</div>
-        <div class="stat-trend up">↑ +12 ove sedmice</div>
+        <div class="stat-trend neu">ukupno</div>
       </a>
       <div class="stat">
-        <div class="stat-val" style="color:var(--amber)">5</div>
+        <div class="stat-val" style="color:var(--amber)">@ViewBag.BrojPredmeta</div>
         <div class="stat-label">Predmeta</div>
-        <div class="stat-trend neu">→ aktivnih</div>
+        <div class="stat-trend neu">aktivnih</div>
       </div>
       <a class="stat clickable" asp-controller="Moderator" asp-action="Feedback">
-        <div class="stat-val" style="color:var(--danger)">3</div>
+        <div class="stat-val" style="color:var(--danger)">@ViewBag.NeobradeniFeedback</div>
         <div class="stat-label">Neobrađeni feedback</div>
-        <div class="stat-trend dn">↑ +3 nova</div>
+        <div class="stat-trend neu">čeka obradu</div>
       </a>
       <div class="stat">
-        <div class="stat-val" style="color:var(--success)">47</div>
-        <div class="stat-label">Obrađenih ovog mjeseca</div>
-        <div class="stat-trend up">↑ +8 ove sedmice</div>
+        <div class="stat-val" style="color:var(--success)">@ViewBag.ObradeniFeedback</div>
+        <div class="stat-label">Obrađenih feedback-a</div>
+        <div class="stat-trend neu">ukupno</div>
       </div>
     </div>
 
     <div class="row2">
       <div class="section-card">
         <div class="sec-title">Najnoviji feedback za obradu</div>
-        <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
-          <div class="fb-icon">💡</div>
-          <div class="fb-content">
-            <div class="fb-title-text">Prijedlog: «include» relacija u Use Case</div>
-            <div class="fb-meta"><span class="fb-tag tag-suggest">Prijedlog</span> · Ahmed Spahić · 11. Apr</div>
-          </div>
-        </a>
-        <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
-          <div class="fb-icon">🐛</div>
-          <div class="fb-content">
-            <div class="fb-title-text">Netačan tačan odgovor u pitanju #042</div>
-            <div class="fb-meta"><span class="fb-tag tag-report">Greška</span> · Merima Kadić · 10. Apr</div>
-          </div>
-        </a>
-        <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
-          <div class="fb-icon">💡</div>
-          <div class="fb-content">
-            <div class="fb-title-text">Prijedlog: fork() sistemski poziv UNIX</div>
-            <div class="fb-meta"><span class="fb-tag tag-suggest">Prijedlog</span> · Kenan Hodžić · 09. Apr</div>
-          </div>
-        </a>
+        @if (ViewBag.NajnovijiFeedback == null || ViewBag.NajnovijiFeedback.Count == 0)
+        {
+          <div style="color:var(--muted);font-size:0.85rem;padding:8px 0;">Nema feedbacka za obradu.</div>
+        }
+        else
+        {
+          @foreach (var f in ViewBag.NajnovijiFeedback)
+          {
+            var jePrijedlog = f.Tip == TipFeedbacka.PRIJEDLOG_PITANJA;
+            <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
+              <div class="fb-icon">@(jePrijedlog ? "💡" : "🐛")</div>
+              <div class="fb-content">
+                <div class="fb-title-text">@(f.Sadrzaj.Length > 70 ? f.Sadrzaj.Substring(0, 70) + "…" : f.Sadrzaj)</div>
+                <div class="fb-meta">
+                  <span class="fb-tag @(jePrijedlog ? "tag-suggest" : "tag-report")">@(jePrijedlog ? "Prijedlog" : "Greška")</span>
+                  · @f.Datum.ToLocalTime().ToString("dd.MM.yyyy.")
+                </div>
+              </div>
+            </a>
+          }
+        }
       </div>
 
       <div class="section-card">
         <div class="sec-title">Pitanja po predmetu</div>
-        <div class="subj-row">
-          <div><div class="subj-name">Objektno orijentisana analiza i dizajn</div><div class="subj-sub">8 oblasti</div></div>
-          <div class="subj-count">142</div>
-        </div>
-        <div class="subj-row">
-          <div><div class="subj-name">Operativni sistemi</div><div class="subj-sub">6 oblasti</div></div>
-          <div class="subj-count">98</div>
-        </div>
-        <div class="subj-row">
-          <div><div class="subj-name">Algoritmi i strukture podataka</div><div class="subj-sub">10 oblasti</div></div>
-          <div class="subj-count">210</div>
-        </div>
-        <div class="subj-row">
-          <div><div class="subj-name">Napredno softversko programiranje</div><div class="subj-sub">5 oblasti</div></div>
-          <div class="subj-count">76</div>
-        </div>
-        <div class="subj-row">
-          <div><div class="subj-name">Baze podataka</div><div class="subj-sub">4 oblasti</div></div>
-          <div class="subj-count">54</div>
-        </div>
+        @if (ViewBag.PitanjaPoPredmetu == null || ViewBag.PitanjaPoPredmetu.Count == 0)
+        {
+          <div style="color:var(--muted);font-size:0.85rem;padding:8px 0;">Još nema predmeta.</div>
+        }
+        else
+        {
+          @foreach (var p in ViewBag.PitanjaPoPredmetu)
+          {
+            <div class="subj-row">
+              <div><div class="subj-name">@p.Naziv</div></div>
+              <div class="subj-count">@p.BrojPitanja</div>
+            </div>
+          }
+        }
       </div>
     </div>
 
     <div class="section-card">
-      <div class="sec-title">Log mojih aktivnosti</div>
-      <div class="log-item"><span class="log-icon">✓</span><div><div class="log-text">Prihvaćen prijedlog pitanja <strong>"Dijagram sekvenci u UML-u"</strong></div><div class="log-time">Danas 10:42</div></div></div>
-      <div class="log-item"><span class="log-icon">✏</span><div><div class="log-text">Uređeno pitanje <strong>#142</strong> u predmetu OOAD</div><div class="log-time">Danas 09:18</div></div></div>
-      <div class="log-item"><span class="log-icon">✕</span><div><div class="log-text">Odbijen prijedlog (duplikat postojećeg pitanja)</div><div class="log-time">Jučer 16:55</div></div></div>
-      <div class="log-item"><span class="log-icon">📝</span><div><div class="log-text">Dodano <strong>3 nova pitanja</strong> u predmet OS</div><div class="log-time">Jučer 14:22</div></div></div>
+      <div class="sec-title">Nedavno obrađen feedback</div>
+      @if (ViewBag.ObradjeniFeedback == null || ViewBag.ObradjeniFeedback.Count == 0)
+      {
+        <div style="color:var(--muted);font-size:0.85rem;padding:8px 0;">Još nema obrađenog feedbacka.</div>
+      }
+      else
+      {
+        @foreach (var f in ViewBag.ObradjeniFeedback)
+        {
+          var jePrijedlog = f.Tip == TipFeedbacka.PRIJEDLOG_PITANJA;
+          <div class="log-item">
+            <span class="log-icon">@(jePrijedlog ? "💡" : "🐛")</span>
+            <div>
+              <div class="log-text">@(f.Sadrzaj.Length > 80 ? f.Sadrzaj.Substring(0, 80) + "…" : f.Sadrzaj)</div>
+              <div class="log-time">@f.Datum.ToLocalTime().ToString("dd.MM.yyyy. HH:mm")</div>
+            </div>
+          </div>
+        }
+      }
     </div>
   </main>
 </div>

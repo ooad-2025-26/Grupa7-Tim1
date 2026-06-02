@@ -310,18 +310,34 @@ namespace ezZkvi.Controllers
                 ? (int)Math.Round(sesije.Average(s => s.Procenat))
                 : 0;
 
-            // XP i nivo (10 XP po tačnom odgovoru, 100 XP po nivou)
-            var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
-            var brojTacnih = student?.BrojTacnihOdgovora ?? 0;
-
+            // XP iz stvarnih kvizova (10 XP po tačnom odgovoru)
+            var brojTacnih = sesije.Sum(s => s.BrojTacnih);
             model.XpUkupno = brojTacnih * 10;
-            model.Nivo = model.XpUkupno / 100 + 1;
-            model.XpUNivou = model.XpUkupno % 100;
 
-            // Rang među studentima (po broju tačnih odgovora)
-            model.UkupnoStudenata = await _context.Student.CountAsync();
-            model.Rang = await _context.Student
-                .CountAsync(s => s.BrojTacnihOdgovora > brojTacnih) + 1;
+            // Progresivni nivoi: svaki nivo košta 100 XP više od prethodnog
+            // (nivo 1→2 traži 100, 2→3 traži 200, 3→4 traži 300 ...)
+            var nivo = 1;
+            var preostaloXp = model.XpUkupno;
+            var cijenaNivoa = 100;
+            while (preostaloXp >= cijenaNivoa)
+            {
+                preostaloXp -= cijenaNivoa;
+                nivo++;
+                cijenaNivoa += 100;
+            }
+            model.Nivo = nivo;
+            model.XpUNivou = preostaloXp;       // bodovi unutar trenutnog nivoa
+            model.XpZaNivo = cijenaNivoa;        // koliko treba za sljedeći nivo
+
+            // Rang među studentima koji su radili kvizove (po ukupno tačnih odgovora)
+            var tacniPoStudentu = await _context.KvizSesije
+                .Where(s => s.Status == StatusSesije.ZAVRSEN && s.StudentId != null)
+                .GroupBy(s => s.StudentId!)
+                .Select(g => new { StudentId = g.Key, Tacni = g.Sum(x => x.BrojTacnih) })
+                .ToListAsync();
+
+            model.UkupnoStudenata = tacniPoStudentu.Count;
+            model.Rang = tacniPoStudentu.Count(x => x.Tacni > brojTacnih) + 1;
 
             // Nedavna aktivnost (zadnjih 5 kvizova)
             model.NedavneAktivnosti = sesije
@@ -457,38 +473,50 @@ namespace ezZkvi.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Broj završenih kvizova po studentu
-            var kvizoviPoStudentu = await _context.KvizSesije
+            // Agregiraj rezultate po studentu DIREKTNO iz završenih kvizova
+            var statistika = await _context.KvizSesije
                 .Where(s => s.Status == StatusSesije.ZAVRSEN && s.StudentId != null)
                 .GroupBy(s => s.StudentId!)
-                .Select(g => new { StudentId = g.Key, Broj = g.Count() })
-                .ToDictionaryAsync(x => x.StudentId, x => x.Broj);
+                .Select(g => new
+                {
+                    StudentId = g.Key,
+                    Kvizovi = g.Count(),
+                    UkupnoTacnih = g.Sum(x => x.BrojTacnih),
+                    UkupnoPitanja = g.Sum(x => x.TraziBrojPitanja)
+                })
+                .ToListAsync();
 
-            var studenti = await _context.Student.ToListAsync();
+            // Povuci imena (UserName) za te studente iz tabele svih korisnika
+            var ids = statistika.Select(s => s.StudentId).ToList();
+            var korisnici = await _context.Users
+                .Where(u => ids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.UserName);
 
-            var entries = studenti
+            var entries = statistika
                 .Select(s =>
                 {
-                    var ime = !string.IsNullOrEmpty(s.UserName) && s.UserName.Contains('@')
-                        ? s.UserName.Split('@')[0]
-                        : (s.UserName ?? "Student");
+                    korisnici.TryGetValue(s.StudentId, out var userName);
+
+                    var ime = !string.IsNullOrEmpty(userName) && userName.Contains('@')
+                        ? userName.Split('@')[0]
+                        : (userName ?? "Student");
 
                     var inicijali = ime.Length >= 2
                         ? ime.Substring(0, 2).ToUpper()
                         : ime.ToUpper();
 
-                    var tacnost = s.BrojOdgovorenihPitanja > 0
-                        ? (int)Math.Round((double)s.BrojTacnihOdgovora / s.BrojOdgovorenihPitanja * 100)
+                    var tacnost = s.UkupnoPitanja > 0
+                        ? (int)Math.Round((double)s.UkupnoTacnih / s.UkupnoPitanja * 100)
                         : 0;
 
                     return new LeaderboardEntryViewModel
                     {
                         Ime = ime,
                         Inicijali = inicijali,
-                        Bodovi = s.BrojTacnihOdgovora * 10,
+                        Bodovi = s.UkupnoTacnih * 10,
                         Tacnost = tacnost,
-                        Kvizovi = kvizoviPoStudentu.TryGetValue(s.Id, out var b) ? b : 0,
-                        JeTrenutni = s.Id == userId
+                        Kvizovi = s.Kvizovi,
+                        JeTrenutni = s.StudentId == userId
                     };
                 })
                 .OrderByDescending(e => e.Bodovi)

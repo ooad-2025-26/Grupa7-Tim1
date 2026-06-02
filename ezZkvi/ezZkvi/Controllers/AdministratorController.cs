@@ -232,8 +232,86 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Administrator/Dashboard
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
+            // Statistike (kartice)
+            ViewBag.BrojKorisnika = await _context.Users.CountAsync();
+            ViewBag.BrojPitanja = await _context.Pitanje.CountAsync();
+            ViewBag.BrojKvizova = await _context.KvizSesije.CountAsync();
+            ViewBag.NeobradeniFeedback = await _context.Feedback
+                .CountAsync(f => f.Status == StatusFeedbacka.NA_CEKANJU);
+
+            // Na čekanju – neodobreni korisnici
+            var neodobreni = await _context.Users
+                .Where(u => !u.IsApproved)
+                .ToListAsync();
+
+            ViewBag.NaCekanju = neodobreni.Select(u =>
+            {
+                var ime = !string.IsNullOrEmpty(u.UserName) && u.UserName.Contains('@')
+                    ? u.UserName.Split('@')[0]
+                    : (u.UserName ?? "Korisnik");
+                return new KorisnikNaCekanjuItem
+                {
+                    Id = u.Id,
+                    Ime = ime,
+                    Inicijali = ime.Length >= 2 ? ime.Substring(0, 2).ToUpper() : ime.ToUpper()
+                };
+            }).ToList();
+
+            // Najaktivniji predmeti – po broju odrađenih kvizova
+            var kvizoviPoPredmetu = await _context.KvizSesije
+                .Where(s => s.PredmetId != null)
+                .GroupBy(s => s.PredmetId!.Value)
+                .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
+                .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
+
+            var pitanjaPoPredmetu = await _context.Pitanje
+                .GroupBy(p => p.PredmetId)
+                .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
+                .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
+
+            var predmeti = await _context.Predmet.ToListAsync();
+
+            ViewBag.NajaktivnijiPredmeti = predmeti
+                .Select(p => new PredmetAktivnostItem
+                {
+                    Naziv = p.Naziv,
+                    BrojPitanja = pitanjaPoPredmetu.TryGetValue(p.Id, out var bp) ? bp : 0,
+                    BrojKvizova = kvizoviPoPredmetu.TryGetValue(p.Id, out var bk) ? bk : 0
+                })
+                .OrderByDescending(p => p.BrojKvizova)
+                .Take(5)
+                .ToList();
+
+            // Nedavna aktivnost – zadnji završeni kvizovi
+            var nedavni = await _context.KvizSesije
+                .Include(s => s.Predmet)
+                .Where(s => s.Status == StatusSesije.ZAVRSEN)
+                .OrderByDescending(s => s.DatumZavrsetka)
+                .Take(5)
+                .ToListAsync();
+
+            var ids = nedavni.Where(s => s.StudentId != null).Select(s => s.StudentId!).Distinct().ToList();
+            var imena = await _context.Users
+                .Where(u => ids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.UserName);
+
+            ViewBag.NedavniKvizovi = nedavni.Select(s =>
+            {
+                var userName = s.StudentId != null && imena.TryGetValue(s.StudentId, out var n) ? n : null;
+                var ime = !string.IsNullOrEmpty(userName) && userName.Contains('@')
+                    ? userName.Split('@')[0]
+                    : (userName ?? "Nepoznat");
+                return new KvizAktivnostItem
+                {
+                    Korisnik = ime,
+                    Predmet = s.Predmet != null ? s.Predmet.Naziv : "—",
+                    Procenat = s.Procenat,
+                    Datum = s.DatumZavrsetka
+                };
+            }).ToList();
+
             return View();
         }
 

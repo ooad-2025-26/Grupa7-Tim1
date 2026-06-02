@@ -127,24 +127,24 @@
 
     <div class="stats">
       <a class="stat" asp-controller="Administrator" asp-action="Users">
-        <div class="stat-val" style="color:var(--accent)">143</div>
+        <div class="stat-val" style="color:var(--accent)">@ViewBag.BrojKorisnika</div>
         <div class="stat-label">Korisnika</div>
-        <div class="stat-trend up">↑ 138 aktivnih</div>
+        <div class="stat-trend neu">ukupno registrovanih</div>
       </a>
       <a class="stat" asp-controller="Moderator" asp-action="Content">
-        <div class="stat-val" style="color:var(--amber)">450</div>
+        <div class="stat-val" style="color:var(--amber)">@ViewBag.BrojPitanja</div>
         <div class="stat-label">Pitanja u bazi</div>
-        <div class="stat-trend up">↑ +12 novih</div>
+        <div class="stat-trend neu">ukupno</div>
       </a>
       <div class="stat" style="cursor:default">
-        <div class="stat-val" style="color:var(--success)">1240</div>
+        <div class="stat-val" style="color:var(--success)">@ViewBag.BrojKvizova</div>
         <div class="stat-label">Kvizova završeno</div>
-        <div class="stat-trend up">↑ 87 ove sedmice</div>
+        <div class="stat-trend neu">ukupno</div>
       </div>
       <a class="stat" asp-controller="Moderator" asp-action="Feedback">
-        <div class="stat-val" style="color:var(--danger)">3</div>
+        <div class="stat-val" style="color:var(--danger)">@ViewBag.NeobradeniFeedback</div>
         <div class="stat-label">Neobrađeni feedback</div>
-        <div class="stat-trend dn">↑ +3 nova</div>
+        <div class="stat-trend neu">čeka obradu</div>
       </a>
     </div>
 
@@ -153,56 +153,71 @@
       <div class="section-card">
         <div class="sec-title">Na čekanju – Odobrenje naloga</div>
         <div id="pendingList">
-          <div class="pend-item" id="pend1">
-            <div class="av-sm">NK</div>
-            <div><div style="font-size:0.88rem;font-weight:600">Nedžad Kurtović</div><div style="font-size:0.75rem;color:var(--muted)">09. Apr 2026</div></div>
-            <div class="pend-actions">
-              <button class="pa-btn pa-ok" onclick="approvePending('pend1')">✓</button>
-              <button class="pa-btn pa-no" onclick="rejectPending('pend1')">✕</button>
-            </div>
-          </div>
-          <div class="pend-item" id="pend2">
-            <div class="av-sm">MB</div>
-            <div><div style="font-size:0.88rem;font-weight:600">Mirza Bašić</div><div style="font-size:0.75rem;color:var(--muted)">08. Apr 2026</div></div>
-            <div class="pend-actions">
-              <button class="pa-btn pa-ok" onclick="approvePending('pend2')">✓</button>
-              <button class="pa-btn pa-no" onclick="rejectPending('pend2')">✕</button>
-            </div>
-          </div>
-          <div class="pend-item" id="pend3">
-            <div class="av-sm">LH</div>
-            <div><div style="font-size:0.88rem;font-weight:600">Lamija Habibović</div><div style="font-size:0.75rem;color:var(--muted)">07. Apr 2026</div></div>
-            <div class="pend-actions">
-              <button class="pa-btn pa-ok" onclick="approvePending('pend3')">✓</button>
-              <button class="pa-btn pa-no" onclick="rejectPending('pend3')">✕</button>
-            </div>
-          </div>
+          @if (ViewBag.NaCekanju == null || ViewBag.NaCekanju.Count == 0)
+          {
+            <div style="color:var(--muted);font-size:0.85rem;padding:8px 0;">Nema korisnika na čekanju.</div>
+          }
+          else
+          {
+            @foreach (var k in ViewBag.NaCekanju)
+            {
+              <div class="pend-item">
+                <div class="av-sm">@k.Inicijali</div>
+                <div><div style="font-size:0.88rem;font-weight:600">@k.Ime</div><div style="font-size:0.75rem;color:var(--muted)">Čeka odobrenje</div></div>
+                <div class="pend-actions">
+                  <form asp-controller="Administrator" asp-action="ApproveUser" asp-route-id="@k.Id" method="post" style="display:inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="pa-btn pa-ok">✓</button>
+                  </form>
+                  <form asp-controller="Administrator" asp-action="RejectUser" asp-route-id="@k.Id" method="post" style="display:inline" onsubmit="return confirm('Odbiti i obrisati ovaj nalog?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="pa-btn pa-no">✕</button>
+                  </form>
+                </div>
+              </div>
+            }
+          }
         </div>
       </div>
 
       <div class="section-card">
         <div class="sec-title">Najaktivniji predmeti</div>
-        <div class="item-row">
-          <div><div class="item-name">OOAD</div><div class="item-sub">142 pitanja · 8 oblasti</div></div>
-          <div class="item-val">412 kvizova</div>
-        </div>
-        <div class="item-row">
-          <div><div class="item-name">Operativni sistemi</div><div class="item-sub">98 pitanja · 6 oblasti</div></div>
-          <div class="item-val">287 kvizova</div>
-        </div>
-        <div class="item-row">
-          <div><div class="item-name">Algoritmi i strukture podataka</div><div class="item-sub">210 pitanja · 10 oblasti</div></div>
-          <div class="item-val">541 kvizova</div>
-        </div>
+        @if (ViewBag.NajaktivnijiPredmeti == null || ViewBag.NajaktivnijiPredmeti.Count == 0)
+        {
+          <div style="color:var(--muted);font-size:0.85rem;padding:8px 0;">Još nema predmeta.</div>
+        }
+        else
+        {
+          @foreach (var p in ViewBag.NajaktivnijiPredmeti)
+          {
+            <div class="item-row">
+              <div><div class="item-name">@p.Naziv</div><div class="item-sub">@p.BrojPitanja pitanja</div></div>
+              <div class="item-val">@p.BrojKvizova kvizova</div>
+            </div>
+          }
+        }
       </div>
     </div>
 
     <div class="section-card">
-      <div class="sec-title">Log aktivnosti</div>
-      <div class="log-item"><span class="log-icon">👤</span><div><div class="log-text">Korisniku <strong>Amila Duraković</strong> dodijeljena uloga <span style="color:var(--amber)">Moderator</span></div><div class="log-time">Danas 08:14</div></div></div>
-      <div class="log-item"><span class="log-icon">📧</span><div><div class="log-text">Obavijest poslana svim korisnicima: <strong>"Nova pitanja – OOAD oblast SU"</strong></div><div class="log-time">Jučer 16:30</div></div></div>
-      <div class="log-item"><span class="log-icon">✓</span><div><div class="log-text">Nalog studenta <strong>Kenan Hodžić</strong> odobren</div><div class="log-time">Jučer 11:05</div></div></div>
-      <div class="log-item"><span class="log-icon">📝</span><div><div class="log-text">Dodano <strong>12 novih pitanja</strong> u predmet OS</div><div class="log-time">09. Apr, 14:22</div></div></div>
+      <div class="sec-title">Nedavna aktivnost</div>
+      @if (ViewBag.NedavniKvizovi == null || ViewBag.NedavniKvizovi.Count == 0)
+      {
+        <div style="color:var(--muted);font-size:0.85rem;padding:8px 0;">Još nema završenih kvizova.</div>
+      }
+      else
+      {
+        @foreach (var a in ViewBag.NedavniKvizovi)
+        {
+          <div class="log-item">
+            <span class="log-icon">📝</span>
+            <div>
+              <div class="log-text"><strong>@a.Korisnik</strong> završio kviz iz <strong>@a.Predmet</strong> — @a.Procenat%</div>
+              <div class="log-time">@a.Datum.ToLocalTime().ToString("dd.MM.yyyy. HH:mm")</div>
+            </div>
+          </div>
+        }
+      }
     </div>
   </main>
 </div>

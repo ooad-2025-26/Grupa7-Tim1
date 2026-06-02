@@ -1,5 +1,6 @@
 using ezZkvi.Data;
 using ezZkvi.Models;
+using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -18,8 +19,61 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Moderator/Dashboard
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
+            // Statistike (kartice)
+            ViewBag.BrojPitanja = await _context.Pitanje.CountAsync();
+            ViewBag.BrojPredmeta = await _context.Predmet.CountAsync();
+            ViewBag.NeobradeniFeedback = await _context.Feedback
+                .CountAsync(f => f.Status == StatusFeedbacka.NA_CEKANJU);
+            ViewBag.ObradeniFeedback = await _context.Feedback
+                .CountAsync(f => f.Status != StatusFeedbacka.NA_CEKANJU);
+
+            // Najnoviji feedback za obradu
+            ViewBag.NajnovijiFeedback = (await _context.Feedback
+                .Where(f => f.Status == StatusFeedbacka.NA_CEKANJU)
+                .OrderByDescending(f => f.DatumSlanja)
+                .Take(5)
+                .ToListAsync())
+                .Select(f => new FeedbackItem
+                {
+                    Sadrzaj = f.Sadrzaj,
+                    Tip = f.TipFeedbacka,
+                    Datum = f.DatumSlanja
+                })
+                .ToList();
+
+            // Pitanja po predmetu
+            var pitanjaPoPredmetu = await _context.Pitanje
+                .GroupBy(p => p.PredmetId)
+                .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
+                .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
+
+            var predmeti = await _context.Predmet.ToListAsync();
+
+            ViewBag.PitanjaPoPredmetu = predmeti
+                .Select(p => new PredmetAktivnostItem
+                {
+                    Naziv = p.Naziv,
+                    BrojPitanja = pitanjaPoPredmetu.TryGetValue(p.Id, out var b) ? b : 0
+                })
+                .OrderByDescending(p => p.BrojPitanja)
+                .ToList();
+
+            // Nedavno obrađeni feedback (zamjena za log)
+            ViewBag.ObradjeniFeedback = (await _context.Feedback
+                .Where(f => f.Status != StatusFeedbacka.NA_CEKANJU)
+                .OrderByDescending(f => f.DatumSlanja)
+                .Take(5)
+                .ToListAsync())
+                .Select(f => new FeedbackItem
+                {
+                    Sadrzaj = f.Sadrzaj,
+                    Tip = f.TipFeedbacka,
+                    Datum = f.DatumSlanja
+                })
+                .ToList();
+
             return View();
         }
 

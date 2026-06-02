@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ezZkvi.Data;
 using ezZkvi.Models;
 
 namespace ezZkvi.Controllers
@@ -9,14 +11,21 @@ namespace ezZkvi.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            ViewBag.BrojKorisnika = await _context.Users.CountAsync();
+            ViewBag.BrojPitanja = await _context.Pitanje.CountAsync();
+            ViewBag.BrojKvizova = await _context.KvizSesije.CountAsync();
+            ViewBag.BrojPredmeta = await _context.Predmet.CountAsync();
+
             return View();
         }
 
