@@ -105,10 +105,6 @@ namespace ezZkvi.Services
                             Srdačan pozdrav,<br>
                             <strong>eZkvi tim</strong>
                         </p>
-
-                        <p style='font-size: 12px; color: #888;'>
-                            Ovo je automatska obavijest poslana putem eZkvi sistema.
-                        </p>
                     </div>
                 </body>
                 </html>";

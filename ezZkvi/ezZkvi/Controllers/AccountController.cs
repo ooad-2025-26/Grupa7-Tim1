@@ -3,6 +3,9 @@ using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using ezZkvi.Services;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
 
 namespace ezZkvi.Controllers
 {
@@ -11,12 +14,14 @@ namespace ezZkvi.Controllers
     {
         private readonly SignInManager<Korisnik> _signInManager;
         private readonly UserManager<Korisnik> _userManager;
+        private readonly IEmailService _emailService;
 
-        public AccountController(SignInManager<Korisnik> signInManager,
-                                 UserManager<Korisnik> userManager)
+        public AccountController(SignInManager<Korisnik> signInManager, UserManager<Korisnik> userManager,
+        IEmailService emailService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _emailService = emailService;
         }
 
         // GET: /Account/Login
@@ -36,6 +41,12 @@ namespace ezZkvi.Controllers
             if (user == null)
             {
                 ModelState.AddModelError("", "Pogrešan email ili lozinka.");
+                return View(model);
+            }
+
+            if (!user.EmailConfirmed)
+            {
+                ModelState.AddModelError("", "Morate potvrditi email adresu prije prijave.");
                 return View(model);
             }
 
@@ -86,9 +97,18 @@ namespace ezZkvi.Controllers
             if (!ModelState.IsValid)
                 return View("Login", model);
 
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
+
+            if (existingUser != null)
+            {
+                ModelState.AddModelError("", "Korisnik sa ovom email adresom već postoji.");
+                return View("Login", model);
+            }
+
             var baseUsername = model.Email.Split('@')[0];
             var username = baseUsername;
             int suffix = 1;
+
             while (await _userManager.FindByNameAsync(username) != null)
             {
                 username = baseUsername + suffix;
@@ -99,26 +119,118 @@ namespace ezZkvi.Controllers
             {
                 UserName = username,
                 Email = model.Email,
-                EmailConfirmed = true,
+                EmailConfirmed = false,
                 IsApproved = false
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
 
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(user, "Student");
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
 
-                TempData["Message"] = $"Registracija je uspješna. Vaš username je '{username}'. Nalog čeka odobrenje administratora.";
+                return View("Login", model);
+            }
+
+            var roleResult = await _userManager.AddToRoleAsync(user, "Student");
+
+            if (!roleResult.Succeeded)
+            {
+                await _userManager.DeleteAsync(user);
+
+                foreach (var error in roleResult.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+
+                return View("Login", model);
+            }
+
+            try
+            {
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+                var confirmationUrl = Url.Action(
+                    "ConfirmEmail",
+                    "Account",
+                    new
+                    {
+                        userId = user.Id,
+                        token = encodedToken
+                    },
+                    Request.Scheme
+                );
+
+                if (string.IsNullOrWhiteSpace(confirmationUrl))
+                {
+                    throw new InvalidOperationException("Verifikacijski link nije mogao biti kreiran.");
+                }
+
+                var subject = "Potvrda email adrese za eZkvi";
+
+                var body = $@"
+                            Poštovani,
+
+                            Za završetak registracije potvrdite svoju email adresu putem ovog linka:
+
+                            {confirmationUrl}
+
+                            Nakon potvrde emaila, vaš nalog će biti poslan administratoru na odobrenje.";
+
+                await _emailService.SendEmailAsync(user.Email, subject, body);
+
+                TempData["Message"] = "Registracija je uspješna. Provjerite email i potvrdite adresu. Nakon potvrde nalog ide administratoru na odobrenje.";
                 return RedirectToAction("Login", "Account");
             }
-
-            foreach (var error in result.Errors)
+            catch (Exception ex)
             {
-                ModelState.AddModelError("", error.Description);
+                await _userManager.DeleteAsync(user);
+
+                Console.WriteLine("EMAIL VERIFICATION ERROR: " + ex.ToString());
+
+                ModelState.AddModelError("", "Registracija nije završena jer verifikacijski email nije poslan. Pokušajte ponovo kasnije.");
+                return View("Login", model);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+            {
+                TempData["Error"] = "Verifikacijski link nije ispravan.";
+                return RedirectToAction("Login");
             }
 
-            return View("Login", model);
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                TempData["Error"] = "Korisnik nije pronađen.";
+                return RedirectToAction("Login");
+            }
+
+            if (user.EmailConfirmed)
+            {
+                TempData["Message"] = "Email adresa je već potvrđena. Nalog čeka odobrenje administratora.";
+                return RedirectToAction("Login");
+            }
+
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = "Email nije potvrđen. Link nije ispravan ili je istekao.";
+                return RedirectToAction("Login");
+            }
+
+            TempData["Message"] = "Email adresa je potvrđena. Nalog sada čeka odobrenje administratora.";
+            return RedirectToAction("Login");
         }
 
         // POST: /Account/Logout
