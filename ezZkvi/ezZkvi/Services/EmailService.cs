@@ -48,15 +48,10 @@ namespace ezZkvi.Services
 
                 using var client = new SmtpClient();
 
-                // Port 465 koristi SSL odmah, port 587 koristi StartTls
-                var secureOption = _settings.SmtpPort == 465
-                    ? SecureSocketOptions.SslOnConnect
-                    : SecureSocketOptions.StartTls;
-
                 await client.ConnectAsync(
                     _settings.SmtpServer,
                     _settings.SmtpPort,
-                    secureOption
+                    SecureSocketOptions.StartTls
                 );
 
                 await client.AuthenticateAsync(_settings.Username, _settings.Password);
