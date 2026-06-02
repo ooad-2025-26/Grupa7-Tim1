@@ -453,9 +453,49 @@ namespace ezZkvi.Controllers
 
 
         // GET: /Student/Leaderboard
-        public IActionResult Leaderboard()
+        public async Task<IActionResult> Leaderboard()
         {
-            return View();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Broj završenih kvizova po studentu
+            var kvizoviPoStudentu = await _context.KvizSesije
+                .Where(s => s.Status == StatusSesije.ZAVRSEN && s.StudentId != null)
+                .GroupBy(s => s.StudentId!)
+                .Select(g => new { StudentId = g.Key, Broj = g.Count() })
+                .ToDictionaryAsync(x => x.StudentId, x => x.Broj);
+
+            var studenti = await _context.Student.ToListAsync();
+
+            var entries = studenti
+                .Select(s =>
+                {
+                    var ime = !string.IsNullOrEmpty(s.UserName) && s.UserName.Contains('@')
+                        ? s.UserName.Split('@')[0]
+                        : (s.UserName ?? "Student");
+
+                    var inicijali = ime.Length >= 2
+                        ? ime.Substring(0, 2).ToUpper()
+                        : ime.ToUpper();
+
+                    var tacnost = s.BrojOdgovorenihPitanja > 0
+                        ? (int)Math.Round((double)s.BrojTacnihOdgovora / s.BrojOdgovorenihPitanja * 100)
+                        : 0;
+
+                    return new LeaderboardEntryViewModel
+                    {
+                        Ime = ime,
+                        Inicijali = inicijali,
+                        Bodovi = s.BrojTacnihOdgovora * 10,
+                        Tacnost = tacnost,
+                        Kvizovi = kvizoviPoStudentu.TryGetValue(s.Id, out var b) ? b : 0,
+                        JeTrenutni = s.Id == userId
+                    };
+                })
+                .OrderByDescending(e => e.Bodovi)
+                .ThenByDescending(e => e.Tacnost)
+                .ToList();
+
+            return View(new LeaderboardViewModel { Entries = entries });
         }
 
         // GET: Student
