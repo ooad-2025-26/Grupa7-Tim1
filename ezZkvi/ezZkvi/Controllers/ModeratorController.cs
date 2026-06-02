@@ -111,9 +111,48 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Moderator/Feedback
-        public IActionResult Feedback()
+        public async Task<IActionResult> Feedback()
         {
-            return View();
+            var sviFeedback = await _context.Feedback
+                .OrderByDescending(f => f.DatumSlanja)
+                .ToListAsync();
+
+            ViewBag.Neobradjenih = sviFeedback.Count(f => f.Status == StatusFeedbacka.NA_CEKANJU);
+            ViewBag.Obradjenih = sviFeedback.Count(f => f.Status != StatusFeedbacka.NA_CEKANJU);
+            ViewBag.Prijedloga = sviFeedback.Count(f => f.TipFeedbacka == TipFeedbacka.PRIJEDLOG_PITANJA);
+            ViewBag.PrijavaGresaka = sviFeedback.Count(f => f.TipFeedbacka == TipFeedbacka.PRIJAVA_GRESKE);
+
+            return View(sviFeedback);
+        }
+
+        // POST: /Moderator/PrihvatiFeedback/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PrihvatiFeedback(int id)
+        {
+            var fb = await _context.Feedback.FindAsync(id);
+            if (fb != null)
+            {
+                fb.Status = StatusFeedbacka.ODOBREN;
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Feedback je prihvaćen.";
+            }
+            return RedirectToAction(nameof(Feedback));
+        }
+
+        // POST: /Moderator/OdbijFeedback/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OdbijFeedback(int id)
+        {
+            var fb = await _context.Feedback.FindAsync(id);
+            if (fb != null)
+            {
+                fb.Status = StatusFeedbacka.ODBIJEN;
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Feedback je odbijen.";
+            }
+            return RedirectToAction(nameof(Feedback));
         }
 
         // GET: Moderator

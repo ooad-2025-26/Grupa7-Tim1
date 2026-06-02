@@ -1,3 +1,5 @@
+@using ezZkvi.Models
+@model IEnumerable<ezZkvi.Models.Feedback>
 @{
     ViewData["Title"] = "Pregled feedbacka";
 }
@@ -92,10 +94,10 @@
 </div>
 
 <div class="stats">
-  <div class="stat"><div class="stat-val" style="color:var(--accent)" id="statNew">3</div><div class="stat-label">Neobrađenih</div></div>
-  <div class="stat"><div class="stat-val" style="color:var(--success)" id="statDone">1</div><div class="stat-label">Obrađenih</div></div>
-  <div class="stat"><div class="stat-val" style="color:var(--amber)">2</div><div class="stat-label">Prijedloga</div></div>
-  <div class="stat"><div class="stat-val" style="color:var(--danger)">2</div><div class="stat-label">Prijava grešaka</div></div>
+  <div class="stat"><div class="stat-val" style="color:var(--accent)">@ViewBag.Neobradjenih</div><div class="stat-label">Neobrađenih</div></div>
+  <div class="stat"><div class="stat-val" style="color:var(--success)">@ViewBag.Obradjenih</div><div class="stat-label">Obrađenih</div></div>
+  <div class="stat"><div class="stat-val" style="color:var(--amber)">@ViewBag.Prijedloga</div><div class="stat-label">Prijedloga</div></div>
+  <div class="stat"><div class="stat-val" style="color:var(--danger)">@ViewBag.PrijavaGresaka</div><div class="stat-label">Prijava grešaka</div></div>
 </div>
 
 <div class="toolbar">
@@ -108,104 +110,55 @@
 
 <div class="feed-list" id="feedList">
 
-  <div class="feed-card" id="fc1" data-type="suggest" data-status="new">
-    <div class="feed-header">
-      <div class="feed-meta">
-        <span class="feed-type type-suggest">💡 Prijedlog pitanja</span>
-        <span class="feed-user">Ahmed Spahić</span>
-        <span class="id-tag">#FB-089</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="feed-date">11. Apr 2026, 09:22</span>
-        <span class="feed-status status-new">Novo</span>
-      </div>
-    </div>
-    <span class="feed-subject">OOAD · Slučajevi upotrebe</span>
-    <div class="q-preview">
-      <div class="q-preview-text">Šta «include» relacija u Use Case dijagramu znači?</div>
-      <div class="q-opts">
-        <div class="q-opt">A. Opciona funkcionalnost</div>
-        <div class="q-opt correct">B. Obavezna funkcionalnost ✓</div>
-        <div class="q-opt">C. Nasljeđivanje aktera</div>
-        <div class="q-opt">D. Proširenje toka</div>
-      </div>
-    </div>
-    <div class="feed-actions">
-      <button class="act-btn accept" onclick="processFeed('fc1','accept')">✓ Prihvati pitanje</button>
-      <button class="act-btn reject" onclick="processFeed('fc1','reject')">✕ Odbij</button>
-      <button class="act-btn">✏ Uredi pa prihvati</button>
-    </div>
-  </div>
+  @if (Model == null || !Model.Any())
+  {
+    <div class="feed-card" style="text-align:center;color:var(--muted)">Još nema feedbacka.</div>
+  }
+  else
+  {
+    @foreach (var f in Model)
+    {
+      var jePrijedlog = f.TipFeedbacka == TipFeedbacka.PRIJEDLOG_PITANJA;
+      var jeNovo = f.Status == StatusFeedbacka.NA_CEKANJU;
+      var statusKlasa = jeNovo ? "status-new" : (f.Status == StatusFeedbacka.ODOBREN ? "status-done" : "status-rejected");
+      var statusText = jeNovo ? "Novo" : (f.Status == StatusFeedbacka.ODOBREN ? "Prihvaćeno" : "Odbijeno");
 
-  <div class="feed-card" id="fc2" data-type="report" data-status="new">
-    <div class="feed-header">
-      <div class="feed-meta">
-        <span class="feed-type type-report">🐛 Prijava greške</span>
-        <span class="feed-user">Merima Kadić</span>
-        <span class="id-tag">#FB-088</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="feed-date">10. Apr 2026, 18:45</span>
-        <span class="feed-status status-new">Novo</span>
-      </div>
-    </div>
-    <span class="feed-subject">Simulacija kviza · OOAD</span>
-    <div class="feed-title">Netačan tačan odgovor u pitanju #042</div>
-    <div class="feed-content">U pitanju o dijagramima stanja, sistem označava odgovor C kao tačan, ali prema predavanjima profesora odgovor bi trebao biti B. Priložena je slika sa screenshotom.</div>
-    <div class="feed-actions">
-      <button class="act-btn accept" onclick="processFeed('fc2','done')">✓ Označi kao obrađeno</button>
-      <button class="act-btn">Pogledaj pitanje</button>
-      <button class="act-btn reject" onclick="processFeed('fc2','reject')">✕ Odbaci</button>
-    </div>
-  </div>
+      <div class="feed-card @(jeNovo ? "" : "processed")" data-type="@(jePrijedlog ? "suggest" : "report")" data-status="@(jeNovo ? "new" : "done")">
+        <div class="feed-header">
+          <div class="feed-meta">
+            <span class="feed-type @(jePrijedlog ? "type-suggest" : "type-report")">@(jePrijedlog ? "💡 Prijedlog pitanja" : "🐛 Prijava greške")</span>
+            <span class="id-tag">#FB-@f.ID</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="feed-date">@f.DatumSlanja.ToLocalTime().ToString("dd.MM.yyyy. HH:mm")</span>
+            <span class="feed-status @statusKlasa">@statusText</span>
+          </div>
+        </div>
 
-  <div class="feed-card" id="fc3" data-type="suggest" data-status="new">
-    <div class="feed-header">
-      <div class="feed-meta">
-        <span class="feed-type type-suggest">💡 Prijedlog pitanja</span>
-        <span class="feed-user">Kenan Hodžić</span>
-        <span class="id-tag">#FB-087</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="feed-date">09. Apr 2026, 14:30</span>
-        <span class="feed-status status-new">Novo</span>
-      </div>
-    </div>
-    <span class="feed-subject">OS · Procesi i niti</span>
-    <div class="q-preview">
-      <div class="q-preview-text">Koji sistemski poziv u UNIX-u kreira novi proces?</div>
-      <div class="q-opts">
-        <div class="q-opt">A. exec()</div>
-        <div class="q-opt correct">B. fork() ✓</div>
-        <div class="q-opt">C. spawn()</div>
-        <div class="q-opt">D. create()</div>
-      </div>
-    </div>
-    <div class="feed-actions">
-      <button class="act-btn accept" onclick="processFeed('fc3','accept')">✓ Prihvati pitanje</button>
-      <button class="act-btn reject" onclick="processFeed('fc3','reject')">✕ Odbij</button>
-    </div>
-  </div>
+        <div class="feed-content">@f.Sadrzaj</div>
 
-  <div class="feed-card processed" id="fc4" data-type="report" data-status="done">
-    <div class="feed-header">
-      <div class="feed-meta">
-        <span class="feed-type type-report">🐛 Prijava greške</span>
-        <span class="feed-user">Selma Bajrić</span>
-        <span class="id-tag">#FB-086</span>
+        @if (jeNovo)
+        {
+          <div class="feed-actions">
+            <form asp-controller="Moderator" asp-action="PrihvatiFeedback" asp-route-id="@f.ID" method="post" style="display:inline">
+              @Html.AntiForgeryToken()
+              <button type="submit" class="act-btn accept">✓ Prihvati</button>
+            </form>
+            <form asp-controller="Moderator" asp-action="OdbijFeedback" asp-route-id="@f.ID" method="post" style="display:inline">
+              @Html.AntiForgeryToken()
+              <button type="submit" class="act-btn reject">✕ Odbij</button>
+            </form>
+          </div>
+        }
+        else
+        {
+          <div class="feed-actions">
+            <button class="act-btn done" disabled>@statusText</button>
+          </div>
+        }
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="feed-date">08. Apr 2026, 11:15</span>
-        <span class="feed-status status-done">Obrađeno</span>
-      </div>
-    </div>
-    <span class="feed-subject">Priprema za kviz · ASP</span>
-    <div class="feed-title">Greška u prikazu pitanja na mobilnom</div>
-    <div class="feed-content">Tekst pitanja se preklapa sa ponuđenim odgovorima na manjim ekranima. Problem je riješen u zadnjem deployu.</div>
-    <div class="feed-actions">
-      <button class="act-btn done" disabled>✓ Obrađeno</button>
-    </div>
-  </div>
+    }
+  }
 
 </div>
 
@@ -220,39 +173,12 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  function processFeed(cardId, action) {
-    const card = document.getElementById(cardId);
-    if (!card) return;
-    const statusTag = card.querySelector('.feed-status');
-    const actionsDiv = card.querySelector('.feed-actions');
-
-    if (action === 'reject') {
-      card.classList.add('fade-out');
-      setTimeout(() => { card.remove(); updateStats(); }, 300);
-      showToast('Feedback odbijen', 'error');
-    } else {
-      // accept ili done -> oznaci kao obradjeno
-      card.classList.add('processed');
-      card.setAttribute('data-status', 'done');
-      statusTag.className = 'feed-status status-done';
-      statusTag.textContent = 'Obrađeno';
-      actionsDiv.innerHTML = '<button class="act-btn done" disabled>✓ Obrađeno</button>';
-      updateStats();
-      showToast(action === 'accept' ? 'Pitanje prihvaćeno!' : 'Označeno kao obrađeno', 'success');
-    }
-  }
-
-  function updateStats() {
-    const cards = document.querySelectorAll('.feed-card');
-    let newCount = 0, doneCount = 0;
-    cards.forEach(c => {
-      const s = c.getAttribute('data-status');
-      if (s === 'new') newCount++;
-      else doneCount++;
-    });
-    document.getElementById('statNew').textContent = newCount;
-    document.getElementById('statDone').textContent = doneCount;
-  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var poruka = '@(TempData["Success"])';
+    var greska = '@(TempData["Error"])';
+    if (poruka) showToast(poruka, 'success');
+    if (greska) showToast(greska, 'error');
+  });
 
   function filterFeed() {
     const q = document.getElementById('feedSearch').value.toLowerCase();
