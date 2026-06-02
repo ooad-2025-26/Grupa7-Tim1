@@ -647,7 +647,7 @@
             <input type="text" placeholder="Pretraži predmete...">
         </div>
 
-        <button type="button" class="btn-add" onclick="showToast('Funkcionalnost u razvoju', 'success')">
+        <button type="button" class="btn-add" onclick="openSubjectModal()">
             + Novi predmet
         </button>
     </div>
@@ -775,6 +775,29 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="subjectModal">
+    <div class="modal">
+        <div class="modal-title">
+            Novi predmet
+            <button type="button" class="modal-close" onclick="closeSubjectModal()">×</button>
+        </div>
+
+        <form asp-controller="Predmet" asp-action="CreateFromContent" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label>Naziv predmeta</label>
+                <input name="Naziv" class="form-control-dark" placeholder="npr. Operativni sistemi" required />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeSubjectModal()">Otkaži</button>
+                <button type="submit" class="btn-save">Sačuvaj predmet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="toast"
      id="toast"
      data-success="@TempData["Success"]"
@@ -806,6 +829,20 @@
         document.getElementById('questionModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeQuestionModal();
+            }
+        });
+
+        function openSubjectModal() {
+            document.getElementById('subjectModal').classList.add('open');
+        }
+
+        function closeSubjectModal() {
+            document.getElementById('subjectModal').classList.remove('open');
+        }
+
+        document.getElementById('subjectModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeSubjectModal();
             }
         });
 

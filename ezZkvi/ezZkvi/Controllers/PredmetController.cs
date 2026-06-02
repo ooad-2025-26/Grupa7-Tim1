@@ -60,6 +60,24 @@ namespace ezZkvi.Controllers
             return View(predmet);
         }
 
+        // POST: Predmet/CreateFromContent
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFromContent([Bind("Naziv")] Predmet predmet)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Predmet nije sačuvan. Provjerite naziv.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            _context.Add(predmet);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Predmet je uspješno dodan.";
+            return RedirectToAction("Content", "Moderator");
+        }
+
         // GET: Predmet/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {

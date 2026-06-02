@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ezZkvi.Models
 {
@@ -17,5 +17,19 @@ namespace ezZkvi.Models
 
         [EnumDataType(typeof(StatusSesije), ErrorMessage = "Neispravna vrijednost statusa.")]
         public StatusSesije Status { get; set; }
+
+        // Ko je radio kviz (ID prijavljenog studenta)
+        public string? StudentId { get; set; }
+
+        // Iz kojeg predmeta je bio kviz
+        public int? PredmetId { get; set; }
+        public Predmet? Predmet { get; set; }
+
+        // Rezultat
+        public int BrojTacnih { get; set; }
+        public int Procenat { get; set; }
+
+        // Kada je kviz završen (UTC)
+        public DateTime DatumZavrsetka { get; set; }
     }
 }

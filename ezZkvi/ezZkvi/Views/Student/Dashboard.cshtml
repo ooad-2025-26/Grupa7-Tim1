@@ -1,3 +1,4 @@
+@model ezZkvi.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
 
@@ -7,6 +8,9 @@
 
     var userName = User.Identity?.Name ?? "Korisnik";
     var initials = userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : userName.ToUpper();
+
+    // Procenat napunjenosti XP trake za trenutni nivo
+    var xpPostotak = Model.XpZaNivo > 0 ? Model.XpUNivou * 100 / Model.XpZaNivo : 0;
 }
 
 @section Styles {
@@ -221,25 +225,39 @@
     <div class="stats">
       <div class="stat-card">
         <div class="stat-label">Kvizovi završeni</div>
-        <div class="stat-val a">0</div>
-        <div class="stat-trend trend-up">Započni prvi kviz!</div>
+        <div class="stat-val a">@Model.KvizoviZavrseni</div>
+        @if (Model.KvizoviZavrseni == 0)
+        {
+          <div class="stat-trend trend-up">Započni prvi kviz!</div>
+        }
+        else
+        {
+          <div class="stat-sub">Svaka čast, samo nastavi!</div>
+        }
       </div>
       <div class="stat-card">
         <div class="stat-label">Prosječan rezultat</div>
-        <div class="stat-val b">0%</div>
-        <div class="stat-sub">Još nema rezultata</div>
+        <div class="stat-val b">@Model.ProsjecanRezultat%</div>
+        @if (Model.KvizoviZavrseni == 0)
+        {
+          <div class="stat-sub">Još nema rezultata</div>
+        }
+        else
+        {
+          <div class="stat-sub">Prosjek svih kvizova</div>
+        }
       </div>
       <div class="stat-card">
         <div class="stat-label">Rang na listi</div>
-        <div class="stat-val g">-</div>
-        <div class="stat-sub">od 143 studenta</div>
+        <div class="stat-val g">@(Model.Rang.HasValue ? "#" + Model.Rang : "-")</div>
+        <div class="stat-sub">od @Model.UkupnoStudenata studenata</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Nivo</div>
-        <div class="stat-val">1</div>
+        <div class="stat-val">@Model.Nivo</div>
         <div class="xp-bar-wrap">
-          <div class="xp-bar-bg"><div class="xp-bar-fill" style="width:0%"></div></div>
-          <div class="xp-labels"><span>0 XP</span><span>100 XP</span></div>
+          <div class="xp-bar-bg"><div class="xp-bar-fill" style="width:@(xpPostotak)%"></div></div>
+          <div class="xp-labels"><span>@Model.XpUNivou XP</span><span>@Model.XpZaNivo XP</span></div>
         </div>
       </div>
     </div>
@@ -257,7 +275,7 @@
         </a>
         <a class="action-btn" asp-controller="Student" asp-action="Leaderboard">
           <div class="action-icon green">🏆</div>
-          <div><div class="action-text">Pogledaj rang listu</div><div class="action-sub">Trenutna pozicija: -</div></div>
+          <div><div class="action-text">Pogledaj rang listu</div><div class="action-sub">Trenutna pozicija: @(Model.Rang.HasValue ? "#" + Model.Rang : "-")</div></div>
         </a>
         <a class="action-btn" asp-controller="Feedback" asp-action="Create">
           <div class="action-icon">💬</div>
@@ -267,73 +285,64 @@
 
       <div class="section-card">
         <div class="section-title">Nedavna aktivnost</div>
-        <div class="no-results">
-          <div class="ico">📝</div>
-          <p>Još nema aktivnosti</p>
-          <a href="#">Započni prvi kviz →</a>
-        </div>
+        @if (!Model.NedavneAktivnosti.Any())
+        {
+          <div class="no-results">
+            <div class="ico">📝</div>
+            <p>Još nema aktivnosti</p>
+            <a asp-controller="Student" asp-action="Simulate">Započni prvi kviz →</a>
+          </div>
+        }
+        else
+        {
+          @foreach (var akt in Model.NedavneAktivnosti)
+          {
+            var dotClass = akt.Procenat >= 50 ? "" : "amber";
+            <div class="activity-item">
+              <div class="activity-dot @dotClass"></div>
+              <div class="activity-info">
+                <div class="activity-name">@akt.PredmetNaziv</div>
+                <div class="activity-time">@akt.Datum.ToLocalTime().ToString("dd.MM.yyyy. HH:mm")</div>
+              </div>
+              <div class="activity-score">@akt.Procenat%</div>
+            </div>
+          }
+        }
       </div>
     </div>
 
     <div class="section-card">
       <div class="section-title">Moji predmeti</div>
-      <div class="subject-list">
-        <div class="subject-item">
-          <div class="subject-ico">🧩</div>
-          <div class="subject-info">
-            <div class="subject-name">Objektno orijentisana analiza i dizajn</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--accent)"></div></div>
-          </div>
-          <div class="subject-meta">
-            <div class="subject-pct" style="color:var(--accent)">0%</div>
-            <div class="subject-count">142 pitanja</div>
-          </div>
+      @if (!Model.MojiPredmeti.Any())
+      {
+        <div class="no-results">
+          <div class="ico">📚</div>
+          <p>Još nisi radio nijedan predmet</p>
+          <a asp-controller="Student" asp-action="Simulate">Odaberi predmet →</a>
         </div>
-        <div class="subject-item">
-          <div class="subject-ico">⚙️</div>
-          <div class="subject-info">
-            <div class="subject-name">Operativni sistemi</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--amber)"></div></div>
-          </div>
-          <div class="subject-meta">
-            <div class="subject-pct" style="color:var(--amber)">0%</div>
-            <div class="subject-count">98 pitanja</div>
-          </div>
+      }
+      else
+      {
+        var boje = new[] { "var(--accent)", "var(--amber)", "var(--success)", "var(--danger)" };
+        <div class="subject-list">
+          @for (var i = 0; i < Model.MojiPredmeti.Count; i++)
+          {
+            var p = Model.MojiPredmeti[i];
+            var boja = boje[i % boje.Length];
+            <div class="subject-item">
+              <div class="subject-ico">📘</div>
+              <div class="subject-info">
+                <div class="subject-name">@p.Naziv</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:@(p.Procenat)%;background:@boja"></div></div>
+              </div>
+              <div class="subject-meta">
+                <div class="subject-pct" style="color:@boja">@p.Procenat%</div>
+                <div class="subject-count">@p.BrojPitanja pitanja</div>
+              </div>
+            </div>
+          }
         </div>
-        <div class="subject-item">
-          <div class="subject-ico">🔢</div>
-          <div class="subject-info">
-            <div class="subject-name">Algoritmi i strukture podataka</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--accent)"></div></div>
-          </div>
-          <div class="subject-meta">
-            <div class="subject-pct" style="color:var(--accent)">0%</div>
-            <div class="subject-count">210 pitanja</div>
-          </div>
-        </div>
-        <div class="subject-item">
-          <div class="subject-ico">💻</div>
-          <div class="subject-info">
-            <div class="subject-name">Napredno softversko programiranje</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--success)"></div></div>
-          </div>
-          <div class="subject-meta">
-            <div class="subject-pct" style="color:var(--success)">0%</div>
-            <div class="subject-count">76 pitanja</div>
-          </div>
-        </div>
-        <div class="subject-item">
-          <div class="subject-ico">🗄️</div>
-          <div class="subject-info">
-            <div class="subject-name">Baze podataka</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--danger)"></div></div>
-          </div>
-          <div class="subject-meta">
-            <div class="subject-pct" style="color:var(--danger)">0%</div>
-            <div class="subject-count">54 pitanja</div>
-          </div>
-        </div>
-      </div>
+      }
     </div>
   </main>
 </div>

@@ -251,7 +251,7 @@ namespace ezZkvi.Controllers
             return elapsed;
         }
 
-        private async Task SaveSimulationResultAsync(SimulacijaRezultatViewModel rezultat)
+        private async Task SaveSimulationResultAsync(SimulacijaRezultatViewModel rezultat, int predmetId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -270,7 +270,12 @@ namespace ezZkvi.Controllers
             {
                 TraziBrojPitanja = rezultat.UkupnoPitanja,
                 VremenskoOgranicenje = VremenskoOgranicenjeMinuta,
-                Status = StatusSesije.ZAVRSEN
+                Status = StatusSesije.ZAVRSEN,
+                StudentId = userId,
+                PredmetId = predmetId,
+                BrojTacnih = rezultat.TacnihOdgovora,
+                Procenat = rezultat.Procenat,
+                DatumZavrsetka = DateTime.UtcNow
             });
 
             await _context.SaveChangesAsync();
@@ -287,9 +292,67 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Student/Dashboard
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            return View();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var model = new DashboardViewModel();
+
+            // Sve završene sesije ovog studenta (najnovije prvo)
+            var sesije = await _context.KvizSesije
+                .Include(s => s.Predmet)
+                .Where(s => s.StudentId == userId && s.Status == StatusSesije.ZAVRSEN)
+                .OrderByDescending(s => s.DatumZavrsetka)
+                .ToListAsync();
+
+            model.KvizoviZavrseni = sesije.Count;
+            model.ProsjecanRezultat = sesije.Count > 0
+                ? (int)Math.Round(sesije.Average(s => s.Procenat))
+                : 0;
+
+            // XP i nivo (10 XP po tačnom odgovoru, 100 XP po nivou)
+            var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
+            var brojTacnih = student?.BrojTacnihOdgovora ?? 0;
+
+            model.XpUkupno = brojTacnih * 10;
+            model.Nivo = model.XpUkupno / 100 + 1;
+            model.XpUNivou = model.XpUkupno % 100;
+
+            // Rang među studentima (po broju tačnih odgovora)
+            model.UkupnoStudenata = await _context.Student.CountAsync();
+            model.Rang = await _context.Student
+                .CountAsync(s => s.BrojTacnihOdgovora > brojTacnih) + 1;
+
+            // Nedavna aktivnost (zadnjih 5 kvizova)
+            model.NedavneAktivnosti = sesije
+                .Take(5)
+                .Select(s => new NedavnaAktivnostViewModel
+                {
+                    PredmetNaziv = s.Predmet != null ? s.Predmet.Naziv : "Nepoznat predmet",
+                    Procenat = s.Procenat,
+                    Datum = s.DatumZavrsetka
+                })
+                .ToList();
+
+            // Broj pitanja po predmetu (za prikaz "X pitanja")
+            var brojPitanjaPoPredmetu = await _context.Pitanje
+                .GroupBy(p => p.PredmetId)
+                .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
+                .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
+
+            // Moji predmeti: prosječan procenat po predmetu koji je student radio
+            model.MojiPredmeti = sesije
+                .Where(s => s.Predmet != null)
+                .GroupBy(s => s.Predmet!)
+                .Select(g => new PredmetNapredakViewModel
+                {
+                    Naziv = g.Key.Naziv,
+                    Procenat = (int)Math.Round(g.Average(s => s.Procenat)),
+                    BrojPitanja = brojPitanjaPoPredmetu.TryGetValue(g.Key.Id, out var b) ? b : 0
+                })
+                .ToList();
+
+            return View(model);
         }
 
         // GET: /Student/Prepare
@@ -371,7 +434,7 @@ namespace ezZkvi.Controllers
 
             var rezultat = CalculateResult(submitModel, pitanja, odgovori);
 
-            await SaveSimulationResultAsync(rezultat);
+            await SaveSimulationResultAsync(rezultat, submitModel.PredmetId);
 
             var predmet = await _context.Predmet.FindAsync(submitModel.PredmetId);
 
