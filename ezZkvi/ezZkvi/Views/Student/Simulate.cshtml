@@ -118,8 +118,16 @@
             }
 
         .active-session-note {
+            position: relative;
+            min-height: 150px;
             background: rgba(0, 229, 255, 0.06);
             border: 1px solid rgba(0, 229, 255, 0.28);
+            padding: 24px;
+            padding-right: 195px;
+        }
+
+        .active-session-content {
+            max-width: 450px;
         }
 
         .active-session-row {
@@ -127,12 +135,14 @@
             align-items: center;
             justify-content: flex-start;
             gap: 14px;
-            flex-wrap: nowrap;
             margin-top: 18px;
-}
+        }
 
         .active-session-time {
-            min-width: 140px;
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 135px;
             padding: 10px 14px;
             border-radius: 10px;
             border: 1px solid rgba(255, 204, 0, 0.35);
@@ -580,22 +590,34 @@
                 padding: 20px;
             }
 
+            .active-session-note {
+                padding-right: 20px;
+                padding-top: 125px;
+                min-height: auto;
+            }
+
+            .active-session-time {
+                top: 20px;
+                right: 20px;
+            }
+
+            .active-session-content {
+                max-width: 100%;
+            }
+
             .result-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
 
             .actions {
                 flex-direction: column;
+                align-items: stretch;
             }
 
-            .btn-main,
-            .btn-secondary {
-                width: 100%;
-            }
-
-            .active-session-time {
-                width: 100%;
-            }
+                .actions .btn-main,
+                .actions .btn-secondary {
+                    width: 100%;
+                }
         }
 
         @@media (max-width: 520px) {
@@ -608,6 +630,20 @@
             }
 
             .timer-box {
+                width: 100%;
+            }
+
+            .active-session-note {
+                padding-top: 130px;
+            }
+
+            .active-session-time {
+                left: 20px;
+                right: auto;
+                width: calc(100% - 40px);
+            }
+
+            .active-session-row .btn-main {
                 width: 100%;
             }
         }
@@ -755,7 +791,8 @@
                                 <div class="question-number">Pitanje @(i + 1)</div>
                                 <div class="question-text">@pitanje.TekstPitanja</div>
                             </div>
-       
+
+                            <div class="difficulty">@pitanje.Tezina</div>
                         </div>
 
                         <div class="answers">
@@ -802,29 +839,30 @@
         @if (Model.AktivnaSesijaId.HasValue)
         {
             <div class="simulation-card active-session-note">
-                <div class="section-label">Aktivna simulacija</div>
-
-                <p class="form-description">
-                    Imaš započetu simulaciju iz predmeta @Model.AktivnaSesijaPredmetNaziv.
-                    Možeš nastaviti dok vrijeme ne istekne.
-                </p>
-
-                <a asp-controller="Student"
-                   asp-action="ContinueSimulation"
-                   asp-route-kvizSesijaId="@Model.AktivnaSesijaId"
-                   class="btn-main">
-                    Nastavi kviz
-                </a>
-
-                <div class="active-session-row">
-                    <div class="active-session-time">
-                        <div class="active-session-time-label">Preostalo vrijeme</div>
-                        <div class="active-session-time-value"
-                             data-remaining-timer="@Model.PreostaloSekundi">
-                            00:00
-                        </div>
+                <div class="active-session-time">
+                    <div class="active-session-time-label">Preostalo vrijeme</div>
+                    <div class="active-session-time-value"
+                         data-remaining-timer="@Model.PreostaloSekundi">
+                        00:00
                     </div>
+                </div>
 
+                <div class="active-session-content">
+                    <div class="section-label">Aktivna simulacija</div>
+
+                    <p class="form-description">
+                        Imaš započetu simulaciju iz predmeta @Model.AktivnaSesijaPredmetNaziv.
+                        Možeš nastaviti dok vrijeme ne istekne.
+                    </p>
+
+                    <div class="active-session-row">
+                        <a asp-controller="Student"
+                           asp-action="ContinueSimulation"
+                           asp-route-kvizSesijaId="@Model.AktivnaSesijaId"
+                           class="btn-main">
+                            Nastavi kviz
+                        </a>
+                    </div>
                 </div>
             </div>
         }

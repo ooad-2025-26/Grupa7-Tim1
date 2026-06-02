@@ -419,7 +419,10 @@ namespace ezZkvi.Controllers
                 return null;
             }
 
-            var vecZavrsena = sesija.Status == StatusSesije.ZAVRSEN;
+            var vecObradjena = sesija.Status == StatusSesije.ZAVRSEN || sesija.Status == StatusSesije.ISTEKAO;
+
+            var deadline = sesija.DatumPocetka.AddMinutes(sesija.VremenskoOgranicenje);
+            var vrijemeIsteklo = DateTime.UtcNow >= deadline;
 
             var stavke = await _context.KvizSesijaPitanja
                 .Include(x => x.Pitanje)
@@ -485,19 +488,25 @@ namespace ezZkvi.Controllers
                 Pregled = pregled
             };
 
-            if (!vecZavrsena)
+            if (!vecObradjena)
             {
-                sesija.Status = StatusSesije.ZAVRSEN;
+                sesija.Status = vrijemeIsteklo
+                    ? StatusSesije.ISTEKAO
+                    : StatusSesije.ZAVRSEN;
+
                 sesija.BrojTacnih = tacno;
                 sesija.Procenat = procenat;
                 sesija.DatumZavrsetka = DateTime.UtcNow;
 
-                var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
-
-                if (student != null)
+                if (sesija.Status == StatusSesije.ZAVRSEN)
                 {
-                    student.BrojOdgovorenihPitanja += ukupno;
-                    student.BrojTacnihOdgovora += tacno;
+                    var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
+
+                    if (student != null)
+                    {
+                        student.BrojOdgovorenihPitanja += ukupno;
+                        student.BrojTacnihOdgovora += tacno;
+                    }
                 }
 
                 await _context.SaveChangesAsync();
@@ -671,28 +680,46 @@ namespace ezZkvi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StartSimulation(int? predmetId)
+        public async Task<IActionResult> StartSimulation(SimulacijaKvizaViewModel model)
         {
-            if (!predmetId.HasValue || predmetId.Value <= 0)
+            if (!model.PredmetId.HasValue)
             {
-                var emptyModel = new SimulacijaKvizaViewModel
+                TempData["SimulationError"] = "Moraš odabrati predmet prije pokretanja simulacije.";
+                return RedirectToAction(nameof(Simulate));
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var now = DateTime.UtcNow;
+
+            var aktivneSesije = await _context.KvizSesije
+                .Where(s =>
+                    s.StudentId == userId &&
+                    s.Status == StatusSesije.U_TOKU)
+                .OrderByDescending(s => s.DatumPocetka)
+                .ToListAsync();
+
+            foreach (var sesija in aktivneSesije)
+            {
+                var deadline = sesija.DatumPocetka.AddMinutes(sesija.VremenskoOgranicenje);
+
+                if (now < deadline)
                 {
-                    ErrorMessage = "Moraš odabrati predmet prije pokretanja simulacije.",
-                    Predmeti = await GetPredmetiZaSimulacijuAsync()
-                };
+                    TempData["SimulationError"] = "Već imaš aktivnu simulaciju kviza. Prvo nastavi postojeći kviz ili sačekaj da vrijeme istekne.";
+                    return RedirectToAction(nameof(Simulate));
+                }
 
-                return View("Simulate", emptyModel);
+                await FinishSimulationAndBuildResultAsync(sesija.ID);
             }
 
-            var model = await BuildSimulationAsync(predmetId.Value);
+            var simulationModel = await BuildSimulationAsync(model.PredmetId.Value);
 
-            if (!string.IsNullOrWhiteSpace(model.ErrorMessage))
+            if (!string.IsNullOrWhiteSpace(simulationModel.ErrorMessage))
             {
-                model.Predmeti = await GetPredmetiZaSimulacijuAsync(predmetId.Value);
-                return View("Simulate", model);
+                TempData["SimulationError"] = simulationModel.ErrorMessage;
+                return RedirectToAction(nameof(Simulate));
             }
 
-            return View("Simulate", model);
+            return View("Simulate", simulationModel);
         }
 
         public async Task<IActionResult> ContinueSimulation(int kvizSesijaId)
