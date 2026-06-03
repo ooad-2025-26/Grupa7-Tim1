@@ -143,6 +143,7 @@
   <button class="sort-btn" onclick="sortBy('name', this)">Ime ↑</button>
 </div>
 
+<div id="lbContent">
 @if (!Model.Entries.Any())
 {
   <div class="table-wrap" style="padding:40px;text-align:center;color:var(--muted)">
@@ -199,6 +200,7 @@ else
     </div>
   </div>
 }
+</div>
 
 @section Scripts {
 <script>
@@ -231,5 +233,62 @@ else
 
     rows.forEach(row => tbody.appendChild(row));
   }
+
+  // ===== Automatsko osvježavanje (AJAX) =====
+  function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function pctBoja(p){ return p >= 80 ? 'var(--success)' : (p >= 60 ? 'var(--amber)' : 'var(--danger)'); }
+
+  function podiumItem(cls, e, rank, block, color){
+    return '<div class="podium-item">'
+      + '<div class="avatar '+cls+'">'+esc(e.inicijali)+'</div>'
+      + '<div class="podium-name">'+esc(e.ime)+'</div>'
+      + '<div class="podium-score" style="color:'+color+'">'+e.bodovi+'</div>'
+      + '<div class="podium-block '+block+'">'+rank+'</div>'
+      + '</div>';
+  }
+
+  function buildLeaderboardHtml(entries){
+    if (!entries || entries.length === 0){
+      return '<div class="table-wrap" style="padding:40px;text-align:center;color:var(--muted)">Još nema rezultata. Uradi prvi kviz da se pojaviš na rang listi!</div>';
+    }
+    let html = '';
+    if (entries.length >= 3){
+      html += '<div class="podium">'
+        + podiumItem('silver', entries[1], 2, 'p1', 'var(--silver)')
+        + podiumItem('gold', entries[0], 1, 'p2', 'var(--gold)')
+        + podiumItem('bronze', entries[2], 3, 'p3', 'var(--bronze)')
+        + '</div>';
+    }
+    html += '<div class="table-wrap"><div class="table-header"><span>#</span><span>Korisnik</span><span>Bodovi</span><span>Tačnost</span><span>Kvizovi</span></div><div id="tableBody">';
+    entries.forEach(function(e, i){
+      var rankClass = i===0?'t1':(i===1?'t2':(i===2?'t3':''));
+      var meClass = e.jeTrenutni ? ' me' : '';
+      var avStyle = e.jeTrenutni ? 'background:rgba(0,229,255,0.12);color:var(--accent)' : '';
+      var youTag = e.jeTrenutni ? '<span class="you-tag">Ti</span>' : '';
+      html += '<div class="table-row'+meClass+'" data-score="'+e.bodovi+'" data-pct="'+e.tacnost+'" data-quizzes="'+e.kvizovi+'" data-name="'+esc(e.ime)+'">'
+        + '<span class="rank '+rankClass+'">'+(i+1)+'</span>'
+        + '<div class="user-info"><div class="user-av" style="'+avStyle+'">'+esc(e.inicijali)+'</div>'
+        + '<span class="user-n">'+esc(e.ime)+' '+youTag+'</span></div>'
+        + '<span class="score">'+e.bodovi+'</span>'
+        + '<span class="pct" style="color:'+pctBoja(e.tacnost)+'">'+e.tacnost+'%</span>'
+        + '<span class="quizzes">'+e.kvizovi+'</span>'
+        + '</div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function refreshLeaderboard(){
+    fetch('@Url.Action("LeaderboardData", "Student")')
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(entries){
+        var c = document.getElementById('lbContent');
+        if (c) c.innerHTML = buildLeaderboardHtml(entries);
+      })
+      .catch(function(){ /* tiho ignoriši grešku mreže */ });
+  }
+
+  // osvježi svakih 10 sekundi
+  setInterval(refreshLeaderboard, 10000);
 </script>
 }

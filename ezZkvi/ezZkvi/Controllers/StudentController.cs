@@ -780,6 +780,19 @@ namespace ezZkvi.Controllers
         // GET: /Student/Leaderboard
         public async Task<IActionResult> Leaderboard()
         {
+            var entries = await BuildLeaderboardAsync();
+            return View(new LeaderboardViewModel { Entries = entries });
+        }
+
+        // GET: /Student/LeaderboardData  — JSON za automatsko osvježavanje (AJAX)
+        public async Task<IActionResult> LeaderboardData()
+        {
+            var entries = await BuildLeaderboardAsync();
+            return Json(entries);
+        }
+
+        private async Task<List<LeaderboardEntryViewModel>> BuildLeaderboardAsync()
+        {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             // Agregiraj rezultate po studentu DIREKTNO iz završenih kvizova
@@ -832,7 +845,7 @@ namespace ezZkvi.Controllers
                 .ThenByDescending(e => e.Tacnost)
                 .ToList();
 
-            return View(new LeaderboardViewModel { Entries = entries });
+            return entries;
         }
 
         [HttpPost]
