@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Pošalji feedback";
+    var feedbackPoslan = TempData["FeedbackPoslan"] != null;
 }
 
 @section Styles {
@@ -101,11 +102,15 @@
 </div>
 
 <!-- Suggest form -->
-<div class="form-card" id="suggestForm" style="display:none">
+<form class="form-card" id="suggestForm" style="display:none" asp-controller="Feedback" asp-action="Create" method="post" onsubmit="return prepSuggest()">
+  @Html.AntiForgeryToken()
+  <input type="hidden" name="TipFeedbacka" value="PRIJEDLOG_PITANJA" />
+  <input type="hidden" name="Sadrzaj" id="suggestSadrzaj" />
+
   <div class="form-title">Prijedlog novog pitanja</div>
   <div class="form-group">
     <label>Predmet</label>
-    <select class="inp">
+    <select class="inp" id="sgPredmet">
       <option>Objektno orijentisana analiza i dizajn</option>
       <option>Operativni sistemi</option>
       <option>Algoritmi i strukture podataka</option>
@@ -115,19 +120,19 @@
   </div>
   <div class="form-group">
     <label>Oblast / Kategorija</label>
-    <input type="text" placeholder="npr. UML dijagrami">
+    <input type="text" id="sgOblast" placeholder="npr. UML dijagrami">
   </div>
   <div class="form-group">
     <label>Tekst pitanja</label>
-    <textarea placeholder="Unesite tekst pitanja koje predlažeš..."></textarea>
+    <textarea id="sgPitanje" placeholder="Unesite tekst pitanja koje predlažeš..."></textarea>
   </div>
   <div class="form-group">
     <label>Ponuđeni odgovori</label>
     <div class="opts-grid">
-      <div class="opt-input"><span class="opt-label-abs">A</span><input type="text" placeholder="Odgovor A"></div>
-      <div class="opt-input"><span class="opt-label-abs">B</span><input type="text" placeholder="Odgovor B"></div>
-      <div class="opt-input"><span class="opt-label-abs">C</span><input type="text" placeholder="Odgovor C"></div>
-      <div class="opt-input"><span class="opt-label-abs">D</span><input type="text" placeholder="Odgovor D"></div>
+      <div class="opt-input"><span class="opt-label-abs">A</span><input type="text" id="sgA" placeholder="Odgovor A"></div>
+      <div class="opt-input"><span class="opt-label-abs">B</span><input type="text" id="sgB" placeholder="Odgovor B"></div>
+      <div class="opt-input"><span class="opt-label-abs">C</span><input type="text" id="sgC" placeholder="Odgovor C"></div>
+      <div class="opt-input"><span class="opt-label-abs">D</span><input type="text" id="sgD" placeholder="Odgovor D"></div>
     </div>
   </div>
   <div class="form-group">
@@ -141,20 +146,24 @@
   </div>
   <div class="form-group">
     <label>Pojašnjenje (opciono)</label>
-    <textarea placeholder="Kratko objasni zašto je taj odgovor tačan..." style="min-height:60px"></textarea>
+    <textarea id="sgObjasnjenje" placeholder="Kratko objasni zašto je taj odgovor tačan..." style="min-height:60px"></textarea>
   </div>
   <div class="btn-row">
-    <button class="btn btn-secondary" onclick="resetForm()">Otkaži</button>
-    <button class="btn btn-primary" onclick="submitForm()">Pošalji prijedlog</button>
+    <button type="button" class="btn btn-secondary" onclick="resetForm()">Otkaži</button>
+    <button type="submit" class="btn btn-primary">Pošalji prijedlog</button>
   </div>
-</div>
+</form>
 
 <!-- Report form -->
-<div class="form-card" id="reportForm" style="display:none">
+<form class="form-card" id="reportForm" style="display:none" asp-controller="Feedback" asp-action="Create" method="post" onsubmit="return prepReport()">
+  @Html.AntiForgeryToken()
+  <input type="hidden" name="TipFeedbacka" value="PRIJAVA_GRESKE" />
+  <input type="hidden" name="Sadrzaj" id="reportSadrzaj" />
+
   <div class="form-title amber">Prijava greške</div>
   <div class="form-group">
     <label>Lokacija greške</label>
-    <select class="inp">
+    <select class="inp" id="rpLokacija">
       <option>Pitanje u bazi</option>
       <option>Simulacija kviza</option>
       <option>Priprema za kviz</option>
@@ -164,14 +173,14 @@
   </div>
   <div class="form-group">
     <label>Predmet / Pitanje (opciono)</label>
-    <input type="text" placeholder="Navedi specifično pitanje ako je relevantno">
+    <input type="text" id="rpPitanje" placeholder="Navedi specifično pitanje ako je relevantno">
   </div>
   <div class="form-group">
     <label>Opis greške</label>
-    <textarea placeholder="Detaljno opiši grešku: šta si vidio/la, šta si očekivao/la..."></textarea>
+    <textarea id="rpOpis" placeholder="Detaljno opiši grešku: šta si vidio/la, šta si očekivao/la..."></textarea>
   </div>
   <div class="form-group">
-    <label>Screenshot (opciono)</label>
+    <label>Screenshot (opciono — ne sprema se)</label>
     <div class="upload-area" onclick="document.getElementById('fileInput').click()">
       <div class="upload-icon">📎</div>
       <div class="upload-text">Klikni za dodavanje screenshota</div>
@@ -185,10 +194,10 @@
     </div>
   </div>
   <div class="btn-row">
-    <button class="btn btn-secondary" onclick="resetForm()">Otkaži</button>
-    <button class="btn btn-primary" style="background:var(--amber)" onclick="submitForm()">Pošalji prijavu</button>
+    <button type="button" class="btn btn-secondary" onclick="resetForm()">Otkaži</button>
+    <button type="submit" class="btn btn-primary" style="background:var(--amber)">Pošalji prijavu</button>
   </div>
-</div>
+</form>
 
 <!-- Success -->
 <div id="successScreen">
@@ -234,8 +243,37 @@
     document.getElementById('filePreview').classList.remove('show');
   }
 
-  function submitForm(){
-    // Backend još nije povezan — samo pokazujemo success ekran
+  function prepSuggest(){
+    var pitanje = (document.getElementById('sgPitanje').value || '').trim();
+    if (!pitanje){ alert('Unesi tekst pitanja.'); return false; }
+    var correctEl = document.querySelector('#suggestForm .correct-opt.selected');
+    var tacan = correctEl ? correctEl.textContent.trim() : '';
+    document.getElementById('suggestSadrzaj').value =
+      'PRIJEDLOG PITANJA\n'
+      + 'Predmet: ' + document.getElementById('sgPredmet').value + '\n'
+      + 'Oblast: ' + (document.getElementById('sgOblast').value || '-') + '\n'
+      + 'Pitanje: ' + pitanje + '\n'
+      + 'A) ' + (document.getElementById('sgA').value || '-') + '\n'
+      + 'B) ' + (document.getElementById('sgB').value || '-') + '\n'
+      + 'C) ' + (document.getElementById('sgC').value || '-') + '\n'
+      + 'D) ' + (document.getElementById('sgD').value || '-') + '\n'
+      + 'Tačan: ' + tacan + '\n'
+      + 'Pojašnjenje: ' + (document.getElementById('sgObjasnjenje').value || '-');
+    return true;
+  }
+
+  function prepReport(){
+    var opis = (document.getElementById('rpOpis').value || '').trim();
+    if (!opis){ alert('Opiši grešku.'); return false; }
+    document.getElementById('reportSadrzaj').value =
+      'PRIJAVA GREŠKE\n'
+      + 'Lokacija: ' + document.getElementById('rpLokacija').value + '\n'
+      + 'Predmet/Pitanje: ' + (document.getElementById('rpPitanje').value || '-') + '\n'
+      + 'Opis: ' + opis;
+    return true;
+  }
+
+  function showSuccess(){
     document.getElementById('typeGrid').style.display='none';
     document.getElementById('suggestForm').style.display='none';
     document.getElementById('reportForm').style.display='none';
@@ -251,5 +289,12 @@
     document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
     removeFile();
   }
+
+@if (feedbackPoslan)
+{
+    <text>
+  window.addEventListener('DOMContentLoaded', showSuccess);
+    </text>
+}
 </script>
 }

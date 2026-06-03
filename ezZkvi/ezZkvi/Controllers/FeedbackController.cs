@@ -49,15 +49,23 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Status,TipFeedbacka,DatumSlanja")] Feedback feedback)
+        public async Task<IActionResult> Create([Bind("TipFeedbacka,Sadrzaj")] Feedback feedback)
         {
             if (ModelState.IsValid)
             {
+                // Status i datum postavlja server (ne student)
+                feedback.Status = StatusFeedbacka.NA_CEKANJU;
+                feedback.DatumSlanja = DateTime.UtcNow;
+
                 _context.Add(feedback);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+
+                TempData["FeedbackPoslan"] = "1";
+                return RedirectToAction(nameof(Create));
             }
-            return View(feedback);
+
+            TempData["Error"] = "Feedback nije poslan. Provjeri da si unio/la tekst.";
+            return RedirectToAction(nameof(Create));
         }
 
         // GET: Feedback/Edit/5
