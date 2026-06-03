@@ -18,6 +18,7 @@ builder.Services.AddIdentity<Korisnik, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
 })
+    .AddErrorDescriber<ezZkvi.Services.BosanskiIdentityErrorDescriber>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 

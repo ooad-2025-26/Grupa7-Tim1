@@ -5,7 +5,7 @@ namespace ezZkvi.ViewModels
     public class RegisterViewModel
     {
         [Required(ErrorMessage = "Email je obavezan")]
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Email adresa nije ispravna.")]
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Lozinka je obavezna")]
