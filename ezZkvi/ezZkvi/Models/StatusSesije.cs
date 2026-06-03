@@ -2,8 +2,8 @@
 {
     public enum StatusSesije
     {
-        AKTIVAN,
-        ZAVRSEN,
-        U_TOKU
+        U_TOKU = 0,
+        ZAVRSEN = 1,
+        ISTEKAO = 2
     }
 }

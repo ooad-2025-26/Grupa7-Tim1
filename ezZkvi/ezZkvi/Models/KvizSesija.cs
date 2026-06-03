@@ -29,7 +29,7 @@ namespace ezZkvi.Models
         public int BrojTacnih { get; set; }
         public int Procenat { get; set; }
 
-        // Kada je kviz završen (UTC)
+        public DateTime DatumPocetka { get; set; }
         public DateTime DatumZavrsetka { get; set; }
     }
 }
