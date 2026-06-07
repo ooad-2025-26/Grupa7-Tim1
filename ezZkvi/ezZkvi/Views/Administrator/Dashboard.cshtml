@@ -104,9 +104,9 @@
     <a class="logo" asp-controller="@logoController" asp-action="Dashboard">ez<span>Zkvi</span></a>
     <nav class="nav">
       <a class="nav-item active" asp-controller="Administrator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
-      <a class="nav-item" asp-controller="Administrator" asp-action="Users"><span class="ico">👥</span> Korisnici <span class="badge">3</span></a>
+      <a class="nav-item" asp-controller="Administrator" asp-action="Users"><span class="ico">👥</span> Korisnici @if (ViewBag.BrojNaCekanju > 0) { <span class="badge">@ViewBag.BrojNaCekanju</span> }</a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
-      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback <span class="badge">3</span></a>
+      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
       <a class="nav-item" asp-controller="Administrator" asp-action="EmailObavijest"> <span class="ico">📧</span> Obavijesti</a>
       <a class="nav-item" asp-controller="Account" asp-action="Login"><span class="ico">🚪</span> Odjava</a>
     </nav>
@@ -124,7 +124,10 @@
         <div class="page-title">Admin <span>panel</span></div>
       </div>
       <div style="display:flex;gap:10px">
-        <div class="notif-btn" onclick="showToast('3 nova zahtjeva za odobrenje','info')"><div class="notif-dot"></div> 3 nova zahtjeva</div>
+        @if (ViewBag.BrojNaCekanju > 0)
+        {
+          <a class="notif-btn" asp-controller="Administrator" asp-action="Users"><div class="notif-dot"></div> @ViewBag.BrojNaCekanju @(ViewBag.BrojNaCekanju == 1 ? "novi zahtjev" : "novih zahtjeva")</a>
+        }
       </div>
     </div>
 

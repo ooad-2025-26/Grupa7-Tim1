@@ -259,6 +259,8 @@ namespace ezZkvi.Controllers
                .Where(u => u.EmailConfirmed && !u.IsApproved)
                .ToListAsync();
 
+            ViewBag.BrojNaCekanju = neodobreni.Count;
+
             ViewBag.NaCekanju = neodobreni.Select(u =>
             {
                 var ime = !string.IsNullOrEmpty(u.UserName) && u.UserName.Contains('@')
