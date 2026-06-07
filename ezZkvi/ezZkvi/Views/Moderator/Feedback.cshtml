@@ -126,10 +126,20 @@
       var statusKlasa = jeNovo ? "status-new" : (f.Status == StatusFeedbacka.ODOBREN ? "status-done" : "status-rejected");
       var statusText = jeNovo ? "Novo" : (f.Status == StatusFeedbacka.ODOBREN ? "Prihvaćeno" : "Odbijeno");
 
+      string? autorEmail = null;
+      if (f.KorisnikId != null && ViewBag.Autori != null && ViewBag.Autori.ContainsKey(f.KorisnikId))
+      {
+          autorEmail = ViewBag.Autori[f.KorisnikId];
+      }
+      var autorPrikaz = !string.IsNullOrEmpty(autorEmail)
+          ? (autorEmail.Contains('@') ? autorEmail.Split('@')[0] : autorEmail)
+          : "Nepoznat korisnik";
+
       <div class="feed-card @(jeNovo ? "" : "processed")" data-type="@(jePrijedlog ? "suggest" : "report")" data-status="@(jeNovo ? "new" : "done")">
         <div class="feed-header">
           <div class="feed-meta">
             <span class="feed-type @(jePrijedlog ? "type-suggest" : "type-report")">@(jePrijedlog ? "💡 Prijedlog pitanja" : "🐛 Prijava greške")</span>
+            <span class="feed-user">@autorPrikaz</span>
             <span class="id-tag">#FB-@f.ID</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -137,6 +147,11 @@
             <span class="feed-status @statusKlasa">@statusText</span>
           </div>
         </div>
+
+        @if (f.Predmet != null)
+        {
+          <span class="feed-subject">@f.Predmet.Naziv</span>
+        }
 
         <div class="feed-content">@f.Sadrzaj</div>
 

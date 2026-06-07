@@ -648,7 +648,7 @@
     <div class="toolbar">
         <div class="search-wrap">
             <span class="search-icon">⌕</span>
-            <input type="text" placeholder="Pretraži predmete...">
+            <input type="text" id="subjectSearch" oninput="filterSubjects()" placeholder="Pretraži predmete...">
         </div>
 
         <button type="button" class="btn-add" onclick="openSubjectModal()">
@@ -673,7 +673,7 @@
         {
             @foreach (var p in ViewBag.PredmetiLista)
             {
-                <div class="t-row" style="grid-template-columns:1fr 90px 140px">
+                <div class="t-row subject-row" data-naziv="@p.Naziv.ToLower()" style="grid-template-columns:1fr 90px 140px">
                     <div>
                         <div class="q-text-cell">@p.Naziv</div>
                     </div>
@@ -927,6 +927,14 @@
 
         function closeEditSubject() {
             document.getElementById('subjectEditModal').classList.remove('open');
+        }
+
+        function filterSubjects() {
+            var q = document.getElementById('subjectSearch').value.toLowerCase();
+            document.querySelectorAll('.subject-row').forEach(function (row) {
+                var naziv = row.getAttribute('data-naziv') || '';
+                row.style.display = (!q || naziv.includes(q)) ? '' : 'none';
+            });
         }
 
         document.getElementById('subjectEditModal').addEventListener('click', function (e) {

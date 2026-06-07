@@ -129,8 +129,20 @@ namespace ezZkvi.Controllers
         public async Task<IActionResult> Feedback()
         {
             var sviFeedback = await _context.Feedback
+                .Include(f => f.Predmet)
                 .OrderByDescending(f => f.DatumSlanja)
                 .ToListAsync();
+
+            // Imena autora (UserName) po KorisnikId
+            var autorIds = sviFeedback
+                .Where(f => f.KorisnikId != null)
+                .Select(f => f.KorisnikId!)
+                .Distinct()
+                .ToList();
+
+            ViewBag.Autori = await _context.Users
+                .Where(u => autorIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.UserName);
 
             ViewBag.Neobradjenih = sviFeedback.Count(f => f.Status == StatusFeedbacka.NA_CEKANJU);
             ViewBag.Obradjenih = sviFeedback.Count(f => f.Status != StatusFeedbacka.NA_CEKANJU);

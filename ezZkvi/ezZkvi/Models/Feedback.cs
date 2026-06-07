@@ -19,5 +19,12 @@ namespace ezZkvi.Models
         [Required(ErrorMessage = "Sadržaj feedbacka je obavezan.")]
         [StringLength(1000, MinimumLength = 10)]
         public string Sadrzaj { get; set; }
+
+        // Ko je poslao feedback (ID prijavljenog korisnika)
+        public string? KorisnikId { get; set; }
+
+        // Na koji predmet se odnosi (opciono)
+        public int? PredmetId { get; set; }
+        public Predmet? Predmet { get; set; }
     }
 }

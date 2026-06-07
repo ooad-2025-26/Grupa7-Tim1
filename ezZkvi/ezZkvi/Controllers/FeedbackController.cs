@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ezZkvi.Data;
 using ezZkvi.Models;
@@ -43,7 +44,7 @@ namespace ezZkvi.Controllers
         {
             ViewBag.Predmeti = await _context.Predmet
                 .OrderBy(p => p.Naziv)
-                .Select(p => p.Naziv)
+                .Select(p => new { p.Id, p.Naziv })
                 .ToListAsync();
 
             return View();
@@ -54,13 +55,14 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TipFeedbacka,Sadrzaj")] Feedback feedback)
+        public async Task<IActionResult> Create([Bind("TipFeedbacka,Sadrzaj,PredmetId")] Feedback feedback)
         {
             if (ModelState.IsValid)
             {
-                // Status i datum postavlja server (ne student)
+                // Status, datum i autora postavlja server (ne student)
                 feedback.Status = StatusFeedbacka.NA_CEKANJU;
                 feedback.DatumSlanja = DateTime.UtcNow;
+                feedback.KorisnikId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 _context.Add(feedback);
                 await _context.SaveChangesAsync();
