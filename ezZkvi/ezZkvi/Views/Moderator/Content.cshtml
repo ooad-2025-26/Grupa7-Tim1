@@ -657,48 +657,38 @@
     </div>
 
     <div class="table-wrap">
-        <div class="t-header" style="grid-template-columns:1fr 80px 80px 100px">
+        <div class="t-header" style="grid-template-columns:1fr 90px 140px">
             <span>Naziv predmeta</span>
             <span>Pitanja</span>
-            <span>Oblasti</span>
             <span>Akcije</span>
         </div>
 
-        <div class="t-row" style="grid-template-columns:1fr 80px 80px 100px">
-            <div>
-                <div class="q-text-cell">Objektno orijentisana analiza i dizajn</div>
+        @if (ViewBag.PredmetiLista == null || ViewBag.PredmetiLista.Count == 0)
+        {
+            <div class="t-row" style="grid-template-columns:1fr;">
+                <div class="q-text-cell">Nema predmeta. Dodaj prvi predmet dugmetom "+ Novi predmet".</div>
             </div>
-            <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">142</span>
-            <span style="color:var(--muted)">8</span>
-            <div class="actions-cell">
-                <button type="button" class="act-btn edit">Uredi</button>
-                <button type="button" class="act-btn del">Obriši</button>
-            </div>
-        </div>
-
-        <div class="t-row" style="grid-template-columns:1fr 80px 80px 100px">
-            <div>
-                <div class="q-text-cell">Operativni sistemi</div>
-            </div>
-            <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">98</span>
-            <span style="color:var(--muted)">6</span>
-            <div class="actions-cell">
-                <button type="button" class="act-btn edit">Uredi</button>
-                <button type="button" class="act-btn del">Obriši</button>
-            </div>
-        </div>
-
-        <div class="t-row" style="grid-template-columns:1fr 80px 80px 100px">
-            <div>
-                <div class="q-text-cell">Algoritmi i strukture podataka</div>
-            </div>
-            <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">210</span>
-            <span style="color:var(--muted)">10</span>
-            <div class="actions-cell">
-                <button type="button" class="act-btn edit">Uredi</button>
-                <button type="button" class="act-btn del">Obriši</button>
-            </div>
-        </div>
+        }
+        else
+        {
+            @foreach (var p in ViewBag.PredmetiLista)
+            {
+                <div class="t-row" style="grid-template-columns:1fr 90px 140px">
+                    <div>
+                        <div class="q-text-cell">@p.Naziv</div>
+                    </div>
+                    <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">@p.BrojPitanja</span>
+                    <div class="actions-cell">
+                        <button type="button" class="act-btn edit" data-id="@p.Id" data-naziv="@p.Naziv" onclick="openEditSubject(this)">Uredi</button>
+                        <form asp-controller="Predmet" asp-action="DeleteFromContent" asp-route-id="@p.Id" method="post" style="display:inline;"
+                              onsubmit="return confirm('Obrisati ovaj predmet? (moguće samo ako nema pitanja)');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="act-btn del">Obriši</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
     </div>
 </div>
 
@@ -797,6 +787,30 @@
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" onclick="closeSubjectModal()">Otkaži</button>
                 <button type="submit" class="btn-save">Sačuvaj predmet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="subjectEditModal">
+    <div class="modal">
+        <div class="modal-title">
+            Uredi predmet
+            <button type="button" class="modal-close" onclick="closeEditSubject()">×</button>
+        </div>
+
+        <form asp-controller="Predmet" asp-action="EditFromContent" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" id="editSubjectId" />
+
+            <div class="form-group">
+                <label>Naziv predmeta</label>
+                <input name="Naziv" id="editSubjectNaziv" class="form-control-dark" required />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeEditSubject()">Otkaži</button>
+                <button type="submit" class="btn-save">Sačuvaj izmjene</button>
             </div>
         </form>
     </div>
@@ -904,6 +918,22 @@
         function closeSubjectModal() {
             document.getElementById('subjectModal').classList.remove('open');
         }
+
+        function openEditSubject(btn) {
+            document.getElementById('editSubjectId').value = btn.getAttribute('data-id');
+            document.getElementById('editSubjectNaziv').value = btn.getAttribute('data-naziv');
+            document.getElementById('subjectEditModal').classList.add('open');
+        }
+
+        function closeEditSubject() {
+            document.getElementById('subjectEditModal').classList.remove('open');
+        }
+
+        document.getElementById('subjectEditModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeEditSubject();
+            }
+        });
 
         document.getElementById('subjectModal').addEventListener('click', function (e) {
             if (e.target === this) {

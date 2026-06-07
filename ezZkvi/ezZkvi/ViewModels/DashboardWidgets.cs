@@ -11,6 +11,7 @@ namespace ezZkvi.ViewModels
 
     public class PredmetAktivnostItem
     {
+        public int Id { get; set; }
         public string Naziv { get; set; } = "";
         public int BrojPitanja { get; set; }
         public int BrojKvizova { get; set; }

@@ -103,6 +103,21 @@ namespace ezZkvi.Controllers
             ViewData["Search"] = search;
             ViewData["Tezina"] = tezina;
 
+            // Lista predmeta sa brojem pitanja (za tab "Predmeti")
+            var brojPitanjaPoPredmetu = await _context.Pitanje
+                .GroupBy(p => p.PredmetId)
+                .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
+                .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
+
+            ViewBag.PredmetiLista = (await _context.Predmet.OrderBy(p => p.Naziv).ToListAsync())
+                .Select(p => new PredmetAktivnostItem
+                {
+                    Id = p.Id,
+                    Naziv = p.Naziv,
+                    BrojPitanja = brojPitanjaPoPredmetu.TryGetValue(p.Id, out var b) ? b : 0
+                })
+                .ToList();
+
             var pitanja = await pitanjaQuery
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();

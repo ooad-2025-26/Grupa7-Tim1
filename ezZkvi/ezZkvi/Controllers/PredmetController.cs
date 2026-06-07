@@ -267,6 +267,66 @@ namespace ezZkvi.Controllers
             return RedirectToAction("Content", "Moderator");
         }
 
+        // POST: Predmet/EditFromContent  — preimenuj predmet, vrati na Content
+        [HttpPost]
+        [Authorize(Roles = "Admin,Moderator")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFromContent(int Id, string Naziv)
+        {
+            var predmet = await _context.Predmet.FindAsync(Id);
+            if (predmet == null)
+            {
+                TempData["Error"] = "Predmet nije pronađen.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            if (string.IsNullOrWhiteSpace(Naziv) || Naziv.Trim().Length < 2)
+            {
+                TempData["Error"] = "Naziv predmeta mora imati najmanje 2 znaka.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            predmet.Naziv = Naziv.Trim();
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Predmet je ažuriran.";
+            return RedirectToAction("Content", "Moderator");
+        }
+
+        // POST: Predmet/DeleteFromContent  — obriši predmet (samo ako nema pitanja), vrati na Content
+        [HttpPost]
+        [Authorize(Roles = "Admin,Moderator")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFromContent(int id)
+        {
+            var predmet = await _context.Predmet.FindAsync(id);
+            if (predmet == null)
+            {
+                TempData["Error"] = "Predmet nije pronađen.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            var imaPitanja = await _context.Pitanje.AnyAsync(p => p.PredmetId == id);
+            if (imaPitanja)
+            {
+                TempData["Error"] = "Ne možeš obrisati predmet koji ima pitanja. Prvo obriši pitanja tog predmeta.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            // Odveži eventualne kviz sesije da ne dođe do greške zbog stranih ključeva
+            var sesije = await _context.KvizSesije.Where(s => s.PredmetId == id).ToListAsync();
+            foreach (var s in sesije)
+            {
+                s.PredmetId = null;
+            }
+
+            _context.Predmet.Remove(predmet);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Predmet je obrisan.";
+            return RedirectToAction("Content", "Moderator");
+        }
+
         // GET: Predmet/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
