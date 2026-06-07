@@ -141,15 +141,17 @@
       <div class="opt-input"><span class="opt-label-abs">C</span><input type="text" id="sgC" placeholder="Odgovor C"></div>
       <div class="opt-input"><span class="opt-label-abs">D</span><input type="text" id="sgD" placeholder="Odgovor D"></div>
     </div>
+    <div class="field-error" id="errSgOdgovori">Popuni sva četiri odgovora (A, B, C i D).</div>
   </div>
   <div class="form-group">
     <label>Tačan odgovor</label>
     <div class="correct-row">
-      <div class="correct-opt selected" onclick="selCorrect(this)">A</div>
+      <div class="correct-opt" onclick="selCorrect(this)">A</div>
       <div class="correct-opt" onclick="selCorrect(this)">B</div>
       <div class="correct-opt" onclick="selCorrect(this)">C</div>
       <div class="correct-opt" onclick="selCorrect(this)">D</div>
     </div>
+    <div class="field-error" id="errSgTacan">Označi koji je odgovor tačan.</div>
   </div>
   <div class="form-group">
     <label>Pojašnjenje (opciono)</label>
@@ -262,14 +264,19 @@
   function prepSuggest(){
     var predmetSelect = document.getElementById('sgPredmet');
     var pitanje = (document.getElementById('sgPitanje').value || '').trim();
+    var a = (document.getElementById('sgA').value || '').trim();
+    var b = (document.getElementById('sgB').value || '').trim();
+    var c = (document.getElementById('sgC').value || '').trim();
+    var d = (document.getElementById('sgD').value || '').trim();
+    var correctEl = document.querySelector('#suggestForm .correct-opt.selected');
 
     var okPredmet = postaviGresku('errSgPredmet', !predmetSelect.value);
     var okPitanje = postaviGresku('errSgPitanje', !pitanje);
-    if (!okPredmet || !okPitanje) return false;
+    var okOdgovori = postaviGresku('errSgOdgovori', !a || !b || !c || !d);
+    var okTacan = postaviGresku('errSgTacan', !correctEl);
+    if (!okPredmet || !okPitanje || !okOdgovori || !okTacan) return false;
 
-    var correctEl = document.querySelector('#suggestForm .correct-opt.selected');
-    var tacan = correctEl ? correctEl.textContent.trim() : '';
-
+    var tacan = correctEl.textContent.trim();
     var predmetNaziv = predmetSelect.options[predmetSelect.selectedIndex] ? predmetSelect.options[predmetSelect.selectedIndex].text : '';
     document.getElementById('sgPredmetId').value = predmetSelect.value;
 
@@ -278,10 +285,10 @@
       + 'Predmet: ' + predmetNaziv + '\n'
       + 'Oblast: ' + (document.getElementById('sgOblast').value || '-') + '\n'
       + 'Pitanje: ' + pitanje + '\n'
-      + 'A) ' + (document.getElementById('sgA').value || '-') + '\n'
-      + 'B) ' + (document.getElementById('sgB').value || '-') + '\n'
-      + 'C) ' + (document.getElementById('sgC').value || '-') + '\n'
-      + 'D) ' + (document.getElementById('sgD').value || '-') + '\n'
+      + 'A) ' + a + '\n'
+      + 'B) ' + b + '\n'
+      + 'C) ' + c + '\n'
+      + 'D) ' + d + '\n'
       + 'Tačan: ' + tacan + '\n'
       + 'Pojašnjenje: ' + (document.getElementById('sgObjasnjenje').value || '-');
     return true;

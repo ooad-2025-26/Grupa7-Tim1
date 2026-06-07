@@ -522,8 +522,7 @@ namespace ezZkvi.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // PRIVREMENO: prikaži pravi razlog (inner exception) radi dijagnostike
-                TempData["Error"] = ex.Message + " | DETALJ: " + (ex.InnerException?.Message ?? "nema detalja");
+                TempData["Error"] = ex.Message;
                 return RedirectToAction(nameof(EmailObavijest));
             }
             catch
