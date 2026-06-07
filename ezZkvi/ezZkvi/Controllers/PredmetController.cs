@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,14 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
+        // Admin smije svaki predmet; moderator samo onaj koji je sam kreirao
+        private bool SmijePredmet(Predmet predmet)
+        {
+            if (User.IsInRole("Admin")) return true;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return predmet.KreatorId == userId;
+        }
+
         // GET: /Predmet/ExportCsv/5  — skine sva pitanja predmeta kao CSV
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> ExportCsv(int id)
@@ -25,6 +34,12 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Odaberi predmet za preuzimanje CSV-a.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            if (!SmijePredmet(predmet))
+            {
+                TempData["Error"] = "Nemaš pristup ovom predmetu.";
                 return RedirectToAction("Content", "Moderator");
             }
 
@@ -86,6 +101,12 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Odaberi predmet za uvoz.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            if (!SmijePredmet(predmet))
+            {
+                TempData["Error"] = "Nemaš pristup ovom predmetu.";
                 return RedirectToAction("Content", "Moderator");
             }
 
@@ -260,6 +281,8 @@ namespace ezZkvi.Controllers
                 return RedirectToAction("Content", "Moderator");
             }
 
+            predmet.KreatorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             _context.Add(predmet);
             await _context.SaveChangesAsync();
 
@@ -277,6 +300,12 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Predmet nije pronađen.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            if (!SmijePredmet(predmet))
+            {
+                TempData["Error"] = "Nemaš pristup ovom predmetu.";
                 return RedirectToAction("Content", "Moderator");
             }
 
@@ -303,6 +332,12 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Predmet nije pronađen.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            if (!SmijePredmet(predmet))
+            {
+                TempData["Error"] = "Nemaš pristup ovom predmetu.";
                 return RedirectToAction("Content", "Moderator");
             }
 

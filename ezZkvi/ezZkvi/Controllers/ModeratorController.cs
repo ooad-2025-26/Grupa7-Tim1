@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ezZkvi.Data;
 using ezZkvi.Models;
 using ezZkvi.ViewModels;
@@ -16,6 +17,21 @@ namespace ezZkvi.Controllers
         public ModeratorController(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        // Vraća null ako korisnik smije SVE (Admin), inače listu ID-eva predmeta koje je on kreirao
+        private async Task<List<int>?> DozvoljeniPredmetiIdAsync()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return null;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return await _context.Predmet
+                .Where(p => p.KreatorId == userId)
+                .Select(p => p.Id)
+                .ToListAsync();
         }
 
         // GET: /Moderator/Dashboard
@@ -80,9 +96,16 @@ namespace ezZkvi.Controllers
         // GET: /Moderator/Content
         public async Task<IActionResult> Content(string? search, int? predmetId, Tezina? tezina)
         {
+            var dozvoljeni = await DozvoljeniPredmetiIdAsync();
+
             var pitanjaQuery = _context.Pitanje
                 .Include(p => p.Predmet)
                 .AsQueryable();
+
+            if (dozvoljeni != null)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => dozvoljeni.Contains(p.PredmetId));
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -99,7 +122,13 @@ namespace ezZkvi.Controllers
                 pitanjaQuery = pitanjaQuery.Where(p => p.Tezina == tezina.Value);
             }
 
-            ViewData["Predmeti"] = new SelectList(_context.Predmet, "Id", "Naziv", predmetId);
+            var predmetiQuery = _context.Predmet.AsQueryable();
+            if (dozvoljeni != null)
+            {
+                predmetiQuery = predmetiQuery.Where(p => dozvoljeni.Contains(p.Id));
+            }
+
+            ViewData["Predmeti"] = new SelectList(predmetiQuery, "Id", "Naziv", predmetId);
             ViewData["Search"] = search;
             ViewData["Tezina"] = tezina;
 
@@ -109,7 +138,7 @@ namespace ezZkvi.Controllers
                 .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
                 .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
 
-            ViewBag.PredmetiLista = (await _context.Predmet.OrderBy(p => p.Naziv).ToListAsync())
+            ViewBag.PredmetiLista = (await predmetiQuery.OrderBy(p => p.Naziv).ToListAsync())
                 .Select(p => new PredmetAktivnostItem
                 {
                     Id = p.Id,
@@ -128,8 +157,19 @@ namespace ezZkvi.Controllers
         // GET: /Moderator/Feedback
         public async Task<IActionResult> Feedback()
         {
-            var sviFeedback = await _context.Feedback
+            var dozvoljeni = await DozvoljeniPredmetiIdAsync();
+
+            var feedbackQuery = _context.Feedback
                 .Include(f => f.Predmet)
+                .AsQueryable();
+
+            // Moderator vidi feedback za SVOJE predmete + opće prijave (bez predmeta); Admin vidi sve
+            if (dozvoljeni != null)
+            {
+                feedbackQuery = feedbackQuery.Where(f => f.PredmetId == null || dozvoljeni.Contains(f.PredmetId.Value));
+            }
+
+            var sviFeedback = await feedbackQuery
                 .OrderByDescending(f => f.DatumSlanja)
                 .ToListAsync();
 

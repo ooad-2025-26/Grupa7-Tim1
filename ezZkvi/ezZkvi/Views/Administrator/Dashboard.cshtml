@@ -33,6 +33,10 @@
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
   .page-title{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;}
   .page-title span{color:var(--accent);}
+  .notif-btn{padding:9px 18px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);font-size:0.85rem;transition:all 0.2s;display:flex;align-items:center;gap:8px;text-decoration:none;}
+  .notif-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .notif-dot{width:8px;height:8px;background:var(--danger);border-radius:50%;}
+  .notif-dot.muted{background:var(--muted);}
 
   .menu-toggle{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:1.2rem;cursor:pointer;}
 
@@ -127,6 +131,10 @@
         @if (ViewBag.BrojNaCekanju > 0)
         {
           <a class="notif-btn" asp-controller="Administrator" asp-action="Users"><div class="notif-dot"></div> @ViewBag.BrojNaCekanju @(ViewBag.BrojNaCekanju == 1 ? "novi zahtjev" : "novih zahtjeva")</a>
+        }
+        else
+        {
+          <div class="notif-btn" style="cursor:default"><div class="notif-dot muted"></div> Nema novih zahtjeva</div>
         }
       </div>
     </div>
