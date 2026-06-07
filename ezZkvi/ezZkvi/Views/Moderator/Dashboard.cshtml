@@ -6,6 +6,9 @@
     var trenutniDatum = DateTime.Now.ToString("dddd · dd. MMMM yyyy", bsCulture);
 
     var userName = User.Identity?.Name ?? "Korisnik";
+
+    // Logo vodi na dashboard prema ulozi
+    var logoController = User.IsInRole("Admin") ? "Administrator" : (User.IsInRole("Moderator") ? "Moderator" : "Student");
 }
 
 @section Styles {
@@ -104,7 +107,7 @@
 <div class="layout">
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="sidebar">
-    <a class="logo" asp-controller="Home" asp-action="Index">ez<span>Zkvi</span></a>
+    <a class="logo" asp-controller="@logoController" asp-action="Dashboard">ez<span>Zkvi</span></a>
     <nav class="nav">
       <a class="nav-item active" asp-controller="Moderator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>

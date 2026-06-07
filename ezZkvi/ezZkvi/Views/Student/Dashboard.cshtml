@@ -9,6 +9,9 @@
     var userName = User.Identity?.Name ?? "Korisnik";
     var initials = userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : userName.ToUpper();
 
+    // Logo vodi na dashboard prema ulozi
+    var logoController = User.IsInRole("Admin") ? "Administrator" : (User.IsInRole("Moderator") ? "Moderator" : "Student");
+
     // Procenat napunjenosti XP trake za trenutni nivo
     var xpPostotak = Model.XpZaNivo > 0 ? Model.XpUNivou * 100 / Model.XpZaNivo : 0;
 }
@@ -280,7 +283,7 @@
 <div class="layout">
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="sidebar">
-    <a class="logo" asp-controller="Home" asp-action="Index">ez<span>Zkvi</span></a>
+    <a class="logo" asp-controller="@logoController" asp-action="Dashboard">ez<span>Zkvi</span></a>
     <nav class="nav">
       <a class="nav-item active" asp-controller="Student" asp-action="Dashboard"><span class="ico">⊞</span> Početna</a>
       <a class="nav-item" asp-controller="Student" asp-action="Prepare"><span class="ico">📚</span> Priprema</a>
