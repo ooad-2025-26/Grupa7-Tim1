@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ezZkvi.Data;
 using ezZkvi.Models;
 
 namespace ezZkvi.Controllers
 {
+    [Authorize(Roles = "Admin,Moderator")]
     public class KvizSesijaPitanjeController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -9,6 +9,7 @@ using ezZkvi.Models;
 
 namespace ezZkvi.Controllers
 {
+    [Authorize(Roles = "Admin,Moderator")]
     public class PredmetController : Controller
     {
         private readonly ApplicationDbContext _context;

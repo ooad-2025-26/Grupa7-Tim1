@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ezZkvi.Data;
@@ -6,6 +7,7 @@ using ezZkvi.Models;
 
 namespace ezZkvi.Controllers
 {
+    [Authorize(Roles = "Admin,Moderator")]
     public class OdgovorController : Controller
     {
         private readonly ApplicationDbContext _context;

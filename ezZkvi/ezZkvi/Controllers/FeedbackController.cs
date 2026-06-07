@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ezZkvi.Data;
@@ -16,12 +17,14 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Feedback
+        [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Index()
         {
             return View(await _context.Feedback.ToListAsync());
         }
 
         // GET: Feedback/Details/5
+        [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -76,6 +79,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Feedback/Edit/5
+        [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -96,6 +100,7 @@ namespace ezZkvi.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Edit(int id, [Bind("ID,Status,TipFeedbacka,DatumSlanja")] Feedback feedback)
         {
             if (id != feedback.ID)
@@ -127,6 +132,7 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Feedback/Delete/5
+        [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -147,6 +153,7 @@ namespace ezZkvi.Controllers
         // POST: Feedback/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var feedback = await _context.Feedback.FindAsync(id);
