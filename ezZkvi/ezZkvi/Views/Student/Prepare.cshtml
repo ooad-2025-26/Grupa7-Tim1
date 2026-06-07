@@ -114,11 +114,19 @@
 </div>
 
 <div class="subject-selector" id="subjectSelector">
-  <div class="subject-chip active" onclick="selectSubject(this,'OOAD')">OOAD</div>
-  <div class="subject-chip" onclick="selectSubject(this,'OS')">Operativni sistemi</div>
-  <div class="subject-chip" onclick="selectSubject(this,'ASP')">Algoritmi</div>
-  <div class="subject-chip" onclick="selectSubject(this,'NSP')">NSP</div>
-  <div class="subject-chip" onclick="selectSubject(this,'BP')">Baze podataka</div>
+  @if (ViewBag.Predmeti != null && ViewBag.Predmeti.Count > 0)
+  {
+    var prvi = true;
+    foreach (var p in ViewBag.Predmeti)
+    {
+      <div class="subject-chip @(prvi ? "active" : "")" data-id="@p.Id" onclick="selectSubject(this)">@p.Naziv</div>
+      prvi = false;
+    }
+  }
+  else
+  {
+    <span style="color:var(--muted);font-size:0.85rem;">Nema predmeta u bazi.</span>
+  }
 </div>
 
 <div class="mini-stats">
@@ -154,113 +162,121 @@
 
 @section Scripts {
 <script>
-  const questions = {
-    OOAD: [
-      { q:"Koji UML dijagram prikazuje dinamičko ponašanje sistema kroz interakciju objekata u vremenu?", opts:["Dijagram klasa","Dijagram paketa","Dijagram sekvenci","Dijagram komponenti"], correct:2, explanation:"Dijagram sekvenci (Sequence Diagram) prikazuje interakciju između objekata u vremenskom redoslijedu." },
-      { q:"Šta predstavlja «include» relacija u Use Case dijagramu?", opts:["Opcionu funkcionalnost","Obaveznu funkcionalnost koja se uvijek izvršava","Nasljeđivanje između aktera","Proširenje osnovnog slučaja upotrebe"], correct:1, explanation:"Include relacija označava obaveznu funkcionalnost – uključeni slučaj upotrebe se uvijek izvršava unutar baznog." },
-      { q:"Koji je primarni cilj Objektno orijentisane analize i dizajna?", opts:["Pisanje efikasnog koda","Modelovanje sistema kroz objekte i njihove interakcije","Optimizacija baze podataka","Testiranje softvera"], correct:1, explanation:"OOAD se fokusira na modelovanje sistema kroz koncepte objekata, klasa, nasljeđivanja i polimorfizma." },
-      { q:"Šta je apstraktna klasa u OOP-u?", opts:["Klasa koja se može instancirati","Klasa bez metoda","Klasa koja se ne može direktno instancirati i sadrži apstraktne metode","Klasa sa samo statičkim metodama"], correct:2, explanation:"Apstraktna klasa služi kao šablon – ne može se kreirati instanca direktno, već se nasljeđuje." },
-      { q:"Koji princip OOP-a omogućava da različite klase implementiraju istu operaciju na različite načine?", opts:["Enkapsulacija","Nasljeđivanje","Polimorfizam","Kompozicija"], correct:2, explanation:"Polimorfizam omogućava da objekti različitih klasa odgovaraju na iste poruke na specifične načine." }
-    ],
-    OS: [
-      { q:"Koja je glavna razlika između procesa i niti (thread)?", opts:["Procesi su brži","Niti dijele memorijski prostor istog procesa","Procesi ne koriste CPU","Niti ne mogu komunicirati"], correct:1, explanation:"Niti unutar istog procesa dijele adresni prostor, dok procesi imaju izolovane memorijske prostore." },
-      { q:"Šta je deadlock u kontekstu operativnih sistema?", opts:["Beskrajna petlja","Situacija gdje dva ili više procesa čekaju resurse koje drže drugi","Greška u kernelu","Prekoračenje memorije"], correct:1, explanation:"Deadlock nastaje kada grupa procesa čeka resurse koje drže drugi procesi iz iste grupe." }
-    ],
-    ASP: [
-      { q:"Koja je vremenska složenost QuickSort algoritma u prosječnom slučaju?", opts:["O(n)","O(n log n)","O(n²)","O(log n)"], correct:1, explanation:"QuickSort ima prosječnu složenost O(n log n), dok je najgori slučaj O(n²)." }
-    ],
-    NSP: [
-      { q:"Koji dizajn pattern osigurava da klasa ima samo jednu instancu?", opts:["Factory","Observer","Singleton","Decorator"], correct:2, explanation:"Singleton pattern ograničava klasu na jednu instancu i pruža globalnu tačku pristupa." }
-    ],
-    BP: [
-      { q:"Šta je primarni ključ u relacijskoj bazi podataka?", opts:["Bilo koji atribut","Unikatan identifikator zapisa","Strani ključ","Indeks"], correct:1, explanation:"Primarni ključ jedinstveno identificira svaki zapis u tabeli i ne može biti NULL." }
-    ]
-  };
+  const PREPARE_URL = '@Url.Action("PrepareQuestions", "Student")';
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-  let currentSubject = 'OOAD', currentQ = 0, correctCount = 0, wrongCount = 0, answered = false;
+  let currentQuestions = [], currentPredmetId = null, currentQ = 0, correctCount = 0, wrongCount = 0, answered = false;
 
-  function loadQuestions() {
-    const qs = questions[currentSubject] || questions.OOAD;
-    document.getElementById('qTotal').textContent = qs.length;
-    currentQ = 0; correctCount = 0; wrongCount = 0; answered = false;
-    document.getElementById('qCorrect').textContent = '0';
-    document.getElementById('qWrong').textContent = '0';
-    renderQuestion();
+  function esc(s) {
+    return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function selectSubject(el) {
+    document.querySelectorAll('.subject-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('headerSub').textContent = el.textContent + ' · Priprema za kviz';
+    loadSubject(el.getAttribute('data-id'));
+  }
+
+  function loadSubject(predmetId) {
+    currentPredmetId = predmetId;
+    fetch(PREPARE_URL + '?predmetId=' + predmetId)
+      .then(r => r.json())
+      .then(data => {
+        currentQuestions = data;
+        currentQ = 0; correctCount = 0; wrongCount = 0; answered = false;
+        document.getElementById('qCorrect').textContent = '0';
+        document.getElementById('qWrong').textContent = '0';
+        document.getElementById('qTotal').textContent = currentQuestions.length;
+
+        if (currentQuestions.length === 0) {
+          document.getElementById('progLabel').textContent = '0 / 0';
+          document.getElementById('progFill').style.width = '0%';
+          document.getElementById('qCard').innerHTML =
+            '<div style="text-align:center;padding:40px 0;color:var(--muted)">Za ovaj predmet nema pitanja za vježbu.<br>Pitanje mora imati bar 2 odgovora i tačno jedan tačan.</div>';
+          return;
+        }
+        renderQuestion();
+      })
+      .catch(() => {
+        document.getElementById('qCard').innerHTML =
+          '<div style="text-align:center;padding:40px 0;color:var(--danger)">Greška pri učitavanju pitanja.</div>';
+      });
   }
 
   function renderQuestion() {
-    const qs = questions[currentSubject];
-    if (!qs || currentQ >= qs.length) return;
-    const q = qs[currentQ];
-    document.getElementById('qNum').textContent = 'Pitanje ' + (currentQ+1) + ' od ' + qs.length;
-    document.getElementById('qText').textContent = q.q;
+    const q = currentQuestions[currentQ];
+    if (!q) return;
+    const total = currentQuestions.length;
+
     document.getElementById('qCurrent').textContent = currentQ + 1;
-    document.getElementById('progLabel').textContent = (currentQ+1) + ' / ' + qs.length;
-    document.getElementById('progFill').style.width = ((currentQ+1)/qs.length*100) + '%';
-    const letters = ['A','B','C','D'];
-    const optDiv = document.getElementById('options');
-    optDiv.innerHTML = '';
-    q.opts.forEach((opt, i) => {
-      const div = document.createElement('div');
-      div.className = 'option';
-      div.innerHTML = '<div class="opt-letter">'+letters[i]+'</div><span>'+opt+'</span>';
-      div.setAttribute('onclick', 'selectOption(this, '+i+')');
-      optDiv.appendChild(div);
+    document.getElementById('progLabel').textContent = (currentQ + 1) + ' / ' + total;
+    document.getElementById('progFill').style.width = ((currentQ + 1) / total * 100) + '%';
+
+    let optsHtml = '';
+    q.opcije.forEach((opt, i) => {
+      optsHtml += '<div class="option" onclick="selectOption(this,' + i + ')"><div class="opt-letter">' + letters[i] + '</div><span>' + esc(opt) + '</span></div>';
     });
-    document.getElementById('feedbackBox').style.display = 'none';
-    document.getElementById('skipBtn').style.display = 'block';
-    document.getElementById('nextBtn').style.display = 'none';
-    document.getElementById('prevBtn').style.display = currentQ > 0 ? 'block' : 'none';
+
+    document.getElementById('qCard').innerHTML =
+      '<div class="q-number">Pitanje ' + (currentQ + 1) + ' od ' + total + '</div>'
+      + '<div class="q-text">' + esc(q.tekst) + '</div>'
+      + '<div class="options">' + optsHtml + '</div>'
+      + '<div class="feedback-box" id="feedbackBox"><div class="fb-title" id="fbTitle"></div><div id="fbText"></div></div>'
+      + '<div class="actions">'
+      + (currentQ > 0 ? '<button class="btn btn-secondary" onclick="prevQuestion()">← Prethodno</button>' : '')
+      + '<button class="btn btn-secondary" id="skipBtn" onclick="nextQuestion()">Preskoči</button>'
+      + '<button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Sljedeće →</button>'
+      + '</div>';
+
     answered = false;
   }
 
   function selectOption(el, index) {
     if (answered) return;
     answered = true;
-    const q = questions[currentSubject][currentQ];
+    const q = currentQuestions[currentQ];
     const opts = document.querySelectorAll('.option');
     opts.forEach(o => o.style.pointerEvents = 'none');
     const fb = document.getElementById('feedbackBox');
-    if (index === q.correct) {
+
+    if (index === q.tacan) {
       el.classList.add('correct');
       fb.className = 'feedback-box correct-fb';
       document.getElementById('fbTitle').textContent = '✓ Tačan odgovor!';
+      document.getElementById('fbText').textContent = '';
       correctCount++;
       document.getElementById('qCorrect').textContent = correctCount;
     } else {
       el.classList.add('wrong');
-      opts[q.correct].classList.add('correct');
+      opts[q.tacan].classList.add('correct');
       fb.className = 'feedback-box wrong-fb';
       document.getElementById('fbTitle').textContent = '✗ Netačan odgovor';
+      document.getElementById('fbText').textContent = 'Tačan odgovor: ' + q.opcije[q.tacan];
       wrongCount++;
       document.getElementById('qWrong').textContent = wrongCount;
     }
-    document.getElementById('fbText').textContent = q.explanation;
+
     fb.style.display = 'block';
     document.getElementById('skipBtn').style.display = 'none';
     document.getElementById('nextBtn').style.display = 'block';
   }
 
   function nextQuestion() {
-    const qs = questions[currentSubject];
-    if (currentQ < qs.length - 1) {
+    if (currentQ < currentQuestions.length - 1) {
       currentQ++;
       renderQuestion();
     } else {
-      const pct = Math.round(correctCount/qs.length*100);
-      const scoreEarned = Math.round(correctCount * 5);
-
-      document.getElementById('qCard').innerHTML = `
-        <div style="text-align:center;padding:40px 0">
-          <div style="font-size:3rem;margin-bottom:16px">${pct >= 70 ? '🎉' : '📚'}</div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;margin-bottom:8px">Priprema završena!</div>
-          <div style="color:var(--muted);margin-bottom:24px">Tačnih: <span style="color:var(--success)">${correctCount}</span> · Netačnih: <span style="color:var(--danger)">${wrongCount}</span> · Rezultat: <span style="color:var(--accent)">${pct}%</span></div>
-          <div style="color:var(--muted);font-size:0.82rem;margin-bottom:20px">+${scoreEarned} XP (sačuvaće se kad baza bude povezana)</div>
-          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="loadQuestions()">Pokušaj ponovo</button>
-            <a class="btn btn-secondary" href="/Student/Simulate" style="text-decoration:none">Idi na simulaciju →</a>
-          </div>
-        </div>`;
+      const pct = currentQuestions.length ? Math.round(correctCount / currentQuestions.length * 100) : 0;
+      document.getElementById('qCard').innerHTML =
+        '<div style="text-align:center;padding:40px 0">'
+        + '<div style="font-size:3rem;margin-bottom:16px">' + (pct >= 70 ? '🎉' : '📚') + '</div>'
+        + '<div style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:700;margin-bottom:8px">Priprema završena!</div>'
+        + '<div style="color:var(--muted);margin-bottom:24px">Tačnih: <span style="color:var(--success)">' + correctCount + '</span> · Netačnih: <span style="color:var(--danger)">' + wrongCount + '</span> · Rezultat: <span style="color:var(--accent)">' + pct + '%</span></div>'
+        + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">'
+        + '<button class="btn btn-primary" onclick="loadSubject(\'' + currentPredmetId + '\')">Pokušaj ponovo</button>'
+        + '<a class="btn btn-secondary" href="/Student/Simulate" style="text-decoration:none">Idi na simulaciju →</a>'
+        + '</div></div>';
     }
   }
 
@@ -268,16 +284,8 @@
     if (currentQ > 0) { currentQ--; renderQuestion(); }
   }
 
-  function selectSubject(el, subj) {
-    document.querySelectorAll('.subject-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    currentSubject = subj;
-    document.getElementById('headerSub').textContent = subj + ' · Priprema za kviz';
-    loadQuestions();
-  }
-
-  document.addEventListener('keydown', function(e) {
-    if (!answered && ['1','2','3','4'].includes(e.key)) {
+  document.addEventListener('keydown', function (e) {
+    if (!answered && ['1', '2', '3', '4', '5', '6'].includes(e.key)) {
       const opts = document.querySelectorAll('.option');
       const idx = parseInt(e.key) - 1;
       if (opts[idx]) opts[idx].click();
@@ -286,6 +294,13 @@
     if (!answered && e.key === 'ArrowLeft' && currentQ > 0) prevQuestion();
   });
 
-  loadQuestions();
+  // Učitaj prvi predmet (ako postoji)
+  const prviChip = document.querySelector('.subject-chip');
+  if (prviChip) {
+    loadSubject(prviChip.getAttribute('data-id'));
+  } else {
+    document.getElementById('qCard').innerHTML =
+      '<div style="text-align:center;padding:40px 0;color:var(--muted)">Nema predmeta u bazi. Moderator prvo treba dodati predmet i pitanja.</div>';
+  }
 </script>
 }

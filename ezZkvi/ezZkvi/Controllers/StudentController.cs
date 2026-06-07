@@ -628,9 +628,53 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Student/Prepare
-        public IActionResult Prepare()
+        public async Task<IActionResult> Prepare()
         {
+            ViewBag.Predmeti = await _context.Predmet
+                .OrderBy(p => p.Naziv)
+                .Select(p => new { p.Id, p.Naziv })
+                .ToListAsync();
+
             return View();
+        }
+
+        // GET: /Student/PrepareQuestions?predmetId=5  — JSON pitanja za vježbu (bez tajmera)
+        public async Task<IActionResult> PrepareQuestions(int predmetId)
+        {
+            var pitanja = await _context.Pitanje
+                .Where(p => p.PredmetId == predmetId)
+                .ToListAsync();
+
+            var ids = pitanja.Select(p => p.Id).ToList();
+            var sviOdgovori = await _context.Odgovor
+                .Where(o => ids.Contains(o.PitanjeId))
+                .ToListAsync();
+
+            var poPitanju = sviOdgovori
+                .GroupBy(o => o.PitanjeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var rezultat = new List<object>();
+
+            foreach (var p in pitanja)
+            {
+                if (!poPitanju.TryGetValue(p.Id, out var ods)) continue;
+
+                // validno pitanje: bar 2 odgovora i tačno jedan tačan
+                if (ods.Count < 2 || ods.Count(o => o.IsTacan) != 1) continue;
+
+                var promijesani = Shuffle(ods);
+                var tacanIndex = promijesani.FindIndex(o => o.IsTacan);
+
+                rezultat.Add(new
+                {
+                    tekst = p.TekstPitanja,
+                    opcije = promijesani.Select(o => o.Tekst).ToList(),
+                    tacan = tacanIndex
+                });
+            }
+
+            return Json(Shuffle(rezultat));
         }
 
         // GET: /Student/Simulate
