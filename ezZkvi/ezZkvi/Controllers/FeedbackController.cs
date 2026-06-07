@@ -39,8 +39,13 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Feedback/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            ViewBag.Predmeti = await _context.Predmet
+                .OrderBy(p => p.Naziv)
+                .Select(p => p.Naziv)
+                .ToListAsync();
+
             return View();
         }
 

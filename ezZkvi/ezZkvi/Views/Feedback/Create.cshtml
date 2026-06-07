@@ -111,11 +111,17 @@
   <div class="form-group">
     <label>Predmet</label>
     <select class="inp" id="sgPredmet">
-      <option>Objektno orijentisana analiza i dizajn</option>
-      <option>Operativni sistemi</option>
-      <option>Algoritmi i strukture podataka</option>
-      <option>Napredno softversko programiranje</option>
-      <option>Baze podataka</option>
+      @if (ViewBag.Predmeti != null && ViewBag.Predmeti.Count > 0)
+      {
+          @foreach (var naziv in ViewBag.Predmeti)
+          {
+              <option>@naziv</option>
+          }
+      }
+      else
+      {
+          <option value="">Nema predmeta u bazi</option>
+      }
     </select>
   </div>
   <div class="form-group">
