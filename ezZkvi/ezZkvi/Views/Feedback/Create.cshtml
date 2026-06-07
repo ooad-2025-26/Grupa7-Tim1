@@ -32,6 +32,7 @@
   .form-title.amber::before{background:var(--amber);}
 
   .form-group{margin-bottom:18px;}
+  .field-error{ display:none; color:var(--danger); font-size:0.78rem; margin-top:6px; }
   label{display:block;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
   input[type=text], textarea, select.inp{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s;}
   input[type=text]:focus, textarea:focus, select.inp:focus{border-color:var(--accent);}
@@ -112,6 +113,7 @@
   <div class="form-group">
     <label>Predmet</label>
     <select class="inp" id="sgPredmet">
+      <option value="">Odaberi predmet</option>
       @if (ViewBag.Predmeti != null && ViewBag.Predmeti.Count > 0)
       {
           @foreach (var p in ViewBag.Predmeti)
@@ -119,11 +121,8 @@
               <option value="@p.Id">@p.Naziv</option>
           }
       }
-      else
-      {
-          <option value="">Nema predmeta u bazi</option>
-      }
     </select>
+    <div class="field-error" id="errSgPredmet">Odaberi predmet.</div>
   </div>
   <div class="form-group">
     <label>Oblast / Kategorija</label>
@@ -132,6 +131,7 @@
   <div class="form-group">
     <label>Tekst pitanja</label>
     <textarea id="sgPitanje" placeholder="Unesite tekst pitanja koje predlažeš..."></textarea>
+    <div class="field-error" id="errSgPitanje">Unesi tekst pitanja.</div>
   </div>
   <div class="form-group">
     <label>Ponuđeni odgovori</label>
@@ -171,12 +171,14 @@
   <div class="form-group">
     <label>Lokacija greške</label>
     <select class="inp" id="rpLokacija">
+      <option value="">Odaberi lokaciju</option>
       <option>Pitanje u bazi</option>
       <option>Simulacija kviza</option>
       <option>Priprema za kviz</option>
       <option>Leaderboard</option>
       <option>Ostalo</option>
     </select>
+    <div class="field-error" id="errRpLokacija">Odaberi lokaciju greške.</div>
   </div>
   <div class="form-group">
     <label>Predmet / Pitanje (opciono)</label>
@@ -185,6 +187,7 @@
   <div class="form-group">
     <label>Opis greške</label>
     <textarea id="rpOpis" placeholder="Detaljno opiši grešku: šta si vidio/la, šta si očekivao/la..."></textarea>
+    <div class="field-error" id="errRpOpis">Opiši grešku.</div>
   </div>
   <div class="form-group">
     <label>Screenshot (opciono — ne sprema se)</label>
@@ -250,13 +253,23 @@
     document.getElementById('filePreview').classList.remove('show');
   }
 
+  // Prikaže/sakrije poruku greške ispod polja; vrati true ako je polje OK
+  function postaviGresku(id, jeGreska){
+    document.getElementById(id).style.display = jeGreska ? 'block' : 'none';
+    return !jeGreska;
+  }
+
   function prepSuggest(){
+    var predmetSelect = document.getElementById('sgPredmet');
     var pitanje = (document.getElementById('sgPitanje').value || '').trim();
-    if (!pitanje){ alert('Unesi tekst pitanja.'); return false; }
+
+    var okPredmet = postaviGresku('errSgPredmet', !predmetSelect.value);
+    var okPitanje = postaviGresku('errSgPitanje', !pitanje);
+    if (!okPredmet || !okPitanje) return false;
+
     var correctEl = document.querySelector('#suggestForm .correct-opt.selected');
     var tacan = correctEl ? correctEl.textContent.trim() : '';
 
-    var predmetSelect = document.getElementById('sgPredmet');
     var predmetNaziv = predmetSelect.options[predmetSelect.selectedIndex] ? predmetSelect.options[predmetSelect.selectedIndex].text : '';
     document.getElementById('sgPredmetId').value = predmetSelect.value;
 
@@ -275,8 +288,13 @@
   }
 
   function prepReport(){
+    var lokacija = document.getElementById('rpLokacija').value;
     var opis = (document.getElementById('rpOpis').value || '').trim();
-    if (!opis){ alert('Opiši grešku.'); return false; }
+
+    var okLokacija = postaviGresku('errRpLokacija', !lokacija);
+    var okOpis = postaviGresku('errRpOpis', !opis);
+    if (!okLokacija || !okOpis) return false;
+
     document.getElementById('reportSadrzaj').value =
       'PRIJAVA GREŠKE\n'
       + 'Lokacija: ' + document.getElementById('rpLokacija').value + '\n'

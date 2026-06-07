@@ -132,10 +132,9 @@
 
 <div class="sort-bar">
   <span class="sort-label">Sortiraj:</span>
-  <button class="sort-btn active" onclick="sortBy('score', this)">Bodovi ↓</button>
-  <button class="sort-btn" onclick="sortBy('pct', this)">Tačnost ↓</button>
-  <button class="sort-btn" onclick="sortBy('quizzes', this)">Kvizovi ↓</button>
-  <button class="sort-btn" onclick="sortBy('name', this)">Ime ↑</button>
+  <button class="sort-btn active" onclick="sortBy('score', this)">Bodovi</button>
+  <button class="sort-btn" onclick="sortBy('pct', this)">Tačnost</button>
+  <button class="sort-btn" onclick="sortBy('quizzes', this)">Kvizovi</button>
 </div>
 
 <div id="lbContent">
@@ -199,34 +198,30 @@ else
 
 @section Scripts {
 <script>
+  let currentSort = 'score';
+  let lastEntries = [];
+
+  // Sortira kopiju liste prema trenutnom kriteriju (opadajuće)
+  function applySort(entries) {
+    var arr = entries.slice();
+    arr.sort(function (a, b) {
+      if (currentSort === 'pct') return (b.tacnost - a.tacnost) || (b.bodovi - a.bodovi);
+      if (currentSort === 'quizzes') return (b.kvizovi - a.kvizovi) || (b.bodovi - a.bodovi);
+      return (b.bodovi - a.bodovi) || (b.tacnost - a.tacnost); // bodovi (zadano)
+    });
+    return arr;
+  }
+
+  function render() {
+    var c = document.getElementById('lbContent');
+    if (c) c.innerHTML = buildLeaderboardHtml(lastEntries);
+  }
+
   function sortBy(field, btnEl) {
+    currentSort = field;
     document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
-
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
-    const rows = Array.from(tbody.querySelectorAll('.table-row'));
-
-    rows.sort((a, b) => {
-      let va = a.getAttribute('data-' + field);
-      let vb = b.getAttribute('data-' + field);
-      if (field === 'score' || field === 'pct' || field === 'quizzes') {
-        return parseInt(vb) - parseInt(va);
-      }
-      return va.localeCompare(vb);
-    });
-
-    rows.forEach((row, i) => {
-      const rankEl = row.querySelector('.rank');
-      rankEl.textContent = i + 1;
-      rankEl.className = 'rank';
-      if (i === 0) rankEl.classList.add('t1');
-      else if (i === 1) rankEl.classList.add('t2');
-      else if (i === 2) rankEl.classList.add('t3');
-      if (row.classList.contains('me')) rankEl.style.color = 'var(--accent)';
-    });
-
-    rows.forEach(row => tbody.appendChild(row));
+    render();
   }
 
   // ===== Automatsko osvježavanje (AJAX) =====
@@ -246,16 +241,17 @@ else
     if (!entries || entries.length === 0){
       return '<div class="table-wrap" style="padding:40px;text-align:center;color:var(--muted)">Još nema rezultata. Uradi prvi kviz da se pojaviš na rang listi!</div>';
     }
+    var sorted = applySort(entries);
     let html = '';
-    if (entries.length >= 3){
+    if (sorted.length >= 3){
       html += '<div class="podium">'
-        + podiumItem('silver', entries[1], 2, 'p1', 'var(--silver)')
-        + podiumItem('gold', entries[0], 1, 'p2', 'var(--gold)')
-        + podiumItem('bronze', entries[2], 3, 'p3', 'var(--bronze)')
+        + podiumItem('silver', sorted[1], 2, 'p1', 'var(--silver)')
+        + podiumItem('gold', sorted[0], 1, 'p2', 'var(--gold)')
+        + podiumItem('bronze', sorted[2], 3, 'p3', 'var(--bronze)')
         + '</div>';
     }
     html += '<div class="table-wrap"><div class="table-header"><span>#</span><span>Korisnik</span><span>Bodovi</span><span>Tačnost</span><span>Kvizovi</span></div><div id="tableBody">';
-    entries.forEach(function(e, i){
+    sorted.forEach(function(e, i){
       var rankClass = i===0?'t1':(i===1?'t2':(i===2?'t3':''));
       var meClass = e.jeTrenutni ? ' me' : '';
       var avStyle = e.jeTrenutni ? 'background:rgba(0,229,255,0.12);color:var(--accent)' : '';
@@ -277,13 +273,14 @@ else
     fetch('@Url.Action("LeaderboardData", "Student")')
       .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function(entries){
-        var c = document.getElementById('lbContent');
-        if (c) c.innerHTML = buildLeaderboardHtml(entries);
+        lastEntries = entries;
+        render();
       })
       .catch(function(){ /* tiho ignoriši grešku mreže */ });
   }
 
-  // osvježi svakih 10 sekundi
+  // učitaj odmah, pa osvježavaj svakih 10 sekundi
+  refreshLeaderboard();
   setInterval(refreshLeaderboard, 10000);
 </script>
 }
