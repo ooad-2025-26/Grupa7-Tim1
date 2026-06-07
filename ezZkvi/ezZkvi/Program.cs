@@ -55,6 +55,9 @@ else
     app.UseHsts();
 }
 
+// Lijepa stranica za HTTP greške (npr. 404 kad se upiše nepostojeći/POST-only URL)
+app.UseStatusCodePagesWithReExecute("/Home/Greska", "?kod={0}");
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();

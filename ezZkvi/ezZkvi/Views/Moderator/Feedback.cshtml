@@ -2,6 +2,9 @@
 @model IEnumerable<ezZkvi.Models.Feedback>
 @{
     ViewData["Title"] = "Pregled feedbacka";
+
+    // Vrati korisnika na NJEGOV dashboard (Admin → Administrator, Moderator → Moderator)
+    var backController = User.IsInRole("Admin") ? "Administrator" : "Moderator";
 }
 
 @section Styles {
@@ -85,7 +88,7 @@
 
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px">
-    <a class="back-link" asp-controller="Moderator" asp-action="Dashboard">← Nazad</a>
+    <a class="back-link" asp-controller="@backController" asp-action="Dashboard">← Nazad</a>
     <div>
       <div class="page-title">Pregled <span>feedbacka</span></div>
       <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Prijedlozi pitanja i prijave grešaka</div>

@@ -39,5 +39,12 @@ namespace ezZkvi.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        // Prikazuje se za HTTP greške (npr. 404 - stranica ne postoji)
+        public IActionResult Greska(int? kod)
+        {
+            ViewBag.Kod = kod;
+            return View();
+        }
     }
 }
