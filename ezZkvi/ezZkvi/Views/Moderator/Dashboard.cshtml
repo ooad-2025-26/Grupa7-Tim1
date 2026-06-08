@@ -111,7 +111,7 @@
     <nav class="nav">
       <a class="nav-item active" asp-controller="Moderator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
-      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback <span class="badge">3</span></a>
+      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
       <a class="nav-item" asp-controller="Account" asp-action="Login"><span class="ico">🚪</span> Odjava</a>
     </nav>
     <a class="user-card" asp-controller="Account" asp-action="Login">
@@ -130,7 +130,14 @@
           <div class="date-badge">@trenutniDatum</div>
         </div>
       </div>
-      <a class="notif-btn" asp-controller="Moderator" asp-action="Feedback"><div class="notif-dot"></div> 3 nova feedback-a</a>
+      @if (ViewBag.NeobradeniFeedback > 0)
+      {
+        <a class="notif-btn" asp-controller="Moderator" asp-action="Feedback"><div class="notif-dot"></div> @ViewBag.NeobradeniFeedback @(ViewBag.NeobradeniFeedback == 1 ? "novi feedback" : "nova feedback-a")</a>
+      }
+      else
+      {
+        <div class="notif-btn" style="cursor:default"><div class="notif-dot" style="background:var(--muted)"></div> Nema novog feedbacka</div>
+      }
     </div>
 
     <div class="stats">

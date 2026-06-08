@@ -331,9 +331,9 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Administrator
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.Administrator.ToListAsync());
+            return RedirectToAction(nameof(Dashboard));
         }
 
         // GET: Administrator/Details/5

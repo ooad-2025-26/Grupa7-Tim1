@@ -130,6 +130,21 @@
 </div>
 
 
+@if (ViewBag.Predmeti != null && ViewBag.Predmeti.Count > 0)
+{
+  <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span class="sort-label">Predmet:</span>
+    <select id="predmetFilter" onchange="filterPredmet(this)"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 12px;font-size:0.82rem;font-family:'Nunito Sans',sans-serif;outline:none;cursor:pointer;">
+      <option value="">Svi predmeti</option>
+      @foreach (var p in ViewBag.Predmeti)
+      {
+        <option value="@p.Id">@p.Naziv</option>
+      }
+    </select>
+  </div>
+}
+
 <div class="sort-bar">
   <span class="sort-label">Sortiraj:</span>
   <button class="sort-btn active" onclick="sortBy('score', this)">Bodovi</button>
@@ -200,6 +215,12 @@ else
 <script>
   let currentSort = 'score';
   let lastEntries = [];
+  let currentPredmetId = '';
+
+  function filterPredmet(sel) {
+    currentPredmetId = sel.value;
+    refreshLeaderboard();
+  }
 
   // Sortira kopiju liste prema trenutnom kriteriju (opadajuće)
   function applySort(entries) {
@@ -270,7 +291,8 @@ else
   }
 
   function refreshLeaderboard(){
-    fetch('@Url.Action("LeaderboardData", "Student")')
+    var url = '@Url.Action("LeaderboardData", "Student")' + (currentPredmetId ? ('?predmetId=' + currentPredmetId) : '');
+    fetch(url)
       .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function(entries){
         lastEntries = entries;

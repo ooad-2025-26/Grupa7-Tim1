@@ -34,19 +34,33 @@ namespace ezZkvi.Controllers
                 .ToListAsync();
         }
 
-        // GET: /Moderator/Dashboard
+        // GET: /Moderator/Dashboard  — samo Moderator (Admin ima svoj Administrator/Dashboard)
+        [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> Dashboard()
         {
+            var dozvoljeni = await DozvoljeniPredmetiIdAsync();
+
+            // Predmeti / pitanja / feedback skalirani: admin sve, moderator samo svoje
+            var predmetiQuery = _context.Predmet.AsQueryable();
+            var pitanjaQuery = _context.Pitanje.AsQueryable();
+            var feedbackQuery = _context.Feedback.AsQueryable();
+            if (dozvoljeni != null)
+            {
+                predmetiQuery = predmetiQuery.Where(p => dozvoljeni.Contains(p.Id));
+                pitanjaQuery = pitanjaQuery.Where(p => dozvoljeni.Contains(p.PredmetId));
+                feedbackQuery = feedbackQuery.Where(f => f.PredmetId == null || dozvoljeni.Contains(f.PredmetId.Value));
+            }
+
             // Statistike (kartice)
-            ViewBag.BrojPitanja = await _context.Pitanje.CountAsync();
-            ViewBag.BrojPredmeta = await _context.Predmet.CountAsync();
-            ViewBag.NeobradeniFeedback = await _context.Feedback
+            ViewBag.BrojPitanja = await pitanjaQuery.CountAsync();
+            ViewBag.BrojPredmeta = await predmetiQuery.CountAsync();
+            ViewBag.NeobradeniFeedback = await feedbackQuery
                 .CountAsync(f => f.Status == StatusFeedbacka.NA_CEKANJU);
-            ViewBag.ObradeniFeedback = await _context.Feedback
+            ViewBag.ObradeniFeedback = await feedbackQuery
                 .CountAsync(f => f.Status != StatusFeedbacka.NA_CEKANJU);
 
             // Najnoviji feedback za obradu
-            ViewBag.NajnovijiFeedback = (await _context.Feedback
+            ViewBag.NajnovijiFeedback = (await feedbackQuery
                 .Where(f => f.Status == StatusFeedbacka.NA_CEKANJU)
                 .OrderByDescending(f => f.DatumSlanja)
                 .Take(5)
@@ -60,12 +74,12 @@ namespace ezZkvi.Controllers
                 .ToList();
 
             // Pitanja po predmetu
-            var pitanjaPoPredmetu = await _context.Pitanje
+            var pitanjaPoPredmetu = await pitanjaQuery
                 .GroupBy(p => p.PredmetId)
                 .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
                 .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
 
-            var predmeti = await _context.Predmet.ToListAsync();
+            var predmeti = await predmetiQuery.ToListAsync();
 
             ViewBag.PitanjaPoPredmetu = predmeti
                 .Select(p => new PredmetAktivnostItem
@@ -77,7 +91,7 @@ namespace ezZkvi.Controllers
                 .ToList();
 
             // Nedavno obrađeni feedback (zamjena za log)
-            ViewBag.ObradjeniFeedback = (await _context.Feedback
+            ViewBag.ObradjeniFeedback = (await feedbackQuery
                 .Where(f => f.Status != StatusFeedbacka.NA_CEKANJU)
                 .OrderByDescending(f => f.DatumSlanja)
                 .Take(5)
@@ -223,9 +237,9 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Moderator
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.Moderator.ToListAsync());
+            return RedirectToAction(nameof(Dashboard));
         }
 
         // GET: Moderator/Details/5

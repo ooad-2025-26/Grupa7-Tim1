@@ -822,26 +822,33 @@ namespace ezZkvi.Controllers
 
 
         // GET: /Student/Leaderboard
-        public async Task<IActionResult> Leaderboard()
+        public async Task<IActionResult> Leaderboard(int? predmetId)
         {
-            var entries = await BuildLeaderboardAsync();
+            ViewBag.Predmeti = await _context.Predmet
+                .OrderBy(p => p.Naziv)
+                .Select(p => new { p.Id, p.Naziv })
+                .ToListAsync();
+            ViewBag.SelectedPredmetId = predmetId;
+
+            var entries = await BuildLeaderboardAsync(predmetId);
             return View(new LeaderboardViewModel { Entries = entries });
         }
 
         // GET: /Student/LeaderboardData  — JSON za automatsko osvježavanje (AJAX)
-        public async Task<IActionResult> LeaderboardData()
+        public async Task<IActionResult> LeaderboardData(int? predmetId)
         {
-            var entries = await BuildLeaderboardAsync();
+            var entries = await BuildLeaderboardAsync(predmetId);
             return Json(entries);
         }
 
-        private async Task<List<LeaderboardEntryViewModel>> BuildLeaderboardAsync()
+        private async Task<List<LeaderboardEntryViewModel>> BuildLeaderboardAsync(int? predmetId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Agregiraj rezultate po studentu DIREKTNO iz završenih kvizova
+            // Agregiraj rezultate po studentu iz završenih kvizova (po predmetu ako je izabran)
             var statistika = await _context.KvizSesije
-                .Where(s => s.Status == StatusSesije.ZAVRSEN && s.StudentId != null)
+                .Where(s => s.Status == StatusSesije.ZAVRSEN && s.StudentId != null
+                            && (predmetId == null || s.PredmetId == predmetId))
                 .GroupBy(s => s.StudentId!)
                 .Select(g => new
                 {
@@ -952,9 +959,9 @@ namespace ezZkvi.Controllers
         }
 
         // GET: Student
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.Student.ToListAsync());
+            return RedirectToAction(nameof(Dashboard));
         }
 
         // GET: Student/Details/5
