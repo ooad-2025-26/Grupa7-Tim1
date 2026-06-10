@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +68,26 @@ namespace ezZkvi.Controllers
                 query = query.Where(f => f.PredmetId == null || dozvoljeni.Contains(f.PredmetId.Value));
             }
 
-            return View(await query.OrderByDescending(f => f.DatumSlanja).ToListAsync());
+            var sviFeedback = await query
+                .OrderByDescending(f => f.DatumSlanja)
+                .ToListAsync();
+
+            var autorIds = sviFeedback
+                .Where(f => f.KorisnikId != null)
+                .Select(f => f.KorisnikId!)
+                .Distinct()
+                .ToList();
+
+            ViewBag.Autori = await _context.Users
+                .Where(u => autorIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.UserName);
+
+            ViewBag.Neobradjenih = sviFeedback.Count(f => f.Status == StatusFeedbacka.NA_CEKANJU);
+            ViewBag.Obradjenih = sviFeedback.Count(f => f.Status != StatusFeedbacka.NA_CEKANJU);
+            ViewBag.Prijedloga = sviFeedback.Count(f => f.TipFeedbacka == TipFeedbacka.PRIJEDLOG_PITANJA);
+            ViewBag.PrijavaGresaka = sviFeedback.Count(f => f.TipFeedbacka == TipFeedbacka.PRIJAVA_GRESKE);
+
+            return View(sviFeedback);
         }
 
         [Authorize(Roles = "Admin,Moderator")]
@@ -238,6 +257,54 @@ namespace ezZkvi.Controllers
             _context.Feedback.Remove(feedback);
             await _context.SaveChangesAsync();
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Moderator")]
+        public async Task<IActionResult> PrihvatiFeedback(int id)
+        {
+            var feedback = await _context.Feedback.FindAsync(id);
+
+            if (feedback == null)
+            {
+                return NotFound();
+            }
+
+            if (!await SmijeFeedbackAsync(feedback))
+            {
+                return Forbid();
+            }
+
+            feedback.Status = StatusFeedbacka.ODOBREN;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Feedback je prihvaćen.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Moderator")]
+        public async Task<IActionResult> OdbijFeedback(int id)
+        {
+            var feedback = await _context.Feedback.FindAsync(id);
+
+            if (feedback == null)
+            {
+                return NotFound();
+            }
+
+            if (!await SmijeFeedbackAsync(feedback))
+            {
+                return Forbid();
+            }
+
+            feedback.Status = StatusFeedbacka.ODBIJEN;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Feedback je odbijen.";
             return RedirectToAction(nameof(Index));
         }
     }

@@ -110,9 +110,9 @@
     <a class="logo" asp-controller="@logoController" asp-action="Dashboard">ez<span>Zkvi</span></a>
     <nav class="nav">
       <a class="nav-item active" asp-controller="Moderator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
-      <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
+      <a class="nav-item" asp-controller="Content" asp-action="Index"><span class="ico">📝</span> Sadržaj</a>
       <a class="nav-item" asp-controller="Leaderboard" asp-action="Index"><span class="ico">🏆</span> Leaderboard</a>
-      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
+      <a class="nav-item" asp-controller="Feedback" asp-action="Index"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
   </nav>
     <form asp-controller="Account" asp-action="Logout" method="post" class="user-card-logout-form">
       @Html.AntiForgeryToken()
@@ -135,7 +135,7 @@
       </div>
       @if (ViewBag.NeobradeniFeedback > 0)
       {
-        <a class="notif-btn" asp-controller="Moderator" asp-action="Feedback"><div class="notif-dot"></div> @ViewBag.NeobradeniFeedback @(ViewBag.NeobradeniFeedback == 1 ? "novi feedback" : "nova feedback-a")</a>
+        <a class="notif-btn" asp-controller="Feedback" asp-action="Index"><div class="notif-dot"></div> @ViewBag.NeobradeniFeedback @(ViewBag.NeobradeniFeedback == 1 ? "novi feedback" : "nova feedback-a")</a>
       }
       else
       {
@@ -144,7 +144,7 @@
     </div>
 
     <div class="stats">
-      <a class="stat clickable" asp-controller="Moderator" asp-action="Content">
+      <a class="stat clickable" asp-controller="Content" asp-action="Index">
         <div class="stat-val" style="color:var(--accent)">@ViewBag.BrojPitanja</div>
         <div class="stat-label">Pitanja u bazi</div>
         <div class="stat-trend neu">ukupno</div>
@@ -154,7 +154,7 @@
         <div class="stat-label">Predmeta</div>
         <div class="stat-trend neu">aktivnih</div>
       </div>
-      <a class="stat clickable" asp-controller="Moderator" asp-action="Feedback">
+      <a class="stat clickable" asp-controller="Feedback" asp-action="Index">
         <div class="stat-val" style="color:var(--danger)">@ViewBag.NeobradeniFeedback</div>
         <div class="stat-label">Neobrađeni feedback</div>
         <div class="stat-trend neu">čeka obradu</div>
@@ -178,7 +178,7 @@
           @foreach (var f in ViewBag.NajnovijiFeedback)
           {
             var jePrijedlog = f.Tip == TipFeedbacka.PRIJEDLOG_PITANJA;
-            <a class="fb-item" asp-controller="Moderator" asp-action="Feedback" style="text-decoration:none;color:inherit">
+            <a class="fb-item" asp-controller="Feedback" asp-action="Index" style="text-decoration:none;color:inherit">
               <div class="fb-icon">@(jePrijedlog ? "💡" : "🐛")</div>
               <div class="fb-content">
                 <div class="fb-title-text">@(f.Sadrzaj.Length > 70 ? f.Sadrzaj.Substring(0, 70) + "…" : f.Sadrzaj)</div>

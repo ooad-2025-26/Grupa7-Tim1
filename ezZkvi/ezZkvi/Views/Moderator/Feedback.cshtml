@@ -158,11 +158,11 @@
         @if (jeNovo)
         {
           <div class="feed-actions">
-            <form asp-controller="Moderator" asp-action="PrihvatiFeedback" asp-route-id="@f.ID" method="post" style="display:inline">
+            <form asp-controller="Feedback" asp-action="PrihvatiFeedback" asp-route-id="@f.ID" method="post" style="display:inline">
               @Html.AntiForgeryToken()
               <button type="submit" class="act-btn accept">✓ Prihvati</button>
             </form>
-            <form asp-controller="Moderator" asp-action="OdbijFeedback" asp-route-id="@f.ID" method="post" style="display:inline">
+            <form asp-controller="Feedback" asp-action="OdbijFeedback" asp-route-id="@f.ID" method="post" style="display:inline">
               @Html.AntiForgeryToken()
               <button type="submit" class="act-btn reject">✕ Odbij</button>
             </form>

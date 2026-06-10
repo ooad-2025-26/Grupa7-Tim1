@@ -109,9 +109,9 @@
     <nav class="nav">
       <a class="nav-item active" asp-controller="Administrator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
       <a class="nav-item" asp-controller="Administrator" asp-action="Users"><span class="ico">👥</span> Korisnici @if (ViewBag.BrojNaCekanju > 0) { <span class="badge">@ViewBag.BrojNaCekanju</span> }</a>
-      <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
+      <a class="nav-item" asp-controller="Content" asp-action="Index"><span class="ico">📝</span> Sadržaj</a>
       <a class="nav-item" asp-controller="Leaderboard" asp-action="Index"><span class="ico">🏆</span> Leaderboard</a>
-      <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
+      <a class="nav-item" asp-controller="Feedback" asp-action="Index"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
       <a class="nav-item" asp-controller="Administrator" asp-action="EmailObavijest"> <span class="ico">📧</span> Obavijesti</a>
   </nav>
     <form asp-controller="Account" asp-action="Logout" method="post" class="user-card-logout-form">
@@ -148,7 +148,7 @@
         <div class="stat-label">Korisnika</div>
         <div class="stat-trend neu">ukupno registrovanih</div>
       </a>
-      <a class="stat" asp-controller="Moderator" asp-action="Content">
+      <a class="stat" asp-controller="Content" asp-action="Index">
         <div class="stat-val" style="color:var(--amber)">@ViewBag.BrojPitanja</div>
         <div class="stat-label">Pitanja u bazi</div>
         <div class="stat-trend neu">ukupno</div>
@@ -158,7 +158,7 @@
         <div class="stat-label">Kvizova završeno</div>
         <div class="stat-trend neu">ukupno</div>
       </div>
-      <a class="stat" asp-controller="Moderator" asp-action="Feedback">
+      <a class="stat" asp-controller="Feedback" asp-action="Index">
         <div class="stat-val" style="color:var(--danger)">@ViewBag.NeobradeniFeedback</div>
         <div class="stat-label">Neobrađeni feedback</div>
         <div class="stat-trend neu">čeka obradu</div>

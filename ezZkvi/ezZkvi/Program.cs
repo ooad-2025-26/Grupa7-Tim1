@@ -123,6 +123,20 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
+    var stareOpceniteOblasti = await db.Oblast
+        .Where(o => o.Naziv == "Općenito" || o.Naziv == "Opcenito" || o.Naziv == "općenito" || o.Naziv == "opcenito")
+        .ToListAsync();
+
+    if (stareOpceniteOblasti.Count > 0)
+    {
+        foreach (var oblast in stareOpceniteOblasti)
+        {
+            oblast.Naziv = "Oblast 1";
+        }
+
+        await db.SaveChangesAsync();
+    }
+
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Korisnik>>();
 
     async Task SeedUserAsync(string email, string password, string role)

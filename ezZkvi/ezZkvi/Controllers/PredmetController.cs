@@ -44,13 +44,13 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Odaberi predmet za preuzimanje CSV-a.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             if (!SmijePredmet(predmet))
             {
                 TempData["Error"] = "Nemaš pristup ovom predmetu.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             var pitanja = await _context.Pitanje
@@ -115,25 +115,25 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Odaberi predmet za uvoz.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             if (!SmijePredmet(predmet))
             {
                 TempData["Error"] = "Nemaš pristup ovom predmetu.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             if (!await SmijeOblastAsync(oblastId, predmetId))
             {
                 TempData["Error"] = "Odabrana oblast ne pripada predmetu ili nemaš pristup.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = "Odaberi CSV fajl.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             var dodano = 0;
@@ -200,7 +200,7 @@ namespace ezZkvi.Controllers
 
             TempData["Success"] = $"Uvezeno {dodano} pitanja."
                 + (preskoceno > 0 ? $" Preskočeno {preskoceno} neispravnih redova." : "");
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         // Pretvori vrijednost u sigurno CSV polje (navodnici ako ima zarez/navodnik)
@@ -252,7 +252,7 @@ namespace ezZkvi.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Predmet nije sačuvan. Provjeri naziv.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             if (!User.IsInRole("Admin"))
@@ -265,13 +265,13 @@ namespace ezZkvi.Controllers
 
             _context.Oblast.Add(new Oblast
             {
-                Naziv = "Općenito",
+                Naziv = "Oblast 1",
                 PredmetId = predmet.Id
             });
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Predmet je uspješno dodan.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         [HttpPost]
@@ -297,14 +297,14 @@ namespace ezZkvi.Controllers
             if (string.IsNullOrWhiteSpace(predmet.Naziv))
             {
                 TempData["Error"] = "Naziv predmeta je obavezan.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             postojeci.Naziv = predmet.Naziv.Trim();
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Predmet je ažuriran.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         [HttpPost]
@@ -326,7 +326,7 @@ namespace ezZkvi.Controllers
             if (imaPitanja)
             {
                 TempData["Error"] = "Predmet se ne može obrisati dok ima pitanja.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             var oblasti = await _context.Oblast.Where(o => o.PredmetId == id).ToListAsync();
@@ -335,12 +335,12 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Predmet je obrisan.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         public IActionResult Index()
         {
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         public IActionResult Details(int? id)

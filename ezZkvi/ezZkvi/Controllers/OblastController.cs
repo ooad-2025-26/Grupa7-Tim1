@@ -52,7 +52,7 @@ namespace ezZkvi.Controllers
 
         public IActionResult Index()
         {
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         [Authorize(Roles = "Admin,Moderator")]
@@ -64,7 +64,7 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Predmet za oblast nije pronađen.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             if (!SmijePredmet(predmet))
@@ -75,7 +75,7 @@ namespace ezZkvi.Controllers
             if (string.IsNullOrWhiteSpace(naziv) || naziv.Trim().Length < 2)
             {
                 TempData["Error"] = "Naziv oblasti je obavezan.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             _context.Oblast.Add(new Oblast
@@ -86,7 +86,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Oblast je uspješno dodana.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         [Authorize(Roles = "Admin,Moderator")]
@@ -117,7 +117,7 @@ namespace ezZkvi.Controllers
             if (string.IsNullOrWhiteSpace(naziv) || naziv.Trim().Length < 2)
             {
                 TempData["Error"] = "Naziv oblasti je obavezan.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             oblast.Naziv = naziv.Trim();
@@ -125,7 +125,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Oblast je ažurirana.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         [Authorize(Roles = "Admin,Moderator")]
@@ -151,14 +151,14 @@ namespace ezZkvi.Controllers
             if (imaPitanja)
             {
                 TempData["Error"] = "Oblast se ne može obrisati dok ima pitanja.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             _context.Oblast.Remove(oblast);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Oblast je obrisana.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using ezZkvi.Data;
+using ezZkvi.Data;
 using ezZkvi.Models;
 using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -114,7 +114,7 @@ namespace ezZkvi.Controllers
 
         public IActionResult Index()
         {
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         public IActionResult Details(int? id)
@@ -200,7 +200,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je ažurirano.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         public IActionResult Delete(int? id)
@@ -234,7 +234,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je obrisano.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
 
         [HttpPost]
@@ -244,7 +244,7 @@ namespace ezZkvi.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Pitanje nije sačuvano. Provjerite unesene podatke.";
-                return RedirectToAction("Content", "Moderator");
+                return RedirectToAction("Index", "Content");
             }
 
             if (!await SmijePredmetAsync(model.PredmetId) || !await SmijeOblastAsync(model.OblastId, model.PredmetId))
@@ -275,7 +275,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je uspješno dodano.";
-            return RedirectToAction("Content", "Moderator");
+            return RedirectToAction("Index", "Content");
         }
     }
 }
