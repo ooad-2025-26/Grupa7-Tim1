@@ -291,16 +291,19 @@
       <a class="nav-item" asp-controller="Student" asp-action="Leaderboard"><span class="ico">🏆</span> Leaderboard</a>
       <a class="nav-item" asp-controller="Feedback" asp-action="Create"><span class="ico">💬</span> Feedback</a>
     </nav>
-    <a class="user-card" asp-controller="Account" asp-action="Login">
-      <div class="top">
-        <div class="user-avatar-sm">@initials</div>
-        <div>
-          <div class="user-name">@userName</div>
-          <div class="user-role">Student</div>
-          <div class="logout-hint">Klikni za odjavu →</div>
+    <form asp-controller="Account" asp-action="Logout" method="post" class="user-card-logout-form">
+      @Html.AntiForgeryToken()
+      <button type="submit" class="user-card user-card-logout-btn">
+        <div class="top">
+          <div class="user-avatar-sm">@initials</div>
+          <div>
+            <div class="user-name">@userName</div>
+            <div class="user-role">Student</div>
+            <div class="logout-hint">Klikni za odjavu →</div>
+          </div>
         </div>
-      </div>
-    </a>
+      </button>
+    </form>
   </div>
 
   <main class="main">

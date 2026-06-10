@@ -27,6 +27,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
+
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(7);
+    options.SlidingExpiration = true;
 });
 
 builder.Services.AddControllersWithViews(options =>
@@ -34,7 +37,14 @@ builder.Services.AddControllersWithViews(options =>
     var policy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
+
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.ResponseCacheAttribute
+    {
+        NoStore = true,
+        Location = Microsoft.AspNetCore.Mvc.ResponseCacheLocation.None
+    });
 });
 
 builder.Services.Configure<EmailSettings>(

@@ -24,9 +24,36 @@ namespace ezZkvi.Controllers
             _emailService = emailService;
         }
 
+        private async Task<IActionResult> RedirectToDashboardByRole(Korisnik user)
+        {
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+                return RedirectToAction("Dashboard", "Administrator");
+
+            if (await _userManager.IsInRoleAsync(user, "Moderator"))
+                return RedirectToAction("Dashboard", "Moderator");
+
+            if (await _userManager.IsInRoleAsync(user, "Student"))
+                return RedirectToAction("Dashboard", "Student");
+
+            return RedirectToAction("Index", "Home");
+        }
+
         // GET: /Account/Login
         [HttpGet]
-        public IActionResult Login() => View();
+        public async Task<IActionResult> Login()
+        {
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                var user = await _userManager.GetUserAsync(User);
+
+                if (user != null)
+                    return await RedirectToDashboardByRole(user);
+
+                return RedirectToAction("Index", "Home");
+            }
+
+            return View();
+        }
 
         // POST: /Account/Login
         [HttpPost]
@@ -64,16 +91,7 @@ namespace ezZkvi.Controllers
 
             if (result.Succeeded)
             {
-                if (await _userManager.IsInRoleAsync(user, "Admin"))
-                    return RedirectToAction("Dashboard", "Administrator");
-
-                if (await _userManager.IsInRoleAsync(user, "Moderator"))
-                    return RedirectToAction("Dashboard", "Moderator");
-
-                if (await _userManager.IsInRoleAsync(user, "Student"))
-                    return RedirectToAction("Dashboard", "Student");
-
-                return RedirectToAction("Index", "Home");
+                return await RedirectToDashboardByRole(user);
             }
 
             ModelState.AddModelError("", "Pogrešan email ili lozinka.");

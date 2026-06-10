@@ -112,13 +112,15 @@
       <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
       <a class="nav-item" asp-controller="Administrator" asp-action="EmailObavijest"> <span class="ico">📧</span> Obavijesti</a>
-      <a class="nav-item" asp-controller="Account" asp-action="Login"><span class="ico">🚪</span> Odjava</a>
     </nav>
-    <a class="user-card" asp-controller="Account" asp-action="Login">
-      <div class="user-name">@userName</div>
-      <div class="user-role">Administrator</div>
-      <div class="logout-hint">Klikni za odjavu →</div>
-    </a>
+    <form asp-controller="Account" asp-action="Logout" method="post" class="user-card-logout-form">
+      @Html.AntiForgeryToken()
+      <button type="submit" class="user-card user-card-logout-btn">
+        <div class="user-name">@userName</div>
+        <div class="user-role">Administrator</div>
+        <div class="logout-hint">Klikni za odjavu →</div>
+      </button>
+    </form>
   </div>
 
   <main class="main">
