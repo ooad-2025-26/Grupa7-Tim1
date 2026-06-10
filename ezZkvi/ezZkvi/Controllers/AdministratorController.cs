@@ -307,7 +307,7 @@ namespace ezZkvi.Controllers
             // Nedavna aktivnost – zadnji završeni kvizovi
             var nedavni = await _context.KvizSesije
                 .Include(s => s.Predmet)
-                .Where(s => s.Status == StatusSesije.ZAVRSEN)
+                .Where(s => s.Status == StatusSesije.ZAVRSEN || s.Status == StatusSesije.ISTEKAO)
                 .OrderByDescending(s => s.DatumZavrsetka)
                 .Take(5)
                 .ToListAsync();

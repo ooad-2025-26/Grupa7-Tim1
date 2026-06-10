@@ -29,6 +29,11 @@
                 <span asp-validation-for="PredmetId" class="text-danger"></span>
             </div>
             <div class="form-group">
+                <label asp-for="OblastId" class="control-label">Oblast</label>
+                <select asp-for="OblastId" class="form-control" asp-items="ViewBag.OblastId"></select>
+                <span asp-validation-for="OblastId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>
         </form>

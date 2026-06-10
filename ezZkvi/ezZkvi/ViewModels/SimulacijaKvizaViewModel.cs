@@ -9,11 +9,14 @@ namespace ezZkvi.ViewModels
 
         public int? AktivnaSesijaId { get; set; }
         public string? AktivnaSesijaPredmetNaziv { get; set; }
+        public string? AktivnaSesijaOblastNaziv { get; set; }
         public int PreostaloSekundi { get; set; }
 
         public int PocetniIndex { get; set; }
         public int? PredmetId { get; set; }
         public string? PredmetNaziv { get; set; }
+        public int? OblastId { get; set; }
+        public string? OblastNaziv { get; set; }
 
         public int BrojPitanja { get; set; } = 10;
         public int VremenskoOgranicenjeMinuta { get; set; } = 15;
@@ -23,9 +26,19 @@ namespace ezZkvi.ViewModels
         public string? ErrorMessage { get; set; }
 
         public List<SelectListItem> Predmeti { get; set; } = new();
+        public List<OblastSelectItemViewModel> Oblasti { get; set; } = new();
         public List<SimulacijaPitanjeViewModel> Questions { get; set; } = new();
 
         public SimulacijaRezultatViewModel? Result { get; set; }
+    }
+
+    public class OblastSelectItemViewModel
+    {
+        public int Id { get; set; }
+        public string Naziv { get; set; } = string.Empty;
+        public int PredmetId { get; set; }
+        public string PredmetNaziv { get; set; } = string.Empty;
+        public bool Selected { get; set; }
     }
 
     public class SimulacijaPitanjeViewModel
@@ -50,6 +63,7 @@ namespace ezZkvi.ViewModels
     {
         public int KvizSesijaId { get; set; }
         public int PredmetId { get; set; }
+        public int OblastId { get; set; }
         public long StartedAtUtcTicks { get; set; }
         public int TotalSeconds { get; set; }
 

@@ -747,6 +747,7 @@
                     <div class="section-label">Aktivna simulacija</div>
                     <div class="quiz-meta">
                         Predmet: @Model.PredmetNaziv<br />
+                        Oblast: @(Model.OblastNaziv ?? "Odabrana oblast")<br />
                         Broj pitanja: @Model.BrojPitanja
                     </div>
                 </div>
@@ -773,6 +774,7 @@
 
                 <input type="hidden" name="KvizSesijaId" id="kvizSesijaId" value="@Model.KvizSesijaId" />
                 <input type="hidden" name="PredmetId" value="@Model.PredmetId" />
+                <input type="hidden" name="OblastId" value="@Model.OblastId" />
                 <input type="hidden" name="StartedAtUtcTicks" value="@Model.StartedAtUtcTicks" />
                 <input type="hidden" name="TotalSeconds" value="@totalSeconds" />
 
@@ -851,7 +853,11 @@
                     <div class="section-label">Aktivna simulacija</div>
 
                     <p class="form-description">
-                        Imaš započetu simulaciju iz predmeta @Model.AktivnaSesijaPredmetNaziv.
+                        Imaš započetu simulaciju iz predmeta @Model.AktivnaSesijaPredmetNaziv
+                        @if (!string.IsNullOrWhiteSpace(Model.AktivnaSesijaOblastNaziv))
+                        {
+                            <text> / oblast @Model.AktivnaSesijaOblastNaziv</text>
+                        }.
                         Možeš nastaviti dok vrijeme ne istekne.
                     </p>
 
@@ -871,7 +877,7 @@
             <div class="section-label">Pokretanje simulacije</div>
 
             <p class="form-description">
-                Odaberi predmet. Sistem će iz baze nasumično izvući pitanja za odabrani predmet.
+                Odaberi predmet i oblast. Sistem će iz baze nasumično izvući pitanja samo iz odabrane oblasti.
             </p>
 
             <form asp-controller="Student" asp-action="StartSimulation" method="post" id="startSimulationForm">
@@ -892,6 +898,27 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label asp-for="OblastId" class="form-label">Oblast</label>
+
+                    <select asp-for="OblastId"
+                            class="simulation-select"
+                            id="oblastSelect">
+                        <option value="">-- Prvo odaberi predmet --</option>
+                        @foreach (var oblast in Model.Oblasti)
+                        {
+                            <option value="@oblast.Id"
+                                    data-predmet-id="@oblast.PredmetId">
+                                @oblast.PredmetNaziv / @oblast.Naziv
+                            </option>
+                        }
+                    </select>
+
+                    <div class="inline-error" id="oblastError">
+                        Moraš odabrati oblast prije pokretanja simulacije.
+                    </div>
+                </div>
+
                 <div class="actions">
                     <button type="submit" class="btn-main">
                         Pokreni simulaciju
@@ -906,17 +933,63 @@
     <script>
         const startForm = document.getElementById('startSimulationForm');
 
+        const predmetSelect = document.getElementById('predmetSelect');
+        const oblastSelect = document.getElementById('oblastSelect');
+
+        function filterOblastiZaPredmet() {
+            if (!predmetSelect || !oblastSelect) {
+                return;
+            }
+
+            const predmetId = predmetSelect.value;
+
+            Array.from(oblastSelect.options).forEach(function (option) {
+                const optionPredmetId = option.getAttribute('data-predmet-id');
+
+                if (!optionPredmetId) {
+                    option.hidden = false;
+                    option.disabled = false;
+                    return;
+                }
+
+                const visible = predmetId && optionPredmetId === predmetId;
+                option.hidden = !visible;
+                option.disabled = !visible;
+            });
+
+            if (oblastSelect.selectedOptions.length && oblastSelect.selectedOptions[0].disabled) {
+                oblastSelect.value = '';
+            }
+        }
+
+        if (predmetSelect) {
+            predmetSelect.addEventListener('change', filterOblastiZaPredmet);
+            filterOblastiZaPredmet();
+        }
+
         if (startForm) {
             startForm.addEventListener('submit', function (event) {
-                const predmetSelect = document.getElementById('predmetSelect');
                 const predmetError = document.getElementById('predmetError');
+                const oblastError = document.getElementById('oblastError');
+                let valid = true;
 
                 if (!predmetSelect.value) {
-                    event.preventDefault();
                     predmetError.style.display = 'block';
-                    predmetSelect.focus();
+                    valid = false;
                 } else {
                     predmetError.style.display = 'none';
+                }
+
+                if (!oblastSelect.value) {
+                    oblastError.style.display = 'block';
+                    valid = false;
+                } else {
+                    oblastError.style.display = 'none';
+                }
+
+                if (!valid) {
+                    event.preventDefault();
+                    (!predmetSelect.value ? predmetSelect : oblastSelect).focus();
                 }
             });
         }

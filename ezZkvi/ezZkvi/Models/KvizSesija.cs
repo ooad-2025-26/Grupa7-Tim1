@@ -25,6 +25,10 @@ namespace ezZkvi.Models
         public int? PredmetId { get; set; }
         public Predmet? Predmet { get; set; }
 
+        // Iz koje oblasti je bio kviz
+        public int? OblastId { get; set; }
+        public Oblast? Oblast { get; set; }
+
         // Rezultat
         public int BrojTacnih { get; set; }
         public int Procenat { get; set; }

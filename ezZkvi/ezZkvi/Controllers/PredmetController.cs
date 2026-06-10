@@ -27,6 +27,15 @@ namespace ezZkvi.Controllers
             return predmet.KreatorId == userId;
         }
 
+        private async Task<bool> SmijeOblastAsync(int oblastId, int predmetId)
+        {
+            var oblast = await _context.Oblast
+                .Include(o => o.Predmet)
+                .FirstOrDefaultAsync(o => o.Id == oblastId && o.PredmetId == predmetId);
+
+            return oblast != null && oblast.Predmet != null && SmijePredmet(oblast.Predmet);
+        }
+
         // GET: /Predmet/ExportCsv/5  — skine sva pitanja predmeta kao CSV
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> ExportCsv(int id)
@@ -45,7 +54,10 @@ namespace ezZkvi.Controllers
             }
 
             var pitanja = await _context.Pitanje
+                .Include(p => p.Oblast)
                 .Where(p => p.PredmetId == id)
+                .OrderBy(p => p.Oblast != null ? p.Oblast.Naziv : "")
+                .ThenBy(p => p.Id)
                 .ToListAsync();
 
             var pitanjeIds = pitanja.Select(p => p.Id).ToList();
@@ -58,7 +70,7 @@ namespace ezZkvi.Controllers
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             var sb = new StringBuilder();
-            sb.AppendLine("TekstPitanja,OdgovorA,OdgovorB,OdgovorC,OdgovorD,Tacan,Tezina");
+            sb.AppendLine("TekstPitanja,OdgovorA,OdgovorB,OdgovorC,OdgovorD,Tacan,Tezina,Oblast");
 
             foreach (var p in pitanja)
             {
@@ -80,7 +92,8 @@ namespace ezZkvi.Controllers
                     CsvPolje(p.TekstPitanja),
                     CsvPolje(a?.Tekst), CsvPolje(b?.Tekst), CsvPolje(c?.Tekst), CsvPolje(d?.Tekst),
                     tacan,
-                    p.Tezina.ToString()
+                    p.Tezina.ToString(),
+                    CsvPolje(p.Oblast?.Naziv)
                 }));
             }
 
@@ -96,7 +109,7 @@ namespace ezZkvi.Controllers
         [HttpPost]
         [Authorize(Roles = "Admin,Moderator")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ImportCsv(int predmetId, IFormFile file)
+        public async Task<IActionResult> ImportCsv(int predmetId, int oblastId, IFormFile file)
         {
             var predmet = await _context.Predmet.FindAsync(predmetId);
             if (predmet == null)
@@ -108,6 +121,12 @@ namespace ezZkvi.Controllers
             if (!SmijePredmet(predmet))
             {
                 TempData["Error"] = "Nemaš pristup ovom predmetu.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            if (!await SmijeOblastAsync(oblastId, predmetId))
+            {
+                TempData["Error"] = "Odabrana oblast ne pripada predmetu ili nemaš pristup.";
                 return RedirectToAction("Content", "Moderator");
             }
 
@@ -161,10 +180,11 @@ namespace ezZkvi.Controllers
                 {
                     TekstPitanja = tekst,
                     PredmetId = predmetId,
+                    OblastId = oblastId,
                     Tezina = tezina
                 };
                 _context.Pitanje.Add(pitanje);
-                await _context.SaveChangesAsync();   // da dobijemo pitanje.Id
+                await _context.SaveChangesAsync();
 
                 var odgovori = validni.Select(k => new Odgovor
                 {
@@ -223,6 +243,99 @@ namespace ezZkvi.Controllers
             }
             rezultat.Add(sb.ToString());
             return rezultat;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFromContent([Bind("Naziv")] Predmet predmet)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Predmet nije sačuvan. Provjeri naziv.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            if (!User.IsInRole("Admin"))
+            {
+                predmet.KreatorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+
+            _context.Predmet.Add(predmet);
+            await _context.SaveChangesAsync();
+
+            _context.Oblast.Add(new Oblast
+            {
+                Naziv = "Općenito",
+                PredmetId = predmet.Id
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Predmet je uspješno dodan.";
+            return RedirectToAction("Content", "Moderator");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFromContent(int id, [Bind("Id,Naziv")] Predmet predmet)
+        {
+            if (id != predmet.Id)
+            {
+                return NotFound();
+            }
+
+            var postojeci = await _context.Predmet.FindAsync(id);
+            if (postojeci == null)
+            {
+                return NotFound();
+            }
+
+            if (!SmijePredmet(postojeci))
+            {
+                return Forbid();
+            }
+
+            if (string.IsNullOrWhiteSpace(predmet.Naziv))
+            {
+                TempData["Error"] = "Naziv predmeta je obavezan.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            postojeci.Naziv = predmet.Naziv.Trim();
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Predmet je ažuriran.";
+            return RedirectToAction("Content", "Moderator");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFromContent(int id)
+        {
+            var predmet = await _context.Predmet.FindAsync(id);
+            if (predmet == null)
+            {
+                return NotFound();
+            }
+
+            if (!SmijePredmet(predmet))
+            {
+                return Forbid();
+            }
+
+            var imaPitanja = await _context.Pitanje.AnyAsync(p => p.PredmetId == id);
+            if (imaPitanja)
+            {
+                TempData["Error"] = "Predmet se ne može obrisati dok ima pitanja.";
+                return RedirectToAction("Content", "Moderator");
+            }
+
+            var oblasti = await _context.Oblast.Where(o => o.PredmetId == id).ToListAsync();
+            _context.Oblast.RemoveRange(oblasti);
+            _context.Predmet.Remove(predmet);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Predmet je obrisan.";
+            return RedirectToAction("Content", "Moderator");
         }
 
         public IActionResult Index()

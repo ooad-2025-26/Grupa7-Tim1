@@ -209,7 +209,7 @@
 
         .t-header {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 220px 100px 120px;
+            grid-template-columns: minmax(0, 1fr) 170px 170px 100px 120px;
             padding: 12px 20px;
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -221,7 +221,7 @@
 
         .t-row {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 220px 100px 120px;
+            grid-template-columns: minmax(0, 1fr) 170px 170px 100px 120px;
             padding: 14px 20px;
             border-bottom: 1px solid var(--border);
             align-items: center;
@@ -248,7 +248,7 @@
         .tag {
             display: inline-flex;
             align-items: center;
-            max-width: 190px;
+            max-width: 150px;
             padding: 4px 10px;
             border-radius: 10px;
             font-size: 0.68rem;
@@ -541,7 +541,7 @@
         <div>
             <div class="page-title">Upravljanje <span>sadržajem</span></div>
             <div style="font-size:0.8rem;color:var(--muted);margin-top:2px;">
-                Pitanja i predmeti platforme
+                Pitanja, predmeti i oblasti platforme
             </div>
         </div>
     </div>
@@ -550,8 +550,9 @@
 </div>
 
 <div class="tabs">
-    <button type="button" class="tab active" onclick="switchTab('questions')">Pitanja</button>
-    <button type="button" class="tab" onclick="switchTab('subjects')">Predmeti</button>
+    <button type="button" class="tab active" data-tab="questions" onclick="switchTab('questions')">Pitanja</button>
+    <button type="button" class="tab" data-tab="subjects" onclick="switchTab('subjects')">Predmeti</button>
+    <button type="button" class="tab" data-tab="areas" onclick="switchTab('areas')">Oblasti</button>
 </div>
 
 <div class="panel active" id="questions">
@@ -563,6 +564,10 @@
 
         <select name="predmetId" asp-items="ViewBag.Predmeti" onchange="document.getElementById('filterForm').submit()">
             <option value="">Svi predmeti</option>
+        </select>
+
+        <select name="oblastId" asp-items="ViewBag.OblastiFilter" onchange="document.getElementById('filterForm').submit()">
+            <option value="">Sve oblasti</option>
         </select>
 
         <select name="tezina" id="tezinaFilter" data-selected="@selectedTezina" onchange="document.getElementById('filterForm').submit()">
@@ -585,6 +590,7 @@
         <div class="t-header">
             <span>Pitanje</span>
             <span>Predmet</span>
+            <span>Oblast</span>
             <span>Težina</span>
             <span>Akcije</span>
         </div>
@@ -613,6 +619,12 @@
                     <span>
                         <span class="tag">
                             @(pitanje.Predmet != null ? pitanje.Predmet.Naziv : "Bez predmeta")
+                        </span>
+                    </span>
+
+                    <span>
+                        <span class="tag" style="background:rgba(255,179,0,0.1);color:var(--amber);">
+                            @(pitanje.Oblast != null ? pitanje.Oblast.Naziv : "Bez oblasti")
                         </span>
                     </span>
 
@@ -674,14 +686,65 @@
             @foreach (var p in ViewBag.PredmetiLista)
             {
                 <div class="t-row subject-row" data-naziv="@p.Naziv.ToLower()" style="grid-template-columns:1fr 90px 140px">
-                    <div>
-                        <div class="q-text-cell">@p.Naziv</div>
-                    </div>
+                    <div><div class="q-text-cell">@p.Naziv</div></div>
                     <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">@p.BrojPitanja</span>
                     <div class="actions-cell">
                         <button type="button" class="act-btn edit" data-id="@p.Id" data-naziv="@p.Naziv" onclick="openEditSubject(this)">Uredi</button>
                         <form asp-controller="Predmet" asp-action="DeleteFromContent" asp-route-id="@p.Id" method="post" style="display:inline;"
                               onsubmit="return confirm('Obrisati ovaj predmet? (moguće samo ako nema pitanja)');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="act-btn del">Obriši</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<div class="panel" id="areas">
+    <div class="toolbar">
+        <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="areaSearch" oninput="filterAreas()" placeholder="Pretraži oblasti...">
+        </div>
+
+        <button type="button" class="btn-add" onclick="openAreaModal()">
+            + Nova oblast
+        </button>
+    </div>
+
+    <div class="table-wrap">
+        <div class="t-header" style="grid-template-columns:1fr 220px 90px 140px">
+            <span>Naziv oblasti</span>
+            <span>Predmet</span>
+            <span>Pitanja</span>
+            <span>Akcije</span>
+        </div>
+
+        @if (ViewBag.OblastiLista == null || ViewBag.OblastiLista.Count == 0)
+        {
+            <div class="t-row" style="grid-template-columns:1fr;">
+                <div class="q-text-cell">Nema oblasti. Dodaj oblast za predmet prije dodavanja pitanja.</div>
+            </div>
+        }
+        else
+        {
+            @foreach (var o in ViewBag.OblastiLista)
+            {
+                <div class="t-row area-row" data-naziv="@((o.Naziv + " " + o.PredmetNaziv).ToLower())" style="grid-template-columns:1fr 220px 90px 140px">
+                    <div><div class="q-text-cell">@o.Naziv</div></div>
+                    <span><span class="tag">@o.PredmetNaziv</span></span>
+                    <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">@o.BrojPitanja</span>
+                    <div class="actions-cell">
+                        <button type="button"
+                                class="act-btn edit"
+                                data-id="@o.Id"
+                                data-naziv="@o.Naziv"
+                                data-predmet-id="@o.PredmetId"
+                                onclick="openEditArea(this)">Uredi</button>
+                        <form asp-controller="Oblast" asp-action="DeleteFromContent" asp-route-id="@o.Id" method="post" style="display:inline;"
+                              onsubmit="return confirm('Obrisati ovu oblast? (moguće samo ako nema pitanja)');">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="act-btn del">Obriši</button>
                         </form>
@@ -704,8 +767,19 @@
 
             <div class="form-group">
                 <label>Predmet</label>
-                <select name="PredmetId" class="form-control-dark" asp-items="ViewBag.Predmeti" required>
+                <select name="PredmetId" id="questionPredmetSelect" class="form-control-dark" asp-items="ViewBag.Predmeti" required onchange="filterQuestionOblasti()">
                     <option value="">Odaberi predmet</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Oblast</label>
+                <select name="OblastId" id="questionOblastSelect" class="form-control-dark" required>
+                    <option value="">Prvo odaberi predmet</option>
+                    @foreach (var o in ViewBag.OblastiListaZaSelect)
+                    {
+                        <option value="@o.Id" data-predmet-id="@o.PredmetId">@o.PredmetNaziv / @o.Naziv</option>
+                    }
                 </select>
             </div>
 
@@ -718,25 +792,10 @@
                 <label>Ponuđeni odgovori</label>
 
                 <div class="answers-grid">
-                    <div class="answer-box">
-                        <span>A</span>
-                        <input name="Odgovor1" class="form-control-dark" placeholder="Odgovor A" required />
-                    </div>
-
-                    <div class="answer-box">
-                        <span>B</span>
-                        <input name="Odgovor2" class="form-control-dark" placeholder="Odgovor B" required />
-                    </div>
-
-                    <div class="answer-box">
-                        <span>C</span>
-                        <input name="Odgovor3" class="form-control-dark" placeholder="Odgovor C" required />
-                    </div>
-
-                    <div class="answer-box">
-                        <span>D</span>
-                        <input name="Odgovor4" class="form-control-dark" placeholder="Odgovor D" required />
-                    </div>
+                    <div class="answer-box"><span>A</span><input name="Odgovor1" class="form-control-dark" placeholder="Odgovor A" required /></div>
+                    <div class="answer-box"><span>B</span><input name="Odgovor2" class="form-control-dark" placeholder="Odgovor B" required /></div>
+                    <div class="answer-box"><span>C</span><input name="Odgovor3" class="form-control-dark" placeholder="Odgovor C" required /></div>
+                    <div class="answer-box"><span>D</span><input name="Odgovor4" class="form-control-dark" placeholder="Odgovor D" required /></div>
                 </div>
             </div>
 
@@ -816,6 +875,65 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="areaModal">
+    <div class="modal">
+        <div class="modal-title">
+            Nova oblast
+            <button type="button" class="modal-close" onclick="closeAreaModal()">×</button>
+        </div>
+
+        <form asp-controller="Oblast" asp-action="CreateFromContent" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label>Predmet</label>
+                <select name="PredmetId" class="form-control-dark" asp-items="ViewBag.Predmeti" required>
+                    <option value="">Odaberi predmet</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Naziv oblasti</label>
+                <input name="Naziv" class="form-control-dark" placeholder="npr. Klase i objekti" required />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeAreaModal()">Otkaži</button>
+                <button type="submit" class="btn-save">Sačuvaj oblast</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="areaEditModal">
+    <div class="modal">
+        <div class="modal-title">
+            Uredi oblast
+            <button type="button" class="modal-close" onclick="closeEditArea()">×</button>
+        </div>
+
+        <form asp-controller="Oblast" asp-action="EditFromContent" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" id="editAreaId" />
+
+            <div class="form-group">
+                <label>Predmet</label>
+                <select name="PredmetId" id="editAreaPredmetId" class="form-control-dark" asp-items="ViewBag.Predmeti" required></select>
+            </div>
+
+            <div class="form-group">
+                <label>Naziv oblasti</label>
+                <input name="Naziv" id="editAreaNaziv" class="form-control-dark" required />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeEditArea()">Otkaži</button>
+                <button type="submit" class="btn-save">Sačuvaj izmjene</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="modal-overlay" id="csvModal">
     <div class="modal">
         <div class="modal-title">
@@ -824,8 +942,8 @@
         </div>
 
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:18px;line-height:1.5;">
-            Preuzmi CSV predmeta, dopuni ga pitanjima (jedan red = jedno pitanje), pa ga uvezi nazad.
-            Kolone: <strong>TekstPitanja, OdgovorA, OdgovorB, OdgovorC, OdgovorD, Tacan (A/B/C/D), Tezina (LAKO/SREDNJE/TESKO)</strong>.
+            Preuzmi CSV predmeta, dopuni ga pitanjima, pa ga uvezi nazad. Kod uvoza moraš odabrati oblast u koju se pitanja dodaju.
+            Kolone: <strong>TekstPitanja, OdgovorA, OdgovorB, OdgovorC, OdgovorD, Tacan, Tezina, Oblast</strong>.
         </p>
 
         <form asp-controller="Predmet" asp-action="ExportCsv" method="get" style="margin-bottom:22px;">
@@ -845,8 +963,19 @@
 
             <div class="form-group">
                 <label>Uvezi pitanja u predmet</label>
-                <select name="predmetId" class="form-control-dark" asp-items="ViewBag.Predmeti" required>
+                <select name="predmetId" id="csvPredmetSelect" class="form-control-dark" asp-items="ViewBag.Predmeti" required onchange="filterCsvOblasti()">
                     <option value="">Odaberi predmet</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Oblast za uvoz</label>
+                <select name="oblastId" id="csvOblastSelect" class="form-control-dark" required>
+                    <option value="">Prvo odaberi predmet</option>
+                    @foreach (var o in ViewBag.OblastiListaZaSelect)
+                    {
+                        <option value="@o.Id" data-predmet-id="@o.PredmetId">@o.PredmetNaziv / @o.Naziv</option>
+                    }
                 </select>
             </div>
 
@@ -865,15 +994,15 @@
 
 <div class="toast"
      id="toast"
-     data-success="@TempData["Success"]"
-     data-error="@TempData["Error"]">
+     data-success='@(TempData["Success"])'
+     data-error='@(TempData["Error"])'>
 </div>
 
 @section Scripts {
     <script>
         function switchTab(t) {
-            document.querySelectorAll('.tab').forEach(function (el, i) {
-                el.classList.toggle('active', (i === 0 && t === 'questions') || (i === 1 && t === 'subjects'));
+            document.querySelectorAll('.tab').forEach(function (el) {
+                el.classList.toggle('active', el.getAttribute('data-tab') === t);
             });
 
             document.querySelectorAll('.panel').forEach(function (el) {
@@ -883,8 +1012,41 @@
             document.getElementById(t).classList.add('active');
         }
 
+        function toggleOptionsByPredmet(selectId, predmetId) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            Array.from(select.options).forEach(function (opt) {
+                const optionPredmet = opt.getAttribute('data-predmet-id');
+                if (!optionPredmet) {
+                    opt.hidden = false;
+                    opt.disabled = false;
+                    return;
+                }
+
+                const visible = predmetId && optionPredmet === predmetId;
+                opt.hidden = !visible;
+                opt.disabled = !visible;
+            });
+
+            if (select.selectedOptions.length && select.selectedOptions[0].disabled) {
+                select.value = '';
+            }
+        }
+
+        function filterQuestionOblasti() {
+            const predmetId = document.getElementById('questionPredmetSelect').value;
+            toggleOptionsByPredmet('questionOblastSelect', predmetId);
+        }
+
+        function filterCsvOblasti() {
+            const predmetId = document.getElementById('csvPredmetSelect').value;
+            toggleOptionsByPredmet('csvOblastSelect', predmetId);
+        }
+
         function openQuestionModal() {
             document.getElementById('questionModal').classList.add('open');
+            filterQuestionOblasti();
         }
 
         function closeQuestionModal() {
@@ -893,23 +1055,12 @@
 
         function openCsvModal() {
             document.getElementById('csvModal').classList.add('open');
+            filterCsvOblasti();
         }
 
         function closeCsvModal() {
             document.getElementById('csvModal').classList.remove('open');
         }
-
-        document.getElementById('csvModal').addEventListener('click', function (e) {
-            if (e.target === this) {
-                closeCsvModal();
-            }
-        });
-
-        document.getElementById('questionModal').addEventListener('click', function (e) {
-            if (e.target === this) {
-                closeQuestionModal();
-            }
-        });
 
         function openSubjectModal() {
             document.getElementById('subjectModal').classList.add('open');
@@ -929,6 +1080,25 @@
             document.getElementById('subjectEditModal').classList.remove('open');
         }
 
+        function openAreaModal() {
+            document.getElementById('areaModal').classList.add('open');
+        }
+
+        function closeAreaModal() {
+            document.getElementById('areaModal').classList.remove('open');
+        }
+
+        function openEditArea(btn) {
+            document.getElementById('editAreaId').value = btn.getAttribute('data-id');
+            document.getElementById('editAreaNaziv').value = btn.getAttribute('data-naziv');
+            document.getElementById('editAreaPredmetId').value = btn.getAttribute('data-predmet-id');
+            document.getElementById('areaEditModal').classList.add('open');
+        }
+
+        function closeEditArea() {
+            document.getElementById('areaEditModal').classList.remove('open');
+        }
+
         function filterSubjects() {
             var q = document.getElementById('subjectSearch').value.toLowerCase();
             document.querySelectorAll('.subject-row').forEach(function (row) {
@@ -937,16 +1107,21 @@
             });
         }
 
-        document.getElementById('subjectEditModal').addEventListener('click', function (e) {
-            if (e.target === this) {
-                closeEditSubject();
-            }
-        });
+        function filterAreas() {
+            var q = document.getElementById('areaSearch').value.toLowerCase();
+            document.querySelectorAll('.area-row').forEach(function (row) {
+                var naziv = row.getAttribute('data-naziv') || '';
+                row.style.display = (!q || naziv.includes(q)) ? '' : 'none';
+            });
+        }
 
-        document.getElementById('subjectModal').addEventListener('click', function (e) {
-            if (e.target === this) {
-                closeSubjectModal();
-            }
+        ['csvModal', 'questionModal', 'subjectModal', 'subjectEditModal', 'areaModal', 'areaEditModal'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('click', function (e) {
+                if (e.target !== this) return;
+                this.classList.remove('open');
+            });
         });
 
         function showToast(msg, type) {
@@ -954,13 +1129,8 @@
             t.textContent = msg;
             t.className = 'toast ' + type;
 
-            setTimeout(function () {
-                t.classList.add('show');
-            }, 10);
-
-            setTimeout(function () {
-                t.classList.remove('show');
-            }, 3500);
+            setTimeout(function () { t.classList.add('show'); }, 10);
+            setTimeout(function () { t.classList.remove('show'); }, 3500);
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -971,17 +1141,15 @@
                 tezinaFilter.value = selectedTezina;
             }
 
+            filterQuestionOblasti();
+            filterCsvOblasti();
+
             const toast = document.getElementById('toast');
             const success = toast.getAttribute('data-success');
             const error = toast.getAttribute('data-error');
 
-            if (success) {
-                showToast(success, 'success');
-            }
-
-            if (error) {
-                showToast(error, 'error');
-            }
+            if (success) showToast(success, 'success');
+            if (error) showToast(error, 'error');
         });
     </script>
 }

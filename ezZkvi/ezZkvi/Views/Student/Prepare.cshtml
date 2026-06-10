@@ -12,98 +12,70 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font-family:'Nunito Sans',sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:32px 20px; }
 
-  .header { width:100%; max-width:800px; display:flex; align-items:center; gap:16px; margin-bottom:28px; }
-  .back-btn {
-    padding:8px 16px; background:var(--surface); border:1px solid var(--border);
-    border-radius:8px; color:var(--muted); font-size:0.85rem; cursor:pointer;
-    transition:all 0.2s; display:flex; align-items:center; gap:6px; text-decoration:none;
-  }
+  .header { width:100%; max-width:1060px; display:flex; align-items:center; gap:16px; margin-bottom:28px; }
+  .back-btn { padding:8px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:0.85rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px; text-decoration:none; }
   .back-btn:hover { border-color:var(--accent); color:var(--accent); }
   .header-info { flex:1; }
   .header-title { font-family:'Rajdhani',sans-serif; font-size:1.5rem; font-weight:700; letter-spacing:1px; }
   .header-sub { font-size:0.8rem; color:var(--muted); margin-top:2px; }
 
-  .subject-selector { width:100%; max-width:800px; display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
-  .subject-chip {
-    padding:8px 18px; background:var(--surface); border:1px solid var(--border);
-    border-radius:20px; font-size:0.82rem; cursor:pointer; transition:all 0.2s;
-    font-family:'Nunito Sans',sans-serif;
-  }
-  .subject-chip:hover, .subject-chip.active { border-color:var(--accent); color:var(--accent); background:rgba(0,229,255,0.06); }
-  .subject-dropdown {
-    background:var(--surface); border:1px solid var(--border); border-radius:8px;
-    color:var(--text); padding:10px 14px; font-size:0.9rem; font-family:'Nunito Sans',sans-serif;
-    outline:none; cursor:pointer; min-width:280px;
-  }
+  .subject-selector { width:100%; max-width:1060px; display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .subject-dropdown { background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:10px 14px; font-size:0.9rem; font-family:'Nunito Sans',sans-serif; outline:none; cursor:pointer; min-width:280px; }
   .subject-dropdown:focus { border-color:var(--accent); }
 
-  .progress-wrap { width:100%; max-width:800px; margin-bottom:24px; }
+  .prepare-layout { width:100%; max-width:1060px; display:grid; grid-template-columns:240px minmax(0, 1fr); gap:20px; align-items:start; }
+  .area-sidebar { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; position:sticky; top:20px; }
+  .area-title { font-family:'Rajdhani',sans-serif; font-size:0.78rem; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .area-filter { width:100%; text-align:left; padding:10px 12px; margin-bottom:8px; background:var(--surface); border:1px solid var(--border); border-radius:9px; color:var(--text); cursor:pointer; transition:0.2s; font-size:0.86rem; }
+  .area-filter:hover, .area-filter.active { border-color:var(--accent); color:var(--accent); background:rgba(0,229,255,0.06); }
+  .practice-main { min-width:0; }
+
+  .progress-wrap { width:100%; margin-bottom:24px; }
   .progress-labels { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
   .prog-bar { height:4px; background:var(--border); border-radius:4px; overflow:hidden; }
   .prog-fill { height:100%; background:linear-gradient(90deg, var(--accent), #00B8D4); border-radius:4px; transition:width 0.5s ease; }
 
-  .q-card {
-    width:100%; max-width:800px; background:var(--card); border:1px solid var(--border);
-    border-radius:14px; padding:32px; animation:fadeUp 0.4s ease both;
-  }
+  .q-card { width:100%; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:32px; animation:fadeUp 0.4s ease both; }
   .q-number { font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; color:var(--accent); margin-bottom:16px; }
   .q-text { font-size:1.15rem; font-weight:600; line-height:1.6; margin-bottom:28px; }
   .options { display:flex; flex-direction:column; gap:12px; }
-  .option {
-    padding:16px 20px; background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
-    cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:14px; font-size:0.95rem;
-  }
+  .option { padding:16px 20px; background:var(--surface); border:1.5px solid var(--border); border-radius:10px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:14px; font-size:0.95rem; }
   .option:hover { border-color:var(--accent); background:rgba(0,229,255,0.04); }
   .option.selected { border-color:var(--accent); background:rgba(0,229,255,0.08); }
   .option.correct { border-color:var(--success); background:rgba(0,230,118,0.08); }
   .option.wrong { border-color:var(--danger); background:rgba(255,82,82,0.08); }
-  .opt-letter {
-    width:32px; height:32px; border-radius:6px; background:var(--border); display:flex;
-    align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif;
-    font-weight:700; font-size:0.9rem; flex-shrink:0; transition:all 0.2s;
-  }
+  .opt-letter { width:32px; height:32px; border-radius:6px; background:var(--border); display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.9rem; flex-shrink:0; transition:all 0.2s; }
   .option.selected .opt-letter { background:var(--accent); color:var(--bg); }
   .option.correct .opt-letter { background:var(--success); color:var(--bg); }
   .option.wrong .opt-letter { background:var(--danger); color:white; }
 
-  .feedback-box {
-    margin-top:20px; padding:16px 20px; border-radius:10px; font-size:0.9rem; line-height:1.5;
-    display:none; animation:fadeUp 0.3s ease both;
-  }
+  .feedback-box { margin-top:20px; padding:16px 20px; border-radius:10px; font-size:0.9rem; line-height:1.5; display:none; animation:fadeUp 0.3s ease both; }
   .feedback-box.correct-fb { background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.3); color:var(--success); }
   .feedback-box.wrong-fb { background:rgba(255,82,82,0.1); border:1px solid rgba(255,82,82,0.3); color:#ff8a80; }
   .fb-title { font-weight:700; margin-bottom:4px; font-family:'Rajdhani',sans-serif; font-size:1rem; letter-spacing:1px; }
 
   .actions { display:flex; justify-content:flex-end; margin-top:24px; gap:12px; flex-wrap:wrap; }
-  .btn {
-    padding:12px 28px; border:none; border-radius:8px; cursor:pointer;
-    font-family:'Rajdhani',sans-serif; font-size:0.95rem; font-weight:700;
-    letter-spacing:1.5px; text-transform:uppercase; transition:all 0.2s;
-  }
+  .btn { padding:12px 28px; border:none; border-radius:8px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:0.95rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; transition:all 0.2s; }
   .btn-primary { background:var(--accent); color:var(--bg); }
   .btn-primary:hover { background:#fff; box-shadow:0 0 20px rgba(0,229,255,0.4); }
   .btn-secondary { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
   .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
 
-  .mini-stats { display:flex; gap:20px; margin-bottom:24px; width:100%; max-width:800px; flex-wrap:wrap; }
-  .mini-stat {
-    flex:1; min-width:120px; background:var(--card); border:1px solid var(--border);
-    border-radius:10px; padding:14px 18px; display:flex; align-items:center; gap:12px;
-  }
+  .mini-stats { display:flex; gap:20px; margin-bottom:24px; width:100%; flex-wrap:wrap; }
+  .mini-stat { flex:1; min-width:120px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 18px; display:flex; align-items:center; gap:12px; }
   .ms-val { font-family:'Rajdhani',sans-serif; font-size:1.5rem; font-weight:700; }
   .ms-val.a { color:var(--accent); } .ms-val.s { color:var(--success); } .ms-val.d { color:var(--danger); }
   .ms-label { font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
 
-  .kb-hint { font-size:0.7rem; color:var(--border); text-align:center; margin-top:16px; width:100%; max-width:800px; }
-  .kb-hint kbd {
-    display:inline-block; padding:2px 6px; background:var(--surface);
-    border:1px solid var(--border); border-radius:4px; font-size:0.68rem; margin:0 2px;
-  }
+  .kb-hint { font-size:0.7rem; color:var(--border); text-align:center; margin-top:16px; width:100%; }
+  .kb-hint kbd { display:inline-block; padding:2px 6px; background:var(--surface); border:1px solid var(--border); border-radius:4px; font-size:0.68rem; margin:0 2px; }
 
   @@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 
-  @@media (max-width: 600px) {
+  @@media (max-width: 760px) {
     body { padding:16px 12px; }
+    .prepare-layout { grid-template-columns:1fr; }
+    .area-sidebar { position:static; }
     .q-card { padding:20px; }
     .mini-stats { flex-direction:column; }
     .mini-stat { min-width:auto; }
@@ -115,7 +87,7 @@
   <a class="back-btn" asp-controller="Student" asp-action="Dashboard">← Nazad</a>
   <div class="header-info">
     <div class="header-title">Priprema za kviz</div>
-    <div class="header-sub" id="headerSub">OOAD · Priprema za kviz</div>
+    <div class="header-sub" id="headerSub">Odaberi predmet i oblast za vježbu</div>
   </div>
 </div>
 
@@ -136,58 +108,101 @@
   }
 </div>
 
-<div class="mini-stats">
-  <div class="mini-stat"><div><div class="ms-val a" id="qCurrent">1</div><div class="ms-label">Trenutno</div></div></div>
-  <div class="mini-stat"><div><div class="ms-val s" id="qCorrect">0</div><div class="ms-label">Tačnih</div></div></div>
-  <div class="mini-stat"><div><div class="ms-val d" id="qWrong">0</div><div class="ms-label">Netačnih</div></div></div>
-  <div class="mini-stat"><div><div class="ms-val" id="qTotal">5</div><div class="ms-label">Ukupno</div></div></div>
-</div>
+<div class="prepare-layout">
+  <aside class="area-sidebar">
+    <div class="area-title">Oblasti</div>
+    <div id="areaFilters">
+      <button type="button" class="area-filter active">Sve oblasti</button>
+    </div>
+  </aside>
 
-<div class="progress-wrap">
-  <div class="progress-labels"><span>Napredak</span><span id="progLabel">1 / 5</span></div>
-  <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:20%"></div></div>
-</div>
+  <main class="practice-main">
+    <div class="mini-stats">
+      <div class="mini-stat"><div><div class="ms-val a" id="qCurrent">1</div><div class="ms-label">Trenutno</div></div></div>
+      <div class="mini-stat"><div><div class="ms-val s" id="qCorrect">0</div><div class="ms-label">Tačnih</div></div></div>
+      <div class="mini-stat"><div><div class="ms-val d" id="qWrong">0</div><div class="ms-label">Netačnih</div></div></div>
+      <div class="mini-stat"><div><div class="ms-val" id="qTotal">0</div><div class="ms-label">Ukupno</div></div></div>
+    </div>
 
-<div class="q-card" id="qCard">
-  <div class="q-number" id="qNum">Pitanje 1 od 5</div>
-  <div class="q-text" id="qText">Učitavanje...</div>
-  <div class="options" id="options"></div>
-  <div class="feedback-box" id="feedbackBox">
-    <div class="fb-title" id="fbTitle"></div>
-    <div id="fbText"></div>
-  </div>
-  <div class="actions">
-    <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" style="display:none">← Prethodno</button>
-    <button class="btn btn-secondary" id="skipBtn" onclick="nextQuestion()">Preskoči</button>
-    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Sljedeće →</button>
-  </div>
-</div>
+    <div class="progress-wrap">
+      <div class="progress-labels"><span>Napredak</span><span id="progLabel">0 / 0</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
 
-<div class="kb-hint">
-  Prečice: <kbd>1</kbd>-<kbd>4</kbd> odgovor · <kbd>→</kbd> sljedeće · <kbd>←</kbd> prethodno
+    <div class="q-card" id="qCard">
+      <div class="q-number" id="qNum">Pitanje</div>
+      <div class="q-text" id="qText">Učitavanje...</div>
+      <div class="options" id="options"></div>
+      <div class="feedback-box" id="feedbackBox">
+        <div class="fb-title" id="fbTitle"></div>
+        <div id="fbText"></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" style="display:none">← Prethodno</button>
+        <button class="btn btn-secondary" id="skipBtn" onclick="nextQuestion()">Preskoči</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Sljedeće →</button>
+      </div>
+    </div>
+
+    <div class="kb-hint">
+      Prečice: <kbd>1</kbd>-<kbd>4</kbd> odgovor · <kbd>→</kbd> sljedeće · <kbd>←</kbd> prethodno
+    </div>
+  </main>
 </div>
 
 @section Scripts {
 <script>
   const PREPARE_URL = '@Url.Action("PrepareQuestions", "Student")';
+  const allAreas = @Html.Raw(Json.Serialize(ViewBag.Oblasti));
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-  let currentQuestions = [], currentPredmetId = null, currentQ = 0, correctCount = 0, wrongCount = 0;
-  let stanje = []; // za svako pitanje: { odgovoreno: bool, odabrani: index|null }
+  let currentQuestions = [], currentPredmetId = null, currentOblastId = null, currentQ = 0, correctCount = 0, wrongCount = 0;
+  let stanje = [];
+
+  function areaProp(o, name) {
+    return o[name] ?? o[name.charAt(0).toUpperCase() + name.slice(1)];
+  }
 
   function esc(s) {
     return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function selectSubject(el) {
-    var naziv = el.options ? el.options[el.selectedIndex].text : el.textContent;
-    document.getElementById('headerSub').textContent = naziv + ' · Priprema za kviz';
-    loadSubject(el.value);
+  function renderAreaFilters(predmetId) {
+    const wrap = document.getElementById('areaFilters');
+    const filtered = allAreas.filter(o => String(areaProp(o, 'predmetId')) === String(predmetId));
+
+    let html = '<button type="button" class="area-filter active" data-oblast="" onclick="selectArea(null, this)">Sve oblasti</button>';
+
+    filtered.forEach(o => {
+      html += '<button type="button" class="area-filter" data-oblast="' + areaProp(o, 'id') + '" onclick="selectArea(' + areaProp(o, 'id') + ', this)">' + esc(areaProp(o, 'naziv')) + '</button>';
+    });
+
+    wrap.innerHTML = html;
   }
 
-  function loadSubject(predmetId) {
+  function selectArea(oblastId, btn) {
+    currentOblastId = oblastId;
+    document.querySelectorAll('.area-filter').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    loadSubject(currentPredmetId, currentOblastId);
+  }
+
+  function selectSubject(el) {
+    var naziv = el.options ? el.options[el.selectedIndex].text : el.textContent;
+    currentPredmetId = el.value;
+    currentOblastId = null;
+    document.getElementById('headerSub').textContent = naziv + ' · Priprema za kviz';
+    renderAreaFilters(currentPredmetId);
+    loadSubject(currentPredmetId, null);
+  }
+
+  function loadSubject(predmetId, oblastId) {
     currentPredmetId = predmetId;
-    fetch(PREPARE_URL + '?predmetId=' + predmetId)
+
+    let url = PREPARE_URL + '?predmetId=' + encodeURIComponent(predmetId || '');
+    if (oblastId) url += '&oblastId=' + encodeURIComponent(oblastId);
+
+    fetch(url)
       .then(r => r.json())
       .then(data => {
         currentQuestions = data;
@@ -200,8 +215,9 @@
         if (currentQuestions.length === 0) {
           document.getElementById('progLabel').textContent = '0 / 0';
           document.getElementById('progFill').style.width = '0%';
+          document.getElementById('qCurrent').textContent = '0';
           document.getElementById('qCard').innerHTML =
-            '<div style="text-align:center;padding:40px 0;color:var(--muted)">Za ovaj predmet nema pitanja za vježbu.<br>Pitanje mora imati bar 2 odgovora i tačno jedan tačan.</div>';
+            '<div style="text-align:center;padding:40px 0;color:var(--muted)">Za odabrani filter nema pitanja za vježbu.<br>Pitanje mora imati bar 2 odgovora i tačno jedan tačan.</div>';
           return;
         }
         renderQuestion();
@@ -237,13 +253,11 @@
       + '<button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Sljedeće →</button>'
       + '</div>';
 
-    // Ako je pitanje već odgovoreno, prikaži ga zaključano sa tačnim odgovorom
     if (stanje[currentQ] && stanje[currentQ].odgovoreno) {
       otkrijOdgovor(currentQuestions[currentQ], stanje[currentQ].odabrani);
     }
   }
 
-  // Prikaže tačan/netačan odgovor i zaključa pitanje (bez ponovnog odgovaranja)
   function otkrijOdgovor(q, odabrani) {
     const opts = document.querySelectorAll('.option');
     opts.forEach(o => o.style.pointerEvents = 'none');
@@ -252,13 +266,13 @@
     if (odabrani === q.tacan) {
       if (opts[odabrani]) opts[odabrani].classList.add('correct');
       fb.className = 'feedback-box correct-fb';
-      document.getElementById('fbTitle').textContent = '✓ Tačan odgovor!';
+      document.getElementById('fbTitle').textContent = 'Tačan odgovor';
       document.getElementById('fbText').textContent = '';
     } else {
       if (odabrani != null && opts[odabrani]) opts[odabrani].classList.add('wrong');
       if (opts[q.tacan]) opts[q.tacan].classList.add('correct');
       fb.className = 'feedback-box wrong-fb';
-      document.getElementById('fbTitle').textContent = '✗ Netačan odgovor';
+      document.getElementById('fbTitle').textContent = 'Netačan odgovor';
       document.getElementById('fbText').textContent = 'Tačan odgovor: ' + q.opcije[q.tacan];
     }
 
@@ -292,11 +306,10 @@
       const pct = currentQuestions.length ? Math.round(correctCount / currentQuestions.length * 100) : 0;
       document.getElementById('qCard').innerHTML =
         '<div style="text-align:center;padding:40px 0">'
-        + '<div style="font-size:3rem;margin-bottom:16px">' + (pct >= 70 ? '🎉' : '📚') + '</div>'
-        + '<div style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:700;margin-bottom:8px">Priprema završena!</div>'
+        + '<div style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:700;margin-bottom:8px">Priprema završena</div>'
         + '<div style="color:var(--muted);margin-bottom:24px">Tačnih: <span style="color:var(--success)">' + correctCount + '</span> · Netačnih: <span style="color:var(--danger)">' + wrongCount + '</span> · Rezultat: <span style="color:var(--accent)">' + pct + '%</span></div>'
         + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">'
-        + '<button class="btn btn-primary" onclick="loadSubject(\'' + currentPredmetId + '\')">Pokušaj ponovo</button>'
+        + '<button class="btn btn-primary" onclick="loadSubject(\'' + currentPredmetId + '\',' + (currentOblastId || 'null') + ')">Pokušaj ponovo</button>'
         + '<a class="btn btn-secondary" href="/Student/Simulate" style="text-decoration:none">Idi na simulaciju →</a>'
         + '</div></div>';
     }
@@ -317,14 +330,15 @@
     if (e.key === 'ArrowLeft' && currentQ > 0) prevQuestion();
   });
 
-  // Učitaj prvi predmet iz dropdowna (ako postoji)
   const sel = document.getElementById('subjectSelect');
   if (sel) {
+    currentPredmetId = sel.value;
     document.getElementById('headerSub').textContent = sel.options[sel.selectedIndex].text + ' · Priprema za kviz';
-    loadSubject(sel.value);
+    renderAreaFilters(sel.value);
+    loadSubject(sel.value, null);
   } else {
     document.getElementById('qCard').innerHTML =
-      '<div style="text-align:center;padding:40px 0;color:var(--muted)">Nema predmeta u bazi. Moderator prvo treba dodati predmet i pitanja.</div>';
+      '<div style="text-align:center;padding:40px 0;color:var(--muted)">Nema predmeta u bazi. Moderator prvo treba dodati predmet, oblast i pitanja.</div>';
   }
 </script>
 }

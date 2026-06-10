@@ -63,7 +63,7 @@ namespace ezZkvi.Controllers
 
             var query = _context.KvizSesije
                 .Where(s =>
-                    s.Status == StatusSesije.ZAVRSEN &&
+                    (s.Status == StatusSesije.ZAVRSEN || s.Status == StatusSesije.ISTEKAO) &&
                     s.StudentId != null);
 
             if (predmetId.HasValue)

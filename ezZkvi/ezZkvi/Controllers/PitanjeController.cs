@@ -32,6 +32,26 @@ namespace ezZkvi.Controllers
                 .AnyAsync(p => p.Id == predmetId && p.KreatorId == userId);
         }
 
+        private async Task<bool> SmijeOblastAsync(int oblastId, int predmetId)
+        {
+            var oblast = await _context.Oblast
+                .Include(o => o.Predmet)
+                .FirstOrDefaultAsync(o => o.Id == oblastId && o.PredmetId == predmetId);
+
+            if (oblast == null)
+            {
+                return false;
+            }
+
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return oblast.Predmet != null && oblast.Predmet.KreatorId == userId;
+        }
+
         private async Task<bool> SmijePitanjeAsync(int pitanjeId)
         {
             if (User.IsInRole("Admin"))
@@ -57,6 +77,39 @@ namespace ezZkvi.Controllers
             }
 
             return query.OrderBy(p => p.Naziv);
+        }
+
+        private IQueryable<Oblast> DozvoljeneOblastiQuery()
+        {
+            var query = _context.Oblast.Include(o => o.Predmet).AsQueryable();
+
+            if (!User.IsInRole("Admin"))
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                query = query.Where(o => o.Predmet != null && o.Predmet.KreatorId == userId);
+            }
+
+            return query.OrderBy(o => o.Predmet!.Naziv).ThenBy(o => o.Naziv);
+        }
+
+        private async Task NapuniSelectListeAsync(int? predmetId = null, int? oblastId = null)
+        {
+            ViewData["PredmetId"] = new SelectList(
+                await DozvoljeniPredmetiQuery().ToListAsync(),
+                "Id",
+                "Naziv",
+                predmetId
+            );
+
+            var oblasti = await DozvoljeneOblastiQuery()
+                .Select(o => new
+                {
+                    o.Id,
+                    Naziv = (o.Predmet != null ? o.Predmet.Naziv : "Predmet") + " / " + o.Naziv
+                })
+                .ToListAsync();
+
+            ViewData["OblastId"] = new SelectList(oblasti, "Id", "Naziv", oblastId);
         }
 
         public IActionResult Index()
@@ -90,6 +143,7 @@ namespace ezZkvi.Controllers
 
             var pitanje = await _context.Pitanje
                 .Include(p => p.Predmet)
+                .Include(p => p.Oblast)
                 .FirstOrDefaultAsync(p => p.Id == id.Value);
 
             if (pitanje == null)
@@ -102,19 +156,13 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            ViewData["PredmetId"] = new SelectList(
-                await DozvoljeniPredmetiQuery().ToListAsync(),
-                "Id",
-                "Naziv",
-                pitanje.PredmetId
-            );
-
+            await NapuniSelectListeAsync(pitanje.PredmetId, pitanje.OblastId);
             return View(pitanje);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,TekstPitanja,Tezina,PredmetId")] Pitanje pitanje)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,TekstPitanja,Tezina,PredmetId,OblastId")] Pitanje pitanje)
         {
             if (id != pitanje.Id)
             {
@@ -133,26 +181,21 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            if (!await SmijePredmetAsync(pitanje.PredmetId))
+            if (!await SmijePredmetAsync(pitanje.PredmetId) || !await SmijeOblastAsync(pitanje.OblastId, pitanje.PredmetId))
             {
                 return Forbid();
             }
 
             if (!ModelState.IsValid)
             {
-                ViewData["PredmetId"] = new SelectList(
-                    await DozvoljeniPredmetiQuery().ToListAsync(),
-                    "Id",
-                    "Naziv",
-                    pitanje.PredmetId
-                );
-
+                await NapuniSelectListeAsync(pitanje.PredmetId, pitanje.OblastId);
                 return View(pitanje);
             }
 
             postojeci.TekstPitanja = pitanje.TekstPitanja;
             postojeci.Tezina = pitanje.Tezina;
             postojeci.PredmetId = pitanje.PredmetId;
+            postojeci.OblastId = pitanje.OblastId;
 
             await _context.SaveChangesAsync();
 
@@ -204,7 +247,7 @@ namespace ezZkvi.Controllers
                 return RedirectToAction("Content", "Moderator");
             }
 
-            if (!await SmijePredmetAsync(model.PredmetId))
+            if (!await SmijePredmetAsync(model.PredmetId) || !await SmijeOblastAsync(model.OblastId, model.PredmetId))
             {
                 return Forbid();
             }
@@ -213,6 +256,7 @@ namespace ezZkvi.Controllers
             {
                 TekstPitanja = model.TekstPitanja,
                 PredmetId = model.PredmetId,
+                OblastId = model.OblastId,
                 Tezina = model.Tezina
             };
 
@@ -221,30 +265,10 @@ namespace ezZkvi.Controllers
 
             var odgovori = new List<Odgovor>
             {
-                new Odgovor
-                {
-                    Tekst = model.Odgovor1,
-                    PitanjeId = pitanje.Id,
-                    IsTacan = model.TacanOdgovor == 1
-                },
-                new Odgovor
-                {
-                    Tekst = model.Odgovor2,
-                    PitanjeId = pitanje.Id,
-                    IsTacan = model.TacanOdgovor == 2
-                },
-                new Odgovor
-                {
-                    Tekst = model.Odgovor3,
-                    PitanjeId = pitanje.Id,
-                    IsTacan = model.TacanOdgovor == 3
-                },
-                new Odgovor
-                {
-                    Tekst = model.Odgovor4,
-                    PitanjeId = pitanje.Id,
-                    IsTacan = model.TacanOdgovor == 4
-                }
+                new Odgovor { Tekst = model.Odgovor1, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 1 },
+                new Odgovor { Tekst = model.Odgovor2, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 2 },
+                new Odgovor { Tekst = model.Odgovor3, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 3 },
+                new Odgovor { Tekst = model.Odgovor4, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 4 }
             };
 
             _context.Odgovor.AddRange(odgovori);

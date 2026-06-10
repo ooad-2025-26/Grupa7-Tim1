@@ -17,6 +17,16 @@ namespace ezZkvi.Controllers
         private const int SistemskiBrojPitanja = 10;
         private const int VremenskoOgranicenjeMinuta = 7;
 
+        public StudentController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        private static bool JeZavrsenaSesija(StatusSesije status)
+        {
+            return status == StatusSesije.ZAVRSEN || status == StatusSesije.ISTEKAO;
+        }
+
         private async Task<List<SelectListItem>> GetPredmetiZaSimulacijuAsync(int? selectedPredmetId = null)
         {
             return await _context.Predmet
@@ -30,18 +40,39 @@ namespace ezZkvi.Controllers
                 .ToListAsync();
         }
 
-        private async Task<SimulacijaKvizaViewModel> BuildSimulationAsync(int predmetId)
+        private async Task<List<OblastSelectItemViewModel>> GetOblastiZaSimulacijuAsync(int? selectedOblastId = null)
+        {
+            return await _context.Oblast
+                .Include(o => o.Predmet)
+                .OrderBy(o => o.Predmet!.Naziv)
+                .ThenBy(o => o.Naziv)
+                .Select(o => new OblastSelectItemViewModel
+                {
+                    Id = o.Id,
+                    Naziv = o.Naziv,
+                    PredmetId = o.PredmetId,
+                    PredmetNaziv = o.Predmet != null ? o.Predmet.Naziv : "Predmet",
+                    Selected = selectedOblastId.HasValue && o.Id == selectedOblastId.Value
+                })
+                .ToListAsync();
+        }
+
+        private async Task<SimulacijaKvizaViewModel> BuildSimulationAsync(int predmetId, int oblastId)
         {
             var predmet = await _context.Predmet.FindAsync(predmetId);
-
+            var oblast = await _context.Oblast.FirstOrDefaultAsync(o => o.Id == oblastId && o.PredmetId == predmetId);
 
             var model = new SimulacijaKvizaViewModel
             {
                 PredmetId = predmetId,
                 PredmetNaziv = predmet?.Naziv ?? "Odabrani predmet",
+                OblastId = oblastId,
+                OblastNaziv = oblast?.Naziv,
                 BrojPitanja = SistemskiBrojPitanja,
                 VremenskoOgranicenjeMinuta = VremenskoOgranicenjeMinuta,
-                StartedAtUtcTicks = DateTime.UtcNow.Ticks
+                StartedAtUtcTicks = DateTime.UtcNow.Ticks,
+                Predmeti = await GetPredmetiZaSimulacijuAsync(predmetId),
+                Oblasti = await GetOblastiZaSimulacijuAsync(oblastId)
             };
 
             if (predmet == null)
@@ -50,8 +81,14 @@ namespace ezZkvi.Controllers
                 return model;
             }
 
+            if (oblast == null)
+            {
+                model.ErrorMessage = "Odabrana oblast ne pripada predmetu.";
+                return model;
+            }
+
             var svaPitanja = await _context.Pitanje
-                .Where(p => p.PredmetId == predmetId)
+                .Where(p => p.PredmetId == predmetId && p.OblastId == oblastId)
                 .ToListAsync();
 
             var pitanjeIds = svaPitanja.Select(p => p.Id).ToList();
@@ -72,7 +109,7 @@ namespace ezZkvi.Controllers
 
             if (validnaPitanja.Count == 0)
             {
-                model.ErrorMessage = "Za odabrani predmet nema validnih pitanja. Svako pitanje mora imati najmanje dva odgovora i tačno jedan tačan odgovor.";
+                model.ErrorMessage = "Za odabranu oblast nema validnih pitanja. Svako pitanje mora imati najmanje dva odgovora i tačno jedan tačan odgovor.";
                 return model;
             }
 
@@ -90,6 +127,7 @@ namespace ezZkvi.Controllers
                 Status = StatusSesije.U_TOKU,
                 StudentId = userId,
                 PredmetId = predmetId,
+                OblastId = oblastId,
                 BrojTacnih = 0,
                 Procenat = 0,
                 DatumPocetka = now,
@@ -174,97 +212,6 @@ namespace ezZkvi.Controllers
                 .ToList();
         }
 
-        private static SimulacijaRezultatViewModel CalculateResult(
-            SimulacijaSubmitViewModel submitModel,
-            List<Pitanje> pitanja,
-            List<Odgovor> odgovori)
-        {
-            var pitanjaPoId = pitanja.ToDictionary(p => p.Id);
-
-            var odgovoriPoId = odgovori.ToDictionary(o => o.Id);
-
-            var odgovoriPoPitanju = odgovori
-                .GroupBy(o => o.PitanjeId)
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            var pregled = new List<SimulacijaPregledOdgovoraViewModel>();
-
-            var tacno = 0;
-            var netacno = 0;
-            var neodgovoreno = 0;
-
-            foreach (var korisnickiOdgovor in submitModel.Odgovori)
-            {
-                if (!pitanjaPoId.TryGetValue(korisnickiOdgovor.PitanjeId, out var pitanje))
-                {
-                    continue;
-                }
-
-                odgovoriPoPitanju.TryGetValue(pitanje.Id, out var ponudjeniOdgovori);
-                ponudjeniOdgovori ??= new List<Odgovor>();
-
-                var tacanOdgovor = ponudjeniOdgovori.FirstOrDefault(o => o.IsTacan);
-
-                Odgovor? odabraniOdgovor = null;
-
-                if (korisnickiOdgovor.OdgovorId.HasValue)
-                {
-                    odgovoriPoId.TryGetValue(korisnickiOdgovor.OdgovorId.Value, out odabraniOdgovor);
-
-                    if (odabraniOdgovor?.PitanjeId != pitanje.Id)
-                    {
-                        odabraniOdgovor = null;
-                    }
-                }
-
-                var jeOdgovoreno = odabraniOdgovor != null;
-                var jeTacno = jeOdgovoreno && odabraniOdgovor!.IsTacan;
-
-                if (jeTacno)
-                {
-                    tacno++;
-                }
-                else if (jeOdgovoreno)
-                {
-                    netacno++;
-                }
-                else
-                {
-                    neodgovoreno++;
-                }
-
-                pregled.Add(new SimulacijaPregledOdgovoraViewModel
-                {
-                    TekstPitanja = pitanje.TekstPitanja,
-                    KorisnickiOdgovor = odabraniOdgovor?.Tekst,
-                    TacanOdgovor = tacanOdgovor?.Tekst ?? "Nije definisan tačan odgovor",
-                    JeTacno = jeTacno,
-                    JeOdgovoreno = jeOdgovoreno
-                });
-            }
-
-            var ukupno = pregled.Count;
-
-            var procenat = ukupno == 0
-                ? 0
-                : (int)Math.Round((double)tacno / ukupno * 100);
-
-            var elapsedSeconds = CalculateElapsedSeconds(
-                submitModel.StartedAtUtcTicks,
-                submitModel.TotalSeconds
-            );
-
-            return new SimulacijaRezultatViewModel
-            {
-                UkupnoPitanja = ukupno,
-                TacnihOdgovora = tacno,
-                NetacnihOdgovora = netacno,
-                Neodgovorenih = neodgovoreno,
-                Procenat = procenat,
-                UtrosenoSekundi = elapsedSeconds,
-                Pregled = pregled
-            };
-        }
         private static int CalculateElapsedSeconds(long startedAtUtcTicks, int totalSeconds)
         {
             if (startedAtUtcTicks <= 0)
@@ -288,41 +235,13 @@ namespace ezZkvi.Controllers
             return elapsed;
         }
 
-        private async Task SaveSimulationResultAsync(SimulacijaRezultatViewModel rezultat, int predmetId)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (!string.IsNullOrWhiteSpace(userId))
-            {
-                var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
-
-                if (student != null)
-                {
-                    student.BrojOdgovorenihPitanja += rezultat.UkupnoPitanja;
-                    student.BrojTacnihOdgovora += rezultat.TacnihOdgovora;
-                }
-            }
-
-            _context.KvizSesije.Add(new KvizSesija
-            {
-                TraziBrojPitanja = rezultat.UkupnoPitanja,
-                VremenskoOgranicenje = VremenskoOgranicenjeMinuta,
-                Status = StatusSesije.ZAVRSEN,
-                StudentId = userId,
-                PredmetId = predmetId,
-                BrojTacnih = rezultat.TacnihOdgovora,
-                Procenat = rezultat.Procenat,
-                DatumZavrsetka = DateTime.UtcNow
-            });
-
-            await _context.SaveChangesAsync();
-        }
         private async Task<SimulacijaKvizaViewModel> BuildActiveSimulationModelAsync(int kvizSesijaId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var sesija = await _context.KvizSesije
                 .Include(s => s.Predmet)
+                .Include(s => s.Oblast)
                 .FirstOrDefaultAsync(s =>
                     s.ID == kvizSesijaId &&
                     s.StudentId == userId &&
@@ -333,7 +252,8 @@ namespace ezZkvi.Controllers
                 return new SimulacijaKvizaViewModel
                 {
                     ErrorMessage = "Aktivna simulacija nije pronađena.",
-                    Predmeti = await GetPredmetiZaSimulacijuAsync()
+                    Predmeti = await GetPredmetiZaSimulacijuAsync(),
+                    Oblasti = await GetOblastiZaSimulacijuAsync()
                 };
             }
 
@@ -348,10 +268,13 @@ namespace ezZkvi.Controllers
                     KvizSesijaId = sesija.ID,
                     PredmetId = sesija.PredmetId,
                     PredmetNaziv = sesija.Predmet?.Naziv ?? "Odabrani predmet",
+                    OblastId = sesija.OblastId,
+                    OblastNaziv = sesija.Oblast?.Naziv,
                     BrojPitanja = rezultat?.UkupnoPitanja ?? 0,
                     VremenskoOgranicenjeMinuta = sesija.VremenskoOgranicenje,
                     Result = rezultat,
-                    Predmeti = await GetPredmetiZaSimulacijuAsync(sesija.PredmetId)
+                    Predmeti = await GetPredmetiZaSimulacijuAsync(sesija.PredmetId),
+                    Oblasti = await GetOblastiZaSimulacijuAsync(sesija.OblastId)
                 };
             }
 
@@ -383,11 +306,14 @@ namespace ezZkvi.Controllers
                 KvizSesijaId = sesija.ID,
                 PredmetId = sesija.PredmetId,
                 PredmetNaziv = sesija.Predmet?.Naziv ?? "Odabrani predmet",
+                OblastId = sesija.OblastId,
+                OblastNaziv = sesija.Oblast?.Naziv,
                 BrojPitanja = stavke.Count,
                 VremenskoOgranicenjeMinuta = sesija.VremenskoOgranicenje,
                 PreostaloSekundi = (int)(deadline - DateTime.UtcNow).TotalSeconds,
                 PocetniIndex = pocetniIndex,
                 Predmeti = await GetPredmetiZaSimulacijuAsync(sesija.PredmetId),
+                Oblasti = await GetOblastiZaSimulacijuAsync(sesija.OblastId),
 
                 Questions = stavke.Select(x => new SimulacijaPitanjeViewModel
                 {
@@ -396,13 +322,9 @@ namespace ezZkvi.Controllers
                     Tezina = x.Pitanje?.Tezina ?? Tezina.LAKO,
                     OdabraniOdgovorId = x.OdgovorId,
                     JeOdgovoreno = x.OdgovorId.HasValue,
-                    Odgovori = odgovoriPoPitanju[x.PitanjeId]
-                        .Select(o => new SimulacijaOdgovorViewModel
-                        {
-                            Id = o.Id,
-                            Tekst = o.Tekst
-                        })
-                        .ToList()
+                    Odgovori = odgovoriPoPitanju.TryGetValue(x.PitanjeId, out var ods)
+                        ? ods.Select(o => new SimulacijaOdgovorViewModel { Id = o.Id, Tekst = o.Tekst }).ToList()
+                        : new List<SimulacijaOdgovorViewModel>()
                 }).ToList()
             };
         }
@@ -419,7 +341,7 @@ namespace ezZkvi.Controllers
                 return null;
             }
 
-            var vecObradjena = sesija.Status == StatusSesije.ZAVRSEN || sesija.Status == StatusSesije.ISTEKAO;
+            var vecObradjena = JeZavrsenaSesija(sesija.Status);
 
             var deadline = sesija.DatumPocetka.AddMinutes(sesija.VremenskoOgranicenje);
             var vrijemeIsteklo = DateTime.UtcNow >= deadline;
@@ -468,7 +390,7 @@ namespace ezZkvi.Controllers
             var ukupno = stavke.Count;
             var tacno = stavke.Count(x => x.Tacno == 1);
             var neodgovoreno = stavke.Count(x => !x.OdgovorId.HasValue);
-            var netacno = ukupno - tacno - neodgovoreno;
+            var netacno = ukupno - tacno; // neodgovorena pitanja se računaju kao netačna
 
             var procenat = ukupno == 0
                 ? 0
@@ -498,31 +420,18 @@ namespace ezZkvi.Controllers
                 sesija.Procenat = procenat;
                 sesija.DatumZavrsetka = DateTime.UtcNow;
 
-                if (sesija.Status == StatusSesije.ZAVRSEN)
-                {
-                    var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
+                var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
 
-                    if (student != null)
-                    {
-                        student.BrojOdgovorenihPitanja += ukupno;
-                        student.BrojTacnihOdgovora += tacno;
-                    }
+                if (student != null)
+                {
+                    student.BrojOdgovorenihPitanja += ukupno;
+                    student.BrojTacnihOdgovora += tacno;
                 }
 
                 await _context.SaveChangesAsync();
             }
 
             return rezultat;
-        }
-
-        private bool StudentExists(string id)
-        {
-            return _context.Student.Any(e => e.Id == id);
-        }
-
-        public StudentController(ApplicationDbContext context)
-        {
-            _context = context;
         }
 
         // GET: /Student/Dashboard
@@ -534,6 +443,7 @@ namespace ezZkvi.Controllers
 
             var aktivnaSesija = await _context.KvizSesije
                                                 .Include(s => s.Predmet)
+                                                .Include(s => s.Oblast)
                                                 .Where(s => s.StudentId == userId && s.Status == StatusSesije.U_TOKU)
                                                 .OrderByDescending(s => s.DatumPocetka)
                                                 .FirstOrDefaultAsync();
@@ -554,10 +464,10 @@ namespace ezZkvi.Controllers
                 }
             }
 
-            // Sve završene sesije ovog studenta (najnovije prvo)
+            // Sve završene/istekle sesije ovog studenta (najnovije prvo)
             var sesije = await _context.KvizSesije
                 .Include(s => s.Predmet)
-                .Where(s => s.StudentId == userId && s.Status == StatusSesije.ZAVRSEN)
+                .Where(s => s.StudentId == userId && (s.Status == StatusSesije.ZAVRSEN || s.Status == StatusSesije.ISTEKAO))
                 .OrderByDescending(s => s.DatumZavrsetka)
                 .ToListAsync();
 
@@ -570,8 +480,6 @@ namespace ezZkvi.Controllers
             var brojTacnih = sesije.Sum(s => s.BrojTacnih);
             model.XpUkupno = brojTacnih * 10;
 
-            // Progresivni nivoi: svaki nivo košta 100 XP više od prethodnog
-            // (nivo 1→2 traži 100, 2→3 traži 200, 3→4 traži 300 ...)
             var nivo = 1;
             var preostaloXp = model.XpUkupno;
             var cijenaNivoa = 100;
@@ -582,12 +490,11 @@ namespace ezZkvi.Controllers
                 cijenaNivoa += 100;
             }
             model.Nivo = nivo;
-            model.XpUNivou = preostaloXp;       // bodovi unutar trenutnog nivoa
-            model.XpZaNivo = cijenaNivoa;        // koliko treba za sljedeći nivo
+            model.XpUNivou = preostaloXp;
+            model.XpZaNivo = cijenaNivoa;
 
-            // Rang među studentima koji su radili kvizove (po ukupno tačnih odgovora)
             var tacniPoStudentu = await _context.KvizSesije
-                .Where(s => s.Status == StatusSesije.ZAVRSEN && s.StudentId != null)
+                .Where(s => (s.Status == StatusSesije.ZAVRSEN || s.Status == StatusSesije.ISTEKAO) && s.StudentId != null)
                 .GroupBy(s => s.StudentId!)
                 .Select(g => new { StudentId = g.Key, Tacni = g.Sum(x => x.BrojTacnih) })
                 .ToListAsync();
@@ -595,7 +502,6 @@ namespace ezZkvi.Controllers
             model.UkupnoStudenata = tacniPoStudentu.Count;
             model.Rang = tacniPoStudentu.Count(x => x.Tacni > brojTacnih) + 1;
 
-            // Nedavna aktivnost (zadnjih 5 kvizova)
             model.NedavneAktivnosti = sesije
                 .Take(5)
                 .Select(s => new NedavnaAktivnostViewModel
@@ -606,13 +512,11 @@ namespace ezZkvi.Controllers
                 })
                 .ToList();
 
-            // Broj pitanja po predmetu (za prikaz "X pitanja")
             var brojPitanjaPoPredmetu = await _context.Pitanje
                 .GroupBy(p => p.PredmetId)
                 .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
                 .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
 
-            // Moji predmeti: prosječan procenat po predmetu koji je student radio
             model.MojiPredmeti = sesije
                 .Where(s => s.Predmet != null)
                 .GroupBy(s => s.Predmet!)
@@ -635,15 +539,38 @@ namespace ezZkvi.Controllers
                 .Select(p => new { p.Id, p.Naziv })
                 .ToListAsync();
 
+            ViewBag.Oblasti = await _context.Oblast
+                .Include(o => o.Predmet)
+                .OrderBy(o => o.Predmet!.Naziv)
+                .ThenBy(o => o.Naziv)
+                .Select(o => new
+                {
+                    o.Id,
+                    o.Naziv,
+                    o.PredmetId,
+                    PredmetNaziv = o.Predmet != null ? o.Predmet.Naziv : "Predmet"
+                })
+                .ToListAsync();
+
             return View();
         }
 
-        // GET: /Student/PrepareQuestions?predmetId=5  — JSON pitanja za vježbu (bez tajmera)
-        public async Task<IActionResult> PrepareQuestions(int predmetId)
+        // GET: /Student/PrepareQuestions?predmetId=5&oblastId=2 — JSON pitanja za vježbu (bez tajmera)
+        public async Task<IActionResult> PrepareQuestions(int? predmetId, int? oblastId)
         {
-            var pitanja = await _context.Pitanje
-                .Where(p => p.PredmetId == predmetId)
-                .ToListAsync();
+            var pitanjaQuery = _context.Pitanje.AsQueryable();
+
+            if (predmetId.HasValue)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.PredmetId == predmetId.Value);
+            }
+
+            if (oblastId.HasValue)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.OblastId == oblastId.Value);
+            }
+
+            var pitanja = await pitanjaQuery.ToListAsync();
 
             var ids = pitanja.Select(p => p.Id).ToList();
             var sviOdgovori = await _context.Odgovor
@@ -660,7 +587,6 @@ namespace ezZkvi.Controllers
             {
                 if (!poPitanju.TryGetValue(p.Id, out var ods)) continue;
 
-                // validno pitanje: bar 2 odgovora i tačno jedan tačan
                 if (ods.Count < 2 || ods.Count(o => o.IsTacan) != 1) continue;
 
                 var promijesani = Shuffle(ods);
@@ -684,11 +610,13 @@ namespace ezZkvi.Controllers
 
             var model = new SimulacijaKvizaViewModel
             {
-                Predmeti = await GetPredmetiZaSimulacijuAsync()
+                Predmeti = await GetPredmetiZaSimulacijuAsync(),
+                Oblasti = await GetOblastiZaSimulacijuAsync()
             };
 
             var aktivnaSesija = await _context.KvizSesije
                 .Include(s => s.Predmet)
+                .Include(s => s.Oblast)
                 .Where(s => s.StudentId == userId && s.Status == StatusSesije.U_TOKU)
                 .OrderByDescending(s => s.DatumPocetka)
                 .FirstOrDefaultAsync();
@@ -704,6 +632,8 @@ namespace ezZkvi.Controllers
                     model.Result = rezultat;
                     model.PredmetId = aktivnaSesija.PredmetId;
                     model.PredmetNaziv = aktivnaSesija.Predmet?.Naziv ?? "Odabrani predmet";
+                    model.OblastId = aktivnaSesija.OblastId;
+                    model.OblastNaziv = aktivnaSesija.Oblast?.Naziv;
                     model.BrojPitanja = rezultat?.UkupnoPitanja ?? 0;
 
                     return View(model);
@@ -711,6 +641,7 @@ namespace ezZkvi.Controllers
 
                 model.AktivnaSesijaId = aktivnaSesija.ID;
                 model.AktivnaSesijaPredmetNaziv = aktivnaSesija.Predmet?.Naziv ?? "Odabrani predmet";
+                model.AktivnaSesijaOblastNaziv = aktivnaSesija.Oblast?.Naziv;
                 model.PreostaloSekundi = (int)(deadline - DateTime.UtcNow).TotalSeconds;
             }
 
@@ -729,6 +660,19 @@ namespace ezZkvi.Controllers
             if (!model.PredmetId.HasValue)
             {
                 TempData["SimulationError"] = "Moraš odabrati predmet prije pokretanja simulacije.";
+                return RedirectToAction(nameof(Simulate));
+            }
+
+            if (!model.OblastId.HasValue)
+            {
+                TempData["SimulationError"] = "Moraš odabrati oblast prije pokretanja simulacije.";
+                return RedirectToAction(nameof(Simulate));
+            }
+
+            var oblastValidna = await _context.Oblast.AnyAsync(o => o.Id == model.OblastId.Value && o.PredmetId == model.PredmetId.Value);
+            if (!oblastValidna)
+            {
+                TempData["SimulationError"] = "Odabrana oblast ne pripada odabranom predmetu.";
                 return RedirectToAction(nameof(Simulate));
             }
 
@@ -755,7 +699,7 @@ namespace ezZkvi.Controllers
                 await FinishSimulationAndBuildResultAsync(sesija.ID);
             }
 
-            var simulationModel = await BuildSimulationAsync(model.PredmetId.Value);
+            var simulationModel = await BuildSimulationAsync(model.PredmetId.Value, model.OblastId.Value);
 
             if (!string.IsNullOrWhiteSpace(simulationModel.ErrorMessage))
             {
@@ -804,6 +748,7 @@ namespace ezZkvi.Controllers
 
             var sesija = await _context.KvizSesije
                 .Include(s => s.Predmet)
+                .Include(s => s.Oblast)
                 .FirstAsync(s => s.ID == submitModel.KvizSesijaId);
 
             var model = new SimulacijaKvizaViewModel
@@ -811,10 +756,13 @@ namespace ezZkvi.Controllers
                 KvizSesijaId = sesija.ID,
                 PredmetId = sesija.PredmetId,
                 PredmetNaziv = sesija.Predmet?.Naziv ?? "Odabrani predmet",
+                OblastId = sesija.OblastId,
+                OblastNaziv = sesija.Oblast?.Naziv,
                 BrojPitanja = rezultat.UkupnoPitanja,
                 VremenskoOgranicenjeMinuta = sesija.VremenskoOgranicenje,
                 Result = rezultat,
-                Predmeti = await GetPredmetiZaSimulacijuAsync(sesija.PredmetId)
+                Predmeti = await GetPredmetiZaSimulacijuAsync(sesija.PredmetId),
+                Oblasti = await GetOblastiZaSimulacijuAsync(sesija.OblastId)
             };
 
             return View("Simulate", model);
@@ -879,25 +827,21 @@ namespace ezZkvi.Controllers
             return Json(new { saved = true });
         }
 
-        // GET: Student
         public IActionResult Index()
         {
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // GET: Student/Details/5
         public IActionResult Details(string id)
         {
             return Forbid();
         }
 
-        // GET: Student/Create
         public IActionResult Create()
         {
             return Forbid();
         }
 
-        // POST: Student/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Student student)
@@ -905,13 +849,11 @@ namespace ezZkvi.Controllers
             return Forbid();
         }
 
-        // GET: Student/Edit/5
         public IActionResult Edit(string id)
         {
             return Forbid();
         }
 
-        // POST: Student/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(string id, Student student)
@@ -919,19 +861,16 @@ namespace ezZkvi.Controllers
             return Forbid();
         }
 
-        // GET: Student/Delete/5
         public IActionResult Delete(string id)
         {
             return Forbid();
         }
 
-        // POST: Student/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(string id)
         {
             return Forbid();
         }
-
     }
 }

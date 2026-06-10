@@ -129,12 +129,13 @@ namespace ezZkvi.Controllers
         }
 
         // GET: /Moderator/Content
-        public async Task<IActionResult> Content(string? search, int? predmetId, Tezina? tezina)
+        public async Task<IActionResult> Content(string? search, int? predmetId, int? oblastId, Tezina? tezina)
         {
             var dozvoljeni = await DozvoljeniPredmetiIdAsync();
 
             var pitanjaQuery = _context.Pitanje
                 .Include(p => p.Predmet)
+                .Include(p => p.Oblast)
                 .AsQueryable();
 
             if (dozvoljeni != null)
@@ -152,6 +153,11 @@ namespace ezZkvi.Controllers
                 pitanjaQuery = pitanjaQuery.Where(p => p.PredmetId == predmetId);
             }
 
+            if (oblastId.HasValue)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.OblastId == oblastId);
+            }
+
             if (tezina.HasValue)
             {
                 pitanjaQuery = pitanjaQuery.Where(p => p.Tezina == tezina.Value);
@@ -163,22 +169,68 @@ namespace ezZkvi.Controllers
                 predmetiQuery = predmetiQuery.Where(p => dozvoljeni.Contains(p.Id));
             }
 
-            ViewData["Predmeti"] = new SelectList(predmetiQuery, "Id", "Naziv", predmetId);
+            var predmeti = await predmetiQuery.OrderBy(p => p.Naziv).ToListAsync();
+            var predmetiIds = predmeti.Select(p => p.Id).ToList();
+
+            var oblasti = await _context.Oblast
+                .Include(o => o.Predmet)
+                .Where(o => predmetiIds.Contains(o.PredmetId))
+                .OrderBy(o => o.Predmet!.Naziv)
+                .ThenBy(o => o.Naziv)
+                .ToListAsync();
+
+            var oblastiSelect = oblasti
+                .Select(o => new
+                {
+                    o.Id,
+                    Naziv = (o.Predmet != null ? o.Predmet.Naziv : "Predmet") + " / " + o.Naziv
+                })
+                .ToList();
+
+            ViewData["Predmeti"] = new SelectList(predmeti, "Id", "Naziv", predmetId);
+            ViewData["OblastiFilter"] = new SelectList(oblastiSelect, "Id", "Naziv", oblastId);
             ViewData["Search"] = search;
             ViewData["Tezina"] = tezina;
+            ViewData["OblastId"] = oblastId;
+
+            ViewBag.OblastiListaZaSelect = oblasti.Select(o => new
+            {
+                o.Id,
+                o.Naziv,
+                o.PredmetId,
+                PredmetNaziv = o.Predmet != null ? o.Predmet.Naziv : "Predmet"
+            }).ToList();
 
             // Lista predmeta sa brojem pitanja (za tab "Predmeti")
             var brojPitanjaPoPredmetu = await _context.Pitanje
+                .Where(p => predmetiIds.Contains(p.PredmetId))
                 .GroupBy(p => p.PredmetId)
                 .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
                 .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
 
-            ViewBag.PredmetiLista = (await predmetiQuery.OrderBy(p => p.Naziv).ToListAsync())
+            ViewBag.PredmetiLista = predmeti
                 .Select(p => new PredmetAktivnostItem
                 {
                     Id = p.Id,
                     Naziv = p.Naziv,
                     BrojPitanja = brojPitanjaPoPredmetu.TryGetValue(p.Id, out var b) ? b : 0
+                })
+                .ToList();
+
+            var brojPitanjaPoOblasti = await _context.Pitanje
+                .Where(p => predmetiIds.Contains(p.PredmetId))
+                .GroupBy(p => p.OblastId)
+                .Select(g => new { OblastId = g.Key, Broj = g.Count() })
+                .ToDictionaryAsync(x => x.OblastId, x => x.Broj);
+
+            ViewBag.OblastiLista = oblasti
+                .Select(o => new OblastAktivnostItem
+                {
+                    Id = o.Id,
+                    Naziv = o.Naziv,
+                    PredmetId = o.PredmetId,
+                    PredmetNaziv = o.Predmet != null ? o.Predmet.Naziv : "Predmet",
+                    BrojPitanja = brojPitanjaPoOblasti.TryGetValue(o.Id, out var b) ? b : 0
                 })
                 .ToList();
 

@@ -17,6 +17,16 @@ namespace ezZkvi.ViewModels
         public int BrojKvizova { get; set; }
     }
 
+
+    public class OblastAktivnostItem
+    {
+        public int Id { get; set; }
+        public string Naziv { get; set; } = "";
+        public int PredmetId { get; set; }
+        public string PredmetNaziv { get; set; } = "";
+        public int BrojPitanja { get; set; }
+    }
+
     public class KvizAktivnostItem
     {
         public string Korisnik { get; set; } = "";
