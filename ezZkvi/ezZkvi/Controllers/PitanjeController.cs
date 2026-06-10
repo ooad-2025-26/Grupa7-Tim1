@@ -1,10 +1,11 @@
 ﻿using ezZkvi.Data;
 using ezZkvi.Models;
 using ezZkvi.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace ezZkvi.Controllers
 {
@@ -18,15 +19,69 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
-        // GET: Pitanje
-        public async Task<IActionResult> Index()
+        private async Task<bool> SmijePredmetAsync(int predmetId)
         {
-            var applicationDbContext = _context.Pitanje.Include(p => p.Predmet);
-            return View(await applicationDbContext.ToListAsync());
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return await _context.Predmet
+                .AnyAsync(p => p.Id == predmetId && p.KreatorId == userId);
         }
 
-        // GET: Pitanje/Details/5
-        public async Task<IActionResult> Details(int? id)
+        private async Task<bool> SmijePitanjeAsync(int pitanjeId)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return await _context.Pitanje
+                .Include(p => p.Predmet)
+                .AnyAsync(p => p.Id == pitanjeId && p.Predmet != null && p.Predmet.KreatorId == userId);
+        }
+
+        private IQueryable<Predmet> DozvoljeniPredmetiQuery()
+        {
+            var query = _context.Predmet.AsQueryable();
+
+            if (!User.IsInRole("Admin"))
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                query = query.Where(p => p.KreatorId == userId);
+            }
+
+            return query.OrderBy(p => p.Naziv);
+        }
+
+        public IActionResult Index()
+        {
+            return RedirectToAction("Content", "Moderator");
+        }
+
+        public IActionResult Details(int? id)
+        {
+            return Forbid();
+        }
+
+        public IActionResult Create()
+        {
+            return Forbid();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(PitanjeSaOdgovorimaViewModel model)
+        {
+            return Forbid();
+        }
+
+        public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
             {
@@ -35,98 +90,28 @@ namespace ezZkvi.Controllers
 
             var pitanje = await _context.Pitanje
                 .Include(p => p.Predmet)
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id.Value);
+
             if (pitanje == null)
             {
                 return NotFound();
             }
 
+            if (!await SmijePitanjeAsync(pitanje.Id))
+            {
+                return Forbid();
+            }
+
+            ViewData["PredmetId"] = new SelectList(
+                await DozvoljeniPredmetiQuery().ToListAsync(),
+                "Id",
+                "Naziv",
+                pitanje.PredmetId
+            );
+
             return View(pitanje);
         }
 
-        // GET: Pitanje/Create
-        public IActionResult Create()
-        {
-            ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Naziv");
-            return View();
-        }
-
-        // POST: Pitanje/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(PitanjeSaOdgovorimaViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Naziv", model.PredmetId);
-                return View(model);
-            }
-
-            var pitanje = new Pitanje
-            {
-                TekstPitanja = model.TekstPitanja,
-                PredmetId = model.PredmetId,
-                Tezina = model.Tezina
-            };
-
-            _context.Pitanje.Add(pitanje);
-            await _context.SaveChangesAsync();
-
-            _context.Odgovor.Add(new Odgovor
-            {
-                Tekst = model.Odgovor1,
-                PitanjeId = pitanje.Id,
-                IsTacan = model.TacanOdgovor == 1
-            });
-
-            _context.Odgovor.Add(new Odgovor
-            {
-                Tekst = model.Odgovor2,
-                PitanjeId = pitanje.Id,
-                IsTacan = model.TacanOdgovor == 2
-            });
-
-            _context.Odgovor.Add(new Odgovor
-            {
-                Tekst = model.Odgovor3,
-                PitanjeId = pitanje.Id,
-                IsTacan = model.TacanOdgovor == 3
-            });
-
-            _context.Odgovor.Add(new Odgovor
-            {
-                Tekst = model.Odgovor4,
-                PitanjeId = pitanje.Id,
-                IsTacan = model.TacanOdgovor == 4
-            });
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        // GET: Pitanje/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var pitanje = await _context.Pitanje.FindAsync(id);
-            if (pitanje == null)
-            {
-                return NotFound();
-            }
-            ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Id", pitanje.PredmetId);
-            return View(pitanje);
-        }
-
-        // POST: Pitanje/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,TekstPitanja,Tezina,PredmetId")] Pitanje pitanje)
@@ -136,50 +121,50 @@ namespace ezZkvi.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            var postojeci = await _context.Pitanje.FindAsync(id);
+
+            if (postojeci == null)
             {
-                try
-                {
-                    _context.Update(pitanje);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PitanjeExists(pitanje.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            ViewData["PredmetId"] = new SelectList(_context.Predmet, "Id", "Id", pitanje.PredmetId);
-            return View(pitanje);
+
+            if (!await SmijePitanjeAsync(postojeci.Id))
+            {
+                return Forbid();
+            }
+
+            if (!await SmijePredmetAsync(pitanje.PredmetId))
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["PredmetId"] = new SelectList(
+                    await DozvoljeniPredmetiQuery().ToListAsync(),
+                    "Id",
+                    "Naziv",
+                    pitanje.PredmetId
+                );
+
+                return View(pitanje);
+            }
+
+            postojeci.TekstPitanja = pitanje.TekstPitanja;
+            postojeci.Tezina = pitanje.Tezina;
+            postojeci.PredmetId = pitanje.PredmetId;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Pitanje je ažurirano.";
+            return RedirectToAction("Content", "Moderator");
         }
 
-        // GET: Pitanje/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var pitanje = await _context.Pitanje
-                .Include(p => p.Predmet)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (pitanje == null)
-            {
-                return NotFound();
-            }
-
-            return View(pitanje);
+            return Forbid();
         }
 
-        // POST: Pitanje/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -191,14 +176,22 @@ namespace ezZkvi.Controllers
                 return NotFound();
             }
 
-            var odgovori = _context.Odgovor.Where(o => o.PitanjeId == id);
-            _context.Odgovor.RemoveRange(odgovori);
+            if (!await SmijePitanjeAsync(pitanje.Id))
+            {
+                return Forbid();
+            }
 
+            var odgovori = await _context.Odgovor
+                .Where(o => o.PitanjeId == id)
+                .ToListAsync();
+
+            _context.Odgovor.RemoveRange(odgovori);
             _context.Pitanje.Remove(pitanje);
 
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Index));
+            TempData["Success"] = "Pitanje je obrisano.";
+            return RedirectToAction("Content", "Moderator");
         }
 
         [HttpPost]
@@ -209,6 +202,11 @@ namespace ezZkvi.Controllers
             {
                 TempData["Error"] = "Pitanje nije sačuvano. Provjerite unesene podatke.";
                 return RedirectToAction("Content", "Moderator");
+            }
+
+            if (!await SmijePredmetAsync(model.PredmetId))
+            {
+                return Forbid();
             }
 
             var pitanje = new Pitanje
@@ -222,43 +220,38 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             var odgovori = new List<Odgovor>
-    {
-        new Odgovor
-        {
-            Tekst = model.Odgovor1,
-            PitanjeId = pitanje.Id,
-            IsTacan = model.TacanOdgovor == 1
-        },
-        new Odgovor
-        {
-            Tekst = model.Odgovor2,
-            PitanjeId = pitanje.Id,
-            IsTacan = model.TacanOdgovor == 2
-        },
-        new Odgovor
-        {
-            Tekst = model.Odgovor3,
-            PitanjeId = pitanje.Id,
-            IsTacan = model.TacanOdgovor == 3
-        },
-        new Odgovor
-        {
-            Tekst = model.Odgovor4,
-            PitanjeId = pitanje.Id,
-            IsTacan = model.TacanOdgovor == 4
-        }
-    };
+            {
+                new Odgovor
+                {
+                    Tekst = model.Odgovor1,
+                    PitanjeId = pitanje.Id,
+                    IsTacan = model.TacanOdgovor == 1
+                },
+                new Odgovor
+                {
+                    Tekst = model.Odgovor2,
+                    PitanjeId = pitanje.Id,
+                    IsTacan = model.TacanOdgovor == 2
+                },
+                new Odgovor
+                {
+                    Tekst = model.Odgovor3,
+                    PitanjeId = pitanje.Id,
+                    IsTacan = model.TacanOdgovor == 3
+                },
+                new Odgovor
+                {
+                    Tekst = model.Odgovor4,
+                    PitanjeId = pitanje.Id,
+                    IsTacan = model.TacanOdgovor == 4
+                }
+            };
 
             _context.Odgovor.AddRange(odgovori);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je uspješno dodano.";
             return RedirectToAction("Content", "Moderator");
-        }
-
-        private bool PitanjeExists(int id)
-        {
-            return _context.Pitanje.Any(e => e.Id == id);
         }
     }
 }

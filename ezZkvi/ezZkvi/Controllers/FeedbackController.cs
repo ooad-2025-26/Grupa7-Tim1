@@ -16,14 +16,61 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
-        // GET: Feedback
+        private async Task<List<int>?> DozvoljeniPredmetiIdAsync()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return null;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return await _context.Predmet
+                .Where(p => p.KreatorId == userId)
+                .Select(p => p.Id)
+                .ToListAsync();
+        }
+
+        private async Task<bool> SmijeFeedbackAsync(Feedback feedback)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            if (!User.IsInRole("Moderator"))
+            {
+                return false;
+            }
+
+            if (feedback.PredmetId == null)
+            {
+                return true;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return await _context.Predmet
+                .AnyAsync(p => p.Id == feedback.PredmetId.Value && p.KreatorId == userId);
+        }
+
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Feedback.ToListAsync());
+            var query = _context.Feedback
+                .Include(f => f.Predmet)
+                .AsQueryable();
+
+            var dozvoljeni = await DozvoljeniPredmetiIdAsync();
+
+            if (dozvoljeni != null)
+            {
+                query = query.Where(f => f.PredmetId == null || dozvoljeni.Contains(f.PredmetId.Value));
+            }
+
+            return View(await query.OrderByDescending(f => f.DatumSlanja).ToListAsync());
         }
 
-        // GET: Feedback/Details/5
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Details(int? id)
         {
@@ -33,16 +80,23 @@ namespace ezZkvi.Controllers
             }
 
             var feedback = await _context.Feedback
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .Include(f => f.Predmet)
+                .FirstOrDefaultAsync(m => m.ID == id.Value);
+
             if (feedback == null)
             {
                 return NotFound();
             }
 
+            if (!await SmijeFeedbackAsync(feedback))
+            {
+                return Forbid();
+            }
+
             return View(feedback);
         }
 
-        // GET: Feedback/Create
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> Create()
         {
             ViewBag.Predmeti = await _context.Predmet
@@ -53,32 +107,39 @@ namespace ezZkvi.Controllers
             return View();
         }
 
-        // POST: Feedback/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> Create([Bind("TipFeedbacka,Sadrzaj,PredmetId")] Feedback feedback)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                // Status, datum i autora postavlja server (ne student)
-                feedback.Status = StatusFeedbacka.NA_CEKANJU;
-                feedback.DatumSlanja = DateTime.UtcNow;
-                feedback.KorisnikId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                _context.Add(feedback);
-                await _context.SaveChangesAsync();
-
-                TempData["FeedbackPoslan"] = "1";
+                TempData["Error"] = "Feedback nije poslan. Provjeri da si unio/la tekst.";
                 return RedirectToAction(nameof(Create));
             }
 
-            TempData["Error"] = "Feedback nije poslan. Provjeri da si unio/la tekst.";
+            if (feedback.PredmetId.HasValue)
+            {
+                var predmetPostoji = await _context.Predmet.AnyAsync(p => p.Id == feedback.PredmetId.Value);
+
+                if (!predmetPostoji)
+                {
+                    TempData["Error"] = "Odabrani predmet nije validan.";
+                    return RedirectToAction(nameof(Create));
+                }
+            }
+
+            feedback.Status = StatusFeedbacka.NA_CEKANJU;
+            feedback.DatumSlanja = DateTime.UtcNow;
+            feedback.KorisnikId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            _context.Add(feedback);
+            await _context.SaveChangesAsync();
+
+            TempData["FeedbackPoslan"] = "1";
             return RedirectToAction(nameof(Create));
         }
 
-        // GET: Feedback/Edit/5
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -87,51 +148,51 @@ namespace ezZkvi.Controllers
                 return NotFound();
             }
 
-            var feedback = await _context.Feedback.FindAsync(id);
+            var feedback = await _context.Feedback
+                .Include(f => f.Predmet)
+                .FirstOrDefaultAsync(f => f.ID == id.Value);
+
             if (feedback == null)
             {
                 return NotFound();
             }
+
+            if (!await SmijeFeedbackAsync(feedback))
+            {
+                return Forbid();
+            }
+
             return View(feedback);
         }
 
-        // POST: Feedback/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Moderator")]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,Status,TipFeedbacka,DatumSlanja")] Feedback feedback)
+        public async Task<IActionResult> Edit(int id, [Bind("ID,Status")] Feedback feedback)
         {
             if (id != feedback.ID)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            var postojeci = await _context.Feedback.FindAsync(id);
+
+            if (postojeci == null)
             {
-                try
-                {
-                    _context.Update(feedback);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!FeedbackExists(feedback.ID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            return View(feedback);
+
+            if (!await SmijeFeedbackAsync(postojeci))
+            {
+                return Forbid();
+            }
+
+            postojeci.Status = feedback.Status;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Feedback/Delete/5
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -141,34 +202,43 @@ namespace ezZkvi.Controllers
             }
 
             var feedback = await _context.Feedback
-                .FirstOrDefaultAsync(m => m.ID == id);
+                .Include(f => f.Predmet)
+                .FirstOrDefaultAsync(m => m.ID == id.Value);
+
             if (feedback == null)
             {
                 return NotFound();
             }
 
+            if (!await SmijeFeedbackAsync(feedback))
+            {
+                return Forbid();
+            }
+
             return View(feedback);
         }
 
-        // POST: Feedback/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var feedback = await _context.Feedback.FindAsync(id);
-            if (feedback != null)
+
+            if (feedback == null)
             {
-                _context.Feedback.Remove(feedback);
+                return NotFound();
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            if (!await SmijeFeedbackAsync(feedback))
+            {
+                return Forbid();
+            }
 
-        private bool FeedbackExists(int id)
-        {
-            return _context.Feedback.Any(e => e.ID == id);
+            _context.Feedback.Remove(feedback);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

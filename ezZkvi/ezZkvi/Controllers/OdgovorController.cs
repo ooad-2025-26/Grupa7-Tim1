@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ezZkvi.Data;
+using ezZkvi.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ezZkvi.Data;
-using ezZkvi.Models;
+using System.Security.Claims;
 
 namespace ezZkvi.Controllers
 {
@@ -17,14 +18,71 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
-        // GET: Odgovor
-        public async Task<IActionResult> Index()
+        private async Task<bool> SmijePitanjeAsync(int pitanjeId)
         {
-            var applicationDbContext = _context.Odgovor.Include(o => o.Pitanje);
-            return View(await applicationDbContext.ToListAsync());
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return await _context.Pitanje
+                .Include(p => p.Predmet)
+                .AnyAsync(p => p.Id == pitanjeId && p.Predmet != null && p.Predmet.KreatorId == userId);
         }
 
-        // GET: Odgovor/Details/5
+        private async Task<bool> SmijeOdgovorAsync(int odgovorId)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return await _context.Odgovor
+                .Include(o => o.Pitanje)
+                .ThenInclude(p => p.Predmet)
+                .AnyAsync(o =>
+                    o.Id == odgovorId &&
+                    o.Pitanje != null &&
+                    o.Pitanje.Predmet != null &&
+                    o.Pitanje.Predmet.KreatorId == userId);
+        }
+
+        private IQueryable<Pitanje> DozvoljenaPitanjaQuery()
+        {
+            var query = _context.Pitanje.AsQueryable();
+
+            if (!User.IsInRole("Admin"))
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                query = query.Where(p => p.Predmet != null && p.Predmet.KreatorId == userId);
+            }
+
+            return query.OrderBy(p => p.TekstPitanja);
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var query = _context.Odgovor
+                .Include(o => o.Pitanje)
+                .ThenInclude(p => p.Predmet)
+                .AsQueryable();
+
+            if (!User.IsInRole("Admin"))
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                query = query.Where(o =>
+                    o.Pitanje != null &&
+                    o.Pitanje.Predmet != null &&
+                    o.Pitanje.Predmet.KreatorId == userId);
+            }
+
+            return View(await query.ToListAsync());
+        }
+
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -34,40 +92,49 @@ namespace ezZkvi.Controllers
 
             var odgovor = await _context.Odgovor
                 .Include(o => o.Pitanje)
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .ThenInclude(p => p.Predmet)
+                .FirstOrDefaultAsync(m => m.Id == id.Value);
+
             if (odgovor == null)
             {
                 return NotFound();
             }
 
+            if (!await SmijeOdgovorAsync(odgovor.Id))
+            {
+                return Forbid();
+            }
+
             return View(odgovor);
         }
 
-        // GET: Odgovor/Create
         public IActionResult Create()
         {
-            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "TekstPitanja");
+            ViewData["PitanjeId"] = new SelectList(DozvoljenaPitanjaQuery(), "Id", "TekstPitanja");
             return View();
         }
 
-        // POST: Odgovor/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Tekst,IsTacan,PitanjeId")] Odgovor odgovor)
         {
-            if (ModelState.IsValid)
+            if (!await SmijePitanjeAsync(odgovor.PitanjeId))
             {
-                _context.Add(odgovor);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return Forbid();
             }
-            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "TekstPitanja", odgovor.PitanjeId);
-            return View(odgovor);
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["PitanjeId"] = new SelectList(DozvoljenaPitanjaQuery(), "Id", "TekstPitanja", odgovor.PitanjeId);
+                return View(odgovor);
+            }
+
+            _context.Add(odgovor);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Odgovor/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -75,18 +142,22 @@ namespace ezZkvi.Controllers
                 return NotFound();
             }
 
-            var odgovor = await _context.Odgovor.FindAsync(id);
+            var odgovor = await _context.Odgovor.FindAsync(id.Value);
+
             if (odgovor == null)
             {
                 return NotFound();
             }
-            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "Id", odgovor.PitanjeId);
+
+            if (!await SmijeOdgovorAsync(odgovor.Id))
+            {
+                return Forbid();
+            }
+
+            ViewData["PitanjeId"] = new SelectList(DozvoljenaPitanjaQuery(), "Id", "TekstPitanja", odgovor.PitanjeId);
             return View(odgovor);
         }
 
-        // POST: Odgovor/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Tekst,IsTacan,PitanjeId")] Odgovor odgovor)
@@ -96,31 +167,38 @@ namespace ezZkvi.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            var postojeci = await _context.Odgovor.FindAsync(id);
+
+            if (postojeci == null)
             {
-                try
-                {
-                    _context.Update(odgovor);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!OdgovorExists(odgovor.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            ViewData["PitanjeId"] = new SelectList(_context.Pitanje, "Id", "Id", odgovor.PitanjeId);
-            return View(odgovor);
+
+            if (!await SmijeOdgovorAsync(postojeci.Id))
+            {
+                return Forbid();
+            }
+
+            if (!await SmijePitanjeAsync(odgovor.PitanjeId))
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["PitanjeId"] = new SelectList(DozvoljenaPitanjaQuery(), "Id", "TekstPitanja", odgovor.PitanjeId);
+                return View(odgovor);
+            }
+
+            postojeci.Tekst = odgovor.Tekst;
+            postojeci.IsTacan = odgovor.IsTacan;
+            postojeci.PitanjeId = odgovor.PitanjeId;
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Odgovor/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -130,33 +208,42 @@ namespace ezZkvi.Controllers
 
             var odgovor = await _context.Odgovor
                 .Include(o => o.Pitanje)
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .ThenInclude(p => p.Predmet)
+                .FirstOrDefaultAsync(m => m.Id == id.Value);
+
             if (odgovor == null)
             {
                 return NotFound();
             }
 
+            if (!await SmijeOdgovorAsync(odgovor.Id))
+            {
+                return Forbid();
+            }
+
             return View(odgovor);
         }
 
-        // POST: Odgovor/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var odgovor = await _context.Odgovor.FindAsync(id);
-            if (odgovor != null)
+
+            if (odgovor == null)
             {
-                _context.Odgovor.Remove(odgovor);
+                return NotFound();
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            if (!await SmijeOdgovorAsync(odgovor.Id))
+            {
+                return Forbid();
+            }
 
-        private bool OdgovorExists(int id)
-        {
-            return _context.Odgovor.Any(e => e.Id == id);
+            _context.Odgovor.Remove(odgovor);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

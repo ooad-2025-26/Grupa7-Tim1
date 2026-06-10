@@ -34,6 +34,27 @@ namespace ezZkvi.Controllers
                 .ToListAsync();
         }
 
+        private async Task<bool> SmijeFeedbackAsync(Feedback feedback)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            if (feedback.PredmetId == null)
+            {
+                return true;
+            }
+
+            var dozvoljeni = await DozvoljeniPredmetiIdAsync();
+            return dozvoljeni != null && dozvoljeni.Contains(feedback.PredmetId.Value);
+        }
+
+        private bool ModeratorExists(string id)
+        {
+            return _context.Moderator.Any(e => e.Id == id);
+        }
+
         // GET: /Moderator/Dashboard  — samo Moderator (Admin ima svoj Administrator/Dashboard)
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> Dashboard()
@@ -212,12 +233,21 @@ namespace ezZkvi.Controllers
         public async Task<IActionResult> PrihvatiFeedback(int id)
         {
             var fb = await _context.Feedback.FindAsync(id);
-            if (fb != null)
+
+            if (fb == null)
             {
-                fb.Status = StatusFeedbacka.ODOBREN;
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Feedback je prihvaćen.";
+                return NotFound();
             }
+
+            if (!await SmijeFeedbackAsync(fb))
+            {
+                return Forbid();
+            }
+
+            fb.Status = StatusFeedbacka.ODOBREN;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Feedback je prihvaćen.";
             return RedirectToAction(nameof(Feedback));
         }
 
@@ -227,153 +257,75 @@ namespace ezZkvi.Controllers
         public async Task<IActionResult> OdbijFeedback(int id)
         {
             var fb = await _context.Feedback.FindAsync(id);
-            if (fb != null)
+
+            if (fb == null)
             {
-                fb.Status = StatusFeedbacka.ODBIJEN;
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Feedback je odbijen.";
+                return NotFound();
             }
+
+            if (!await SmijeFeedbackAsync(fb))
+            {
+                return Forbid();
+            }
+
+            fb.Status = StatusFeedbacka.ODBIJEN;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Feedback je odbijen.";
             return RedirectToAction(nameof(Feedback));
         }
 
         // GET: Moderator
         public IActionResult Index()
         {
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction(nameof(Content));
+            }
+
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // GET: Moderator/Details/5
-        public async Task<IActionResult> Details(string id)
+        public IActionResult Details(string id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var moderator = await _context.Moderator
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (moderator == null)
-            {
-                return NotFound();
-            }
-
-            return View(moderator);
+            return Forbid();
         }
 
-        // GET: Moderator/Create
         public IActionResult Create()
         {
-            return View();
+            return Forbid();
         }
 
-        // POST: Moderator/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Moderator moderator)
+        public IActionResult Create(Moderator moderator)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(moderator);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(moderator);
+            return Forbid();
         }
 
-        // GET: Moderator/Edit/5
-        public async Task<IActionResult> Edit(string id)
+        public IActionResult Edit(string id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var moderator = await _context.Moderator.FindAsync(id);
-            if (moderator == null)
-            {
-                return NotFound();
-            }
-            return View(moderator);
+            return Forbid();
         }
 
-        // POST: Moderator/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, [Bind("BrojOdgovorenihPitanja,BrojTacnihOdgovora,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] Moderator moderator)
+        public IActionResult Edit(string id, Moderator moderator)
         {
-            if (id != moderator.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(moderator);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ModeratorExists(moderator.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(moderator);
+            return Forbid();
         }
 
-        // GET: Moderator/Delete/5
-        public async Task<IActionResult> Delete(string id)
+        public IActionResult Delete(string id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var moderator = await _context.Moderator
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (moderator == null)
-            {
-                return NotFound();
-            }
-
-            return View(moderator);
+            return Forbid();
         }
 
-        // POST: Moderator/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var odgovori = _context.Odgovor.Where(o => o.PitanjeId == id);
-            _context.Odgovor.RemoveRange(odgovori);
-
-            var pitanje = await _context.Pitanje.FindAsync(id);
-
-            if (pitanje != null)
-            {
-                _context.Pitanje.Remove(pitanje);
-            }
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Content", "Moderator");
+            return Forbid();
         }
 
-        private bool ModeratorExists(string id)
-        {
-            return _context.Moderator.Any(e => e.Id == id);
-        }
     }
 }

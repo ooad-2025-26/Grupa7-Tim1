@@ -6,7 +6,7 @@ using ezZkvi.Models;
 
 namespace ezZkvi.Controllers
 {
-    [Authorize(Roles = "Admin,Moderator")]
+    [Authorize(Roles = "Admin")]
     public class KvizSesijaController : Controller
     {
         private readonly ApplicationDbContext _context;

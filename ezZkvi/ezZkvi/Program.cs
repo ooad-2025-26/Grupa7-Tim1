@@ -30,6 +30,18 @@ builder.Services.ConfigureApplicationCookie(options =>
 
     options.ExpireTimeSpan = TimeSpan.FromMinutes(7);
     options.SlidingExpiration = true;
+
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.Redirect("/Account/NijeUlogovan");
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.Redirect("/Account/AccessDenied");
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddControllersWithViews(options =>

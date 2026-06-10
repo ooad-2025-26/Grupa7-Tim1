@@ -260,8 +260,28 @@ namespace ezZkvi.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        // GET: /Account/NijeUlogovan
+        [HttpGet]
+        public IActionResult NijeUlogovan()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            return View();
+        }
+
         // GET: /Account/AccessDenied
         [HttpGet]
-        public IActionResult AccessDenied() => View();
+        public IActionResult AccessDenied()
+        {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return RedirectToAction(nameof(NijeUlogovan));
+            }
+
+            return View();
+        }
     }
 }

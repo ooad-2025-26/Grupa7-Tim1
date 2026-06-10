@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -225,231 +225,50 @@ namespace ezZkvi.Controllers
             return rezultat;
         }
 
-        // GET: Predmet
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.Predmet.ToListAsync());
+            return RedirectToAction("Content", "Moderator");
         }
 
-        // GET: Predmet/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var predmet = await _context.Predmet
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (predmet == null)
-            {
-                return NotFound();
-            }
-
-            return View(predmet);
+            return Forbid();
         }
 
-        // GET: Predmet/Create
         public IActionResult Create()
         {
-            return View();
+            return Forbid();
         }
 
-        // POST: Predmet/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Naziv")] Predmet predmet)
+        public IActionResult Create([Bind("Id,Naziv")] Predmet predmet)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(predmet);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(predmet);
+            return Forbid();
         }
 
-        // POST: Predmet/CreateFromContent
+        public IActionResult Edit(int? id)
+        {
+            return Forbid();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateFromContent([Bind("Naziv")] Predmet predmet)
+        public IActionResult Edit(int id, [Bind("Id,Naziv")] Predmet predmet)
         {
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "Predmet nije sačuvan. Provjerite naziv.";
-                return RedirectToAction("Content", "Moderator");
-            }
-
-            predmet.KreatorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            _context.Add(predmet);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Predmet je uspješno dodan.";
-            return RedirectToAction("Content", "Moderator");
+            return Forbid();
         }
 
-        // POST: Predmet/EditFromContent  — preimenuj predmet, vrati na Content
-        [HttpPost]
-        [Authorize(Roles = "Admin,Moderator")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditFromContent(int Id, string Naziv)
+        public IActionResult Delete(int? id)
         {
-            var predmet = await _context.Predmet.FindAsync(Id);
-            if (predmet == null)
-            {
-                TempData["Error"] = "Predmet nije pronađen.";
-                return RedirectToAction("Content", "Moderator");
-            }
-
-            if (!SmijePredmet(predmet))
-            {
-                TempData["Error"] = "Nemaš pristup ovom predmetu.";
-                return RedirectToAction("Content", "Moderator");
-            }
-
-            if (string.IsNullOrWhiteSpace(Naziv) || Naziv.Trim().Length < 2)
-            {
-                TempData["Error"] = "Naziv predmeta mora imati najmanje 2 znaka.";
-                return RedirectToAction("Content", "Moderator");
-            }
-
-            predmet.Naziv = Naziv.Trim();
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Predmet je ažuriran.";
-            return RedirectToAction("Content", "Moderator");
+            return Forbid();
         }
 
-        // POST: Predmet/DeleteFromContent  — obriši predmet (samo ako nema pitanja), vrati na Content
-        [HttpPost]
-        [Authorize(Roles = "Admin,Moderator")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteFromContent(int id)
-        {
-            var predmet = await _context.Predmet.FindAsync(id);
-            if (predmet == null)
-            {
-                TempData["Error"] = "Predmet nije pronađen.";
-                return RedirectToAction("Content", "Moderator");
-            }
-
-            if (!SmijePredmet(predmet))
-            {
-                TempData["Error"] = "Nemaš pristup ovom predmetu.";
-                return RedirectToAction("Content", "Moderator");
-            }
-
-            var imaPitanja = await _context.Pitanje.AnyAsync(p => p.PredmetId == id);
-            if (imaPitanja)
-            {
-                TempData["Error"] = "Ne možeš obrisati predmet koji ima pitanja. Prvo obriši pitanja tog predmeta.";
-                return RedirectToAction("Content", "Moderator");
-            }
-
-            // Odveži eventualne kviz sesije da ne dođe do greške zbog stranih ključeva
-            var sesije = await _context.KvizSesije.Where(s => s.PredmetId == id).ToListAsync();
-            foreach (var s in sesije)
-            {
-                s.PredmetId = null;
-            }
-
-            _context.Predmet.Remove(predmet);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Predmet je obrisan.";
-            return RedirectToAction("Content", "Moderator");
-        }
-
-        // GET: Predmet/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var predmet = await _context.Predmet.FindAsync(id);
-            if (predmet == null)
-            {
-                return NotFound();
-            }
-            return View(predmet);
-        }
-
-        // POST: Predmet/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Naziv")] Predmet predmet)
-        {
-            if (id != predmet.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(predmet);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PredmetExists(predmet.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(predmet);
-        }
-
-        // GET: Predmet/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var predmet = await _context.Predmet
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (predmet == null)
-            {
-                return NotFound();
-            }
-
-            return View(predmet);
-        }
-
-        // POST: Predmet/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var predmet = await _context.Predmet.FindAsync(id);
-            if (predmet != null)
-            {
-                _context.Predmet.Remove(predmet);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool PredmetExists(int id)
-        {
-            return _context.Predmet.Any(e => e.Id == id);
+            return Forbid();
         }
     }
 }

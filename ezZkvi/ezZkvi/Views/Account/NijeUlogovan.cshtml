@@ -1,0 +1,92 @@
+﻿@{
+    ViewData["Title"] = "Niste ulogovani";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --bg: #080C14;
+            --card: #141D2B;
+            --border: #1E2D42;
+            --accent: #00E5FF;
+            --text: #E8EDF5;
+            --muted: #5A7090;
+            --danger: #FF5252;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Nunito Sans', sans-serif;
+            min-height: 100vh;
+        }
+
+        .auth-error-wrap {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .auth-error-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 48px 40px;
+            text-align: center;
+            max-width: 440px;
+            width: 100%;
+        }
+
+        .auth-error-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .auth-error-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.9rem;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .auth-error-text {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .auth-error-btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background: var(--accent);
+            color: var(--bg);
+            border-radius: 8px;
+            text-decoration: none;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+            .auth-error-btn:hover {
+                background: #fff;
+                color: var(--bg);
+            }
+    </style>
+}
+
+<div class="auth-error-wrap">
+    <div class="auth-error-card">
+        <div class="auth-error-icon">🔒</div>
+        <div class="auth-error-title">Niste ulogovani</div>
+        <p class="auth-error-text">
+            Za pristup ovoj stranici morate biti prijavljeni na sistem.
+        </p>
+        <a class="auth-error-btn" asp-controller="Account" asp-action="Login">
+            Prijava
+        </a>
+    </div>
+</div>

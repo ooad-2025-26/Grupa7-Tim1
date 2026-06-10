@@ -1,4 +1,4 @@
-﻿using ezZkvi.Data;
+using ezZkvi.Data;
 using ezZkvi.Models;
 using ezZkvi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -18,7 +18,6 @@ namespace ezZkvi.Controllers
             _context = context;
         }
 
-        // GET: /Leaderboard
         public async Task<IActionResult> Index(int? predmetId)
         {
             ViewBag.Predmeti = await _context.Predmet
@@ -37,7 +36,6 @@ namespace ezZkvi.Controllers
             });
         }
 
-        // GET: /Leaderboard/Data
         public async Task<IActionResult> Data(int? predmetId)
         {
             var entries = await BuildLeaderboardAsync(predmetId);
