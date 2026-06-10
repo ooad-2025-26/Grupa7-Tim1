@@ -18,8 +18,8 @@ namespace ezZkvi.ViewModels
         public int? OblastId { get; set; }
         public string? OblastNaziv { get; set; }
 
-        public int BrojPitanja { get; set; } = 10;
-        public int VremenskoOgranicenjeMinuta { get; set; } = 15;
+        public int BrojPitanja { get; set; } = 5;
+        public int VremenskoOgranicenjeMinuta { get; set; } = 3;
 
         public long StartedAtUtcTicks { get; set; }
 
@@ -49,6 +49,8 @@ namespace ezZkvi.ViewModels
 
         public int? OdabraniOdgovorId { get; set; }
         public bool JeOdgovoreno { get; set; }
+        public bool JePreskoceno { get; set; }
+        public bool JeZakljucano { get; set; }
 
         public List<SimulacijaOdgovorViewModel> Odgovori { get; set; } = new();
     }
@@ -83,6 +85,8 @@ namespace ezZkvi.ViewModels
         public int NetacnihOdgovora { get; set; }
         public int Neodgovorenih { get; set; }
         public int Procenat { get; set; }
+        public double OsvojeniPoeni { get; set; }
+        public double MaksimalniPoeni { get; set; }
         public int UtrosenoSekundi { get; set; }
 
         public List<SimulacijaPregledOdgovoraViewModel> Pregled { get; set; } = new();
@@ -96,6 +100,8 @@ namespace ezZkvi.ViewModels
 
         public bool JeTacno { get; set; }
         public bool JeOdgovoreno { get; set; }
+        public bool JePreskoceno { get; set; }
+        public double OsvojeniPoeni { get; set; }
     }
     public class SaveSimulationAnswerViewModel
     {

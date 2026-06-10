@@ -386,6 +386,10 @@
                 border-color: rgba(0, 230, 118, 0.28);
             }
 
+            .question-card.skipped {
+                border-color: rgba(245, 158, 11, 0.32);
+            }
+
         .question-header {
             display: flex;
             justify-content: space-between;
@@ -556,6 +560,12 @@
                 border: 1px solid rgba(255, 82, 82, 0.3);
             }
 
+            .review-status.skip {
+                color: var(--orange);
+                background: rgba(245, 158, 11, 0.08);
+                border: 1px solid rgba(245, 158, 11, 0.3);
+            }
+
         @@keyframes fadeQuestion {
             from {
                 opacity: 0;
@@ -647,7 +657,7 @@
         <h1 class="page-title">Simulacija <span>kviza</span></h1>
 
         <div class="page-subtitle">
-            Odaberi predmet i pokreni simulaciju. Pitanja se nasumično uzimaju iz baze.
+            Kviz traje 3 minute, ima 5 ABCD pitanja: 1 teško, 2 srednja i 2 laka.
         </div>
     </div>
 
@@ -665,8 +675,8 @@
 
             <div class="result-grid">
                 <div class="result-stat">
-                    <div class="result-label">Rezultat</div>
-                    <div class="result-value accent">@Model.Result!.Procenat%</div>
+                    <div class="result-label">Poeni</div>
+                    <div class="result-value accent">@Model.Result!.OsvojeniPoeni.ToString("0.00")</div>
                 </div>
 
                 <div class="result-stat">
@@ -680,9 +690,13 @@
                 </div>
 
                 <div class="result-stat">
-                    <div class="result-label">Ukupno</div>
-                    <div class="result-value">@Model.Result.UkupnoPitanja</div>
+                    <div class="result-label">Preskočeno</div>
+                    <div class="result-value">@Model.Result.Neodgovorenih</div>
                 </div>
+            </div>
+
+            <div class="quiz-meta">
+                Maksimalno: @Model.Result.MaksimalniPoeni.ToString("0.00") poena · Procenat: @Model.Result.Procenat% · Utrošeno vrijeme: @TimeSpan.FromSeconds(Model.Result.UtrosenoSekundi).ToString(@"mm\:ss")
             </div>
 
             <div class="actions">
@@ -713,7 +727,16 @@
                             @item.TacanOdgovor
                         </div>
 
-                        @if (item.JeTacno)
+                        <div class="review-line">
+                            <strong>Poeni:</strong>
+                            @item.OsvojeniPoeni.ToString("0.00")
+                        </div>
+
+                        @if (item.JePreskoceno)
+                        {
+                            <span class="review-status skip">Preskočeno</span>
+                        }
+                        else if (item.JeTacno)
                         {
                             <span class="review-status ok">Tačno</span>
                         }
@@ -735,7 +758,8 @@
                     <div class="quiz-meta">
                         Predmet: @Model.PredmetNaziv<br />
                         Oblast: @(Model.OblastNaziv ?? "Odabrana oblast")<br />
-                        Broj pitanja: @Model.BrojPitanja
+                        Broj pitanja: @Model.BrojPitanja<br />
+                        Bodovanje: +0.10 tačno, -0.03 netačno, 0 preskočeno
                     </div>
                 </div>
 
@@ -769,7 +793,7 @@
                 {
                     var pitanje = Model.Questions[i];
 
-                    <div class="question-card @(i == pocetniIndex ? "active" : "") @(pitanje.JeOdgovoreno ? "answered" : "")"
+                    <div class="question-card @(i == pocetniIndex ? "active" : "") @(pitanje.JeZakljucano ? "answered" : "") @(pitanje.JePreskoceno ? "skipped" : "")"
                          data-question-index="@i"
                          data-pitanje-id="@pitanje.Id">
 
@@ -789,7 +813,7 @@
                                 var odgovor = pitanje.Odgovori[j];
                                 var radioId = $"q{i}_a{j}";
                                 var isChecked = pitanje.OdabraniOdgovorId == odgovor.Id;
-                                var isDisabled = pitanje.JeOdgovoreno;
+                                var isDisabled = pitanje.JeZakljucano;
 
                                 <label class="answer-option" for="@radioId">
                                     <input type="radio"
@@ -805,11 +829,11 @@
                         </div>
 
                         <div class="inline-error question-error">
-                            Moraš odabrati odgovor prije nastavka.
+                            Moraš odabrati odgovor ili preskočiti pitanje.
                         </div>
 
                         <div class="locked-note">
-                            Odgovor je potvrđen. Ne možeš ga više mijenjati.
+                            @(pitanje.JePreskoceno ? "Pitanje je preskočeno. Ne možeš se vratiti na njega." : "Odgovor je potvrđen. Ne možeš ga više mijenjati.")
                         </div>
                     </div>
                 }
@@ -817,6 +841,10 @@
                 <div class="actions">
                     <button type="button" class="btn-main" id="nextQuestionBtn">
                         Potvrdi odgovor
+                    </button>
+
+                    <button type="button" class="btn-secondary" id="skipQuestionBtn">
+                        Preskoči pitanje
                     </button>
                 </div>
             </form>
@@ -863,7 +891,7 @@
             <div class="section-label">Pokretanje simulacije</div>
 
             <p class="form-description">
-                Odaberi predmet i oblast. Sistem će iz baze nasumično izvući pitanja samo iz odabrane oblasti.
+                Odaberi predmet i oblast. Sistem izvlači 1 teško, 2 srednja i 2 laka ABCD pitanja iz odabrane oblasti.
             </p>
 
             <form asp-controller="Student" asp-action="StartSimulation" method="post" id="startSimulationForm">
@@ -983,6 +1011,7 @@
         const quizForm = document.getElementById('quizForm');
         const questionCards = Array.from(document.querySelectorAll('.question-card'));
         const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+        const skipQuestionBtn = document.getElementById('skipQuestionBtn');
         const progressCurrent = document.getElementById('progressCurrent');
         const progressFill = document.getElementById('progressFill');
 
@@ -1002,8 +1031,16 @@
 
             if (currentQuestionIndex === total - 1) {
                 nextQuestionBtn.textContent = 'Završi simulaciju';
+
+                if (skipQuestionBtn) {
+                    skipQuestionBtn.textContent = 'Preskoči i završi';
+                }
             } else {
                 nextQuestionBtn.textContent = 'Potvrdi odgovor';
+
+                if (skipQuestionBtn) {
+                    skipQuestionBtn.textContent = 'Preskoči pitanje';
+                }
             }
         }
 
@@ -1020,62 +1057,92 @@
                 currentQuestionIndex++;
                 showQuestion(currentQuestionIndex);
                 nextQuestionBtn.disabled = false;
+
+                if (skipQuestionBtn) {
+                    skipQuestionBtn.disabled = false;
+                }
             } else {
                 quizForm.submit();
             }
         }
 
+        async function lockCurrentQuestion(shouldSkip) {
+            const currentCard = questionCards[currentQuestionIndex];
+            const selectedAnswer = currentCard.querySelector('input[type="radio"]:checked');
+            const errorMessage = currentCard.querySelector('.question-error');
+
+            if (currentCard.classList.contains('answered')) {
+                moveToNextQuestionOrSubmit();
+                return;
+            }
+
+            if (!shouldSkip && !selectedAnswer) {
+                errorMessage.textContent = 'Moraš odabrati odgovor ili preskočiti pitanje.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            nextQuestionBtn.disabled = true;
+
+            if (skipQuestionBtn) {
+                skipQuestionBtn.disabled = true;
+            }
+
+            const token = quizForm.querySelector('input[name="__RequestVerificationToken"]').value;
+            const kvizSesijaId = document.getElementById('kvizSesijaId').value;
+
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', token);
+            formData.append('KvizSesijaId', kvizSesijaId);
+            formData.append('PitanjeId', currentCard.dataset.pitanjeId);
+
+            if (!shouldSkip && selectedAnswer) {
+                formData.append('OdgovorId', selectedAnswer.value);
+            }
+
+            const response = await fetch('@Url.Action("SaveSimulationAnswer", "Student")', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                errorMessage.textContent = 'Pitanje nije snimljeno. Vrijeme je možda isteklo.';
+                errorMessage.style.display = 'block';
+                nextQuestionBtn.disabled = false;
+
+                if (skipQuestionBtn) {
+                    skipQuestionBtn.disabled = false;
+                }
+
+                return;
+            }
+
+            errorMessage.style.display = 'none';
+            currentCard.classList.add('answered');
+
+            if (shouldSkip) {
+                currentCard.classList.add('skipped');
+            }
+
+            currentCard.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+                radio.disabled = true;
+            });
+
+            moveToNextQuestionOrSubmit();
+        }
+
         if (nextQuestionBtn && quizForm && questionCards.length) {
             showQuestion(currentQuestionIndex);
 
-            nextQuestionBtn.addEventListener('click', async function () {
-                const currentCard = questionCards[currentQuestionIndex];
-                const selectedAnswer = currentCard.querySelector('input[type="radio"]:checked');
-                const errorMessage = currentCard.querySelector('.question-error');
+            nextQuestionBtn.addEventListener('click', function () {
+                lockCurrentQuestion(false);
+            });
+        }
 
-                if (currentCard.classList.contains('answered')) {
-                    moveToNextQuestionOrSubmit();
-                    return;
-                }
-
-                if (!selectedAnswer) {
-                    errorMessage.textContent = 'Moraš odabrati odgovor prije nastavka.';
-                    errorMessage.style.display = 'block';
-                    return;
-                }
-
-                nextQuestionBtn.disabled = true;
-
-                const token = quizForm.querySelector('input[name="__RequestVerificationToken"]').value;
-                const kvizSesijaId = document.getElementById('kvizSesijaId').value;
-
-                const formData = new FormData();
-                formData.append('__RequestVerificationToken', token);
-                formData.append('KvizSesijaId', kvizSesijaId);
-                formData.append('PitanjeId', currentCard.dataset.pitanjeId);
-                formData.append('OdgovorId', selectedAnswer.value);
-
-                const response = await fetch('@Url.Action("SaveSimulationAnswer", "Student")', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                });
-
-                if (!response.ok) {
-                    errorMessage.textContent = 'Odgovor nije snimljen. Vrijeme je možda isteklo.';
-                    errorMessage.style.display = 'block';
-                    nextQuestionBtn.disabled = false;
-                    return;
-                }
-
-                errorMessage.style.display = 'none';
-                currentCard.classList.add('answered');
-
-                currentCard.querySelectorAll('input[type="radio"]').forEach(function (radio) {
-                    radio.disabled = true;
-                });
-
-                moveToNextQuestionOrSubmit();
+        if (skipQuestionBtn && quizForm && questionCards.length) {
+            skipQuestionBtn.addEventListener('click', function () {
+                lockCurrentQuestion(true);
             });
         }
 

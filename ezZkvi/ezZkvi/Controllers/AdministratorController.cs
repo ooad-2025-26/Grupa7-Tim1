@@ -163,13 +163,13 @@ namespace ezZkvi.Controllers
 
             if (currentUser != null && currentUser.Id == user.Id)
             {
-                TempData["Error"] = "Ne mo�ete ukloniti pristup sami sebi.";
+                TempData["Error"] = "Ne možete ukloniti pristup sami sebi.";
                 return RedirectToAction(nameof(Users));
             }
 
             if (await _userManager.IsInRoleAsync(user, "Admin"))
             {
-                TempData["Error"] = "Ne mo�ete ukloniti pristup administratoru.";
+                TempData["Error"] = "Ne možete ukloniti pristup administratoru.";
                 return RedirectToAction(nameof(Users));
             }
 
@@ -179,7 +179,7 @@ namespace ezZkvi.Controllers
 
             if (!result.Succeeded)
             {
-                TempData["Error"] = "Gre�ka prilikom uklanjanja pristupa.";
+                TempData["Error"] = "Greška prilikom uklanjanja pristupa.";
                 return RedirectToAction(nameof(Users));
             }
 
@@ -216,7 +216,7 @@ namespace ezZkvi.Controllers
 
             if (currentUser != null && currentUser.Id == user.Id)
             {
-                TempData["Error"] = "Ne mo�ete mijenjati vlastitu ulogu.";
+                TempData["Error"] = "Ne možete mijenjati vlastitu ulogu.";
                 return RedirectToAction(nameof(Users));
             }
 
@@ -237,7 +237,7 @@ namespace ezZkvi.Controllers
 
             if (!addResult.Succeeded)
             {
-                TempData["Error"] = "Gre�ka prilikom dodjeljivanja nove uloge.";
+                TempData["Error"] = "Greška prilikom dodjeljivanja nove uloge.";
                 return RedirectToAction(nameof(Users));
             }
 

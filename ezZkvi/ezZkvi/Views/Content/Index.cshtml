@@ -1,5 +1,6 @@
 @model IEnumerable<ezZkvi.Models.Pitanje>
 @using ezZkvi.Models
+@using System.Collections.Generic
 
 @{
     ViewData["Title"] = "Upravljanje sadržajem";
@@ -7,6 +8,7 @@
     var roleText = User.IsInRole("Admin") ? "Admin" : "Moderator";
     var backController = User.IsInRole("Admin") ? "Administrator" : "Moderator";
     var selectedTezina = ViewData["Tezina"]?.ToString();
+    var odgovoriPoPitanju = ViewBag.OdgovoriPoPitanju as Dictionary<int, List<Odgovor>> ?? new Dictionary<int, List<Odgovor>>();
 }
 
 @section Styles {
@@ -611,6 +613,18 @@
                 ? "diff-med"
                 : "diff-hard";
 
+                odgovoriPoPitanju.TryGetValue(pitanje.Id, out var odgovori);
+                odgovori ??= new List<Odgovor>();
+                var odgovor1 = odgovori.ElementAtOrDefault(0);
+                var odgovor2 = odgovori.ElementAtOrDefault(1);
+                var odgovor3 = odgovori.ElementAtOrDefault(2);
+                var odgovor4 = odgovori.ElementAtOrDefault(3);
+                var tacanOdgovor = odgovor1?.IsTacan == true ? 1
+                    : odgovor2?.IsTacan == true ? 2
+                    : odgovor3?.IsTacan == true ? 3
+                    : odgovor4?.IsTacan == true ? 4
+                    : 1;
+
                 <div class="t-row">
                     <div>
                         <div class="q-text-cell">@pitanje.TekstPitanja</div>
@@ -633,12 +647,21 @@
                     </span>
 
                     <div class="actions-cell">
-                        <a class="act-btn edit"
-                           asp-controller="Pitanje"
-                           asp-action="Edit"
-                           asp-route-id="@pitanje.Id">
+                        <button type="button"
+                                class="act-btn edit"
+                                data-id="@pitanje.Id"
+                                data-tekst="@pitanje.TekstPitanja"
+                                data-predmet-id="@pitanje.PredmetId"
+                                data-oblast-id="@pitanje.OblastId"
+                                data-tezina="@pitanje.Tezina"
+                                data-odgovor1="@(odgovor1?.Tekst ?? string.Empty)"
+                                data-odgovor2="@(odgovor2?.Tekst ?? string.Empty)"
+                                data-odgovor3="@(odgovor3?.Tekst ?? string.Empty)"
+                                data-odgovor4="@(odgovor4?.Tekst ?? string.Empty)"
+                                data-tacan-odgovor="@tacanOdgovor"
+                                onclick="openEditQuestion(this)">
                             Uredi
-                        </a>
+                        </button>
 
                         <form asp-controller="Pitanje"
                               asp-action="Delete"
@@ -823,6 +846,80 @@
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" onclick="closeQuestionModal()">Otkaži</button>
                 <button type="submit" class="btn-save">Sačuvaj pitanje</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="questionEditModal">
+    <div class="modal">
+        <div class="modal-title">
+            Uredi pitanje
+            <button type="button" class="modal-close" onclick="closeEditQuestion()">×</button>
+        </div>
+
+        <form asp-controller="Pitanje" asp-action="EditFromContent" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" id="editQuestionId" />
+
+            <div class="form-group">
+                <label>Predmet</label>
+                <select name="PredmetId" id="editQuestionPredmetSelect" class="form-control-dark" asp-items="ViewBag.Predmeti" required onchange="filterEditQuestionOblasti()">
+                    <option value="">Odaberi predmet</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Oblast</label>
+                <select name="OblastId" id="editQuestionOblastSelect" class="form-control-dark" required>
+                    <option value="">Prvo odaberi predmet</option>
+                    @foreach (var o in ViewBag.OblastiListaZaSelect)
+                    {
+                        <option value="@o.Id" data-predmet-id="@o.PredmetId">@o.PredmetNaziv / @o.Naziv</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Tekst pitanja</label>
+                <textarea name="TekstPitanja" id="editQuestionTekst" class="form-control-dark" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Ponuđeni odgovori</label>
+
+                <div class="answers-grid">
+                    <div class="answer-box"><span>A</span><input name="Odgovor1" id="editQuestionOdgovor1" class="form-control-dark" required /></div>
+                    <div class="answer-box"><span>B</span><input name="Odgovor2" id="editQuestionOdgovor2" class="form-control-dark" required /></div>
+                    <div class="answer-box"><span>C</span><input name="Odgovor3" id="editQuestionOdgovor3" class="form-control-dark" required /></div>
+                    <div class="answer-box"><span>D</span><input name="Odgovor4" id="editQuestionOdgovor4" class="form-control-dark" required /></div>
+                </div>
+            </div>
+
+            <div class="modal-two-cols">
+                <div class="form-group">
+                    <label>Tačan odgovor</label>
+                    <select name="TacanOdgovor" id="editQuestionTacanOdgovor" class="form-control-dark" required>
+                        <option value="1">A</option>
+                        <option value="2">B</option>
+                        <option value="3">C</option>
+                        <option value="4">D</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Težina</label>
+                    <select name="Tezina" id="editQuestionTezina" class="form-control-dark" required>
+                        <option value="LAKO">Lako</option>
+                        <option value="SREDNJE">Srednje</option>
+                        <option value="TESKO">Teško</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeEditQuestion()">Otkaži</button>
+                <button type="submit" class="btn-save">Sačuvaj izmjene</button>
             </div>
         </form>
     </div>
@@ -1039,6 +1136,11 @@
             toggleOptionsByPredmet('questionOblastSelect', predmetId);
         }
 
+        function filterEditQuestionOblasti() {
+            const predmetId = document.getElementById('editQuestionPredmetSelect').value;
+            toggleOptionsByPredmet('editQuestionOblastSelect', predmetId);
+        }
+
         function filterCsvOblasti() {
             const predmetId = document.getElementById('csvPredmetSelect').value;
             toggleOptionsByPredmet('csvOblastSelect', predmetId);
@@ -1051,6 +1153,28 @@
 
         function closeQuestionModal() {
             document.getElementById('questionModal').classList.remove('open');
+        }
+
+        function openEditQuestion(btn) {
+            const predmetId = btn.getAttribute('data-predmet-id');
+            const oblastId = btn.getAttribute('data-oblast-id');
+
+            document.getElementById('editQuestionId').value = btn.getAttribute('data-id');
+            document.getElementById('editQuestionTekst').value = btn.getAttribute('data-tekst') || '';
+            document.getElementById('editQuestionPredmetSelect').value = predmetId;
+            filterEditQuestionOblasti();
+            document.getElementById('editQuestionOblastSelect').value = oblastId;
+            document.getElementById('editQuestionTezina').value = btn.getAttribute('data-tezina');
+            document.getElementById('editQuestionOdgovor1').value = btn.getAttribute('data-odgovor1') || '';
+            document.getElementById('editQuestionOdgovor2').value = btn.getAttribute('data-odgovor2') || '';
+            document.getElementById('editQuestionOdgovor3').value = btn.getAttribute('data-odgovor3') || '';
+            document.getElementById('editQuestionOdgovor4').value = btn.getAttribute('data-odgovor4') || '';
+            document.getElementById('editQuestionTacanOdgovor').value = btn.getAttribute('data-tacan-odgovor') || '1';
+            document.getElementById('questionEditModal').classList.add('open');
+        }
+
+        function closeEditQuestion() {
+            document.getElementById('questionEditModal').classList.remove('open');
         }
 
         function openCsvModal() {
@@ -1115,7 +1239,7 @@
             });
         }
 
-        ['csvModal', 'questionModal', 'subjectModal', 'subjectEditModal', 'areaModal', 'areaEditModal'].forEach(function (id) {
+        ['csvModal', 'questionModal', 'questionEditModal', 'subjectModal', 'subjectEditModal', 'areaModal', 'areaEditModal'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
             el.addEventListener('click', function (e) {
@@ -1142,6 +1266,7 @@
             }
 
             filterQuestionOblasti();
+            filterEditQuestionOblasti();
             filterCsvOblasti();
 
             const toast = document.getElementById('toast');

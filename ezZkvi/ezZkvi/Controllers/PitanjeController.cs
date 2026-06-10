@@ -224,14 +224,24 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            var koristenoUKvizu = await _context.KvizSesijaPitanja
-                .AnyAsync(ksp => ksp.PitanjeId == id);
+            var koristiSeUAktivnojSesiji = await _context.KvizSesijaPitanja
+                .Include(ksp => ksp.KvizSesija)
+                .AnyAsync(ksp =>
+                    ksp.PitanjeId == id &&
+                    ksp.KvizSesija != null &&
+                    ksp.KvizSesija.Status == StatusSesije.U_TOKU);
 
-            if (koristenoUKvizu)
+            if (koristiSeUAktivnojSesiji)
             {
-                TempData["Error"] = "Pitanje se ne može obrisati jer je već korišteno u simulaciji kviza.";
+                TempData["Error"] = "Pitanje se ne može obrisati jer se trenutno koristi u aktivnoj simulaciji.";
                 return RedirectToAction("Index", "Content");
             }
+
+            var preostaleVezeSesije = await _context.KvizSesijaPitanja
+                .Where(ksp => ksp.PitanjeId == id)
+                .ToListAsync();
+
+            _context.KvizSesijaPitanja.RemoveRange(preostaleVezeSesije);
 
             var odgovori = await _context.Odgovor
                 .Where(o => o.PitanjeId == id)
@@ -243,6 +253,87 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je obrisano.";
+            return RedirectToAction("Index", "Content");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFromContent(PitanjeSaOdgovorimaViewModel model)
+        {
+            if (model.Id <= 0)
+            {
+                return NotFound();
+            }
+
+            var postojeci = await _context.Pitanje.FindAsync(model.Id);
+
+            if (postojeci == null)
+            {
+                return NotFound();
+            }
+
+            if (!await SmijePitanjeAsync(postojeci.Id))
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Pitanje nije ažurirano. Provjerite unesene podatke.";
+                return RedirectToAction("Index", "Content");
+            }
+
+            if (!await SmijePredmetAsync(model.PredmetId) || !await SmijeOblastAsync(model.OblastId, model.PredmetId))
+            {
+                return Forbid();
+            }
+
+            postojeci.TekstPitanja = model.TekstPitanja.Trim();
+            postojeci.Tezina = model.Tezina;
+            postojeci.PredmetId = model.PredmetId;
+            postojeci.OblastId = model.OblastId;
+
+            var tekstoviOdgovora = new[]
+            {
+                model.Odgovor1.Trim(),
+                model.Odgovor2.Trim(),
+                model.Odgovor3.Trim(),
+                model.Odgovor4.Trim()
+            };
+
+            var odgovori = await _context.Odgovor
+                .Where(o => o.PitanjeId == postojeci.Id)
+                .OrderBy(o => o.Id)
+                .ToListAsync();
+
+            while (odgovori.Count < 4)
+            {
+                var noviOdgovor = new Odgovor
+                {
+                    PitanjeId = postojeci.Id,
+                    Tekst = string.Empty,
+                    IsTacan = false
+                };
+
+                _context.Odgovor.Add(noviOdgovor);
+                odgovori.Add(noviOdgovor);
+            }
+
+            if (odgovori.Count > 4)
+            {
+                _context.Odgovor.RemoveRange(odgovori.Skip(4));
+                odgovori = odgovori.Take(4).ToList();
+            }
+
+            for (var i = 0; i < 4; i++)
+            {
+                odgovori[i].Tekst = tekstoviOdgovora[i];
+                odgovori[i].IsTacan = model.TacanOdgovor == i + 1;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Pitanje je ažurirano.";
             return RedirectToAction("Index", "Content");
         }
 

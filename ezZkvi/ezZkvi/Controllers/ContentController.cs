@@ -165,6 +165,16 @@ namespace ezZkvi.Controllers
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
 
+            var pitanjaIds = pitanja.Select(p => p.Id).ToList();
+            var odgovori = await _context.Odgovor
+                .Where(o => pitanjaIds.Contains(o.PitanjeId))
+                .OrderBy(o => o.Id)
+                .ToListAsync();
+
+            ViewBag.OdgovoriPoPitanju = odgovori
+                .GroupBy(o => o.PitanjeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             return View(pitanja);
         }
     }

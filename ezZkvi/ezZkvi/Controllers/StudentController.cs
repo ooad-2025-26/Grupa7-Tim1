@@ -14,8 +14,12 @@ namespace ezZkvi.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        private const int SistemskiBrojPitanja = 10;
-        private const int VremenskoOgranicenjeMinuta = 7;
+        private const int SistemskiBrojPitanja = 5;
+        private const int VremenskoOgranicenjeMinuta = 3;
+        private const double PoeniZaTacanOdgovor = 0.1;
+        private const double PoeniZaNetacanOdgovor = -0.03;
+        private const double MaksimalanBrojPoena = SistemskiBrojPitanja * PoeniZaTacanOdgovor;
+        private const double OznakaPreskocenogPitanja = -1;
 
         public StudentController(ApplicationDbContext context)
         {
@@ -25,6 +29,11 @@ namespace ezZkvi.Controllers
         private static bool JeZavrsenaSesija(StatusSesije status)
         {
             return status == StatusSesije.ZAVRSEN || status == StatusSesije.ISTEKAO;
+        }
+
+        private static bool JePitanjeZakljucano(KvizSesijaPitanje stavka)
+        {
+            return stavka.OdgovorId.HasValue || stavka.Tacno == OznakaPreskocenogPitanja;
         }
 
         private async Task<List<SelectListItem>> GetPredmetiZaSimulacijuAsync(int? selectedPredmetId = null)
@@ -103,17 +112,17 @@ namespace ezZkvi.Controllers
 
             var validnaPitanja = svaPitanja
                 .Where(p => odgovoriPoPitanju.ContainsKey(p.Id)
-                            && odgovoriPoPitanju[p.Id].Count >= 2
+                            && odgovoriPoPitanju[p.Id].Count == 4
                             && odgovoriPoPitanju[p.Id].Count(o => o.IsTacan) == 1)
                 .ToList();
 
-            if (validnaPitanja.Count == 0)
+            var odabranaPitanja = SelectQuestionsByDifficulty(validnaPitanja);
+
+            if (odabranaPitanja.Count == 0)
             {
-                model.ErrorMessage = "Za odabranu oblast nema validnih pitanja. Svako pitanje mora imati najmanje dva odgovora i tačno jedan tačan odgovor.";
+                model.ErrorMessage = "Za odabranu oblast ne postoji nijedno validno ABCD pitanje. Svako pitanje mora imati tačno 4 ponuđena odgovora i tačno jedan tačan odgovor.";
                 return model;
             }
-
-            var odabranaPitanja = SelectQuestionsByDifficulty(validnaPitanja, SistemskiBrojPitanja);
 
             model.BrojPitanja = odabranaPitanja.Count;
 
@@ -173,36 +182,49 @@ namespace ezZkvi.Controllers
             return model;
         }
 
-        private static List<Pitanje> SelectQuestionsByDifficulty(List<Pitanje> svaPitanja, int maxBrojPitanja)
+        private static List<Pitanje> SelectQuestionsByDifficulty(List<Pitanje> svaPitanja)
         {
-            var quotas = new Dictionary<Tezina, int>
+            var quotas = new List<(Tezina Tezina, int Broj)>
             {
-                [Tezina.LAKO] = 5,
-                [Tezina.SREDNJE] = 3,
-                [Tezina.TESKO] = 2
+                (Tezina.TESKO, 1),
+                (Tezina.SREDNJE, 2),
+                (Tezina.LAKO, 2)
             };
 
             var selected = new List<Pitanje>();
+            var selectedIds = new HashSet<int>();
 
             foreach (var quota in quotas)
             {
-                selected.AddRange(
-                    Shuffle(svaPitanja.Where(p => p.Tezina == quota.Key))
-                        .Take(quota.Value)
-                );
+                var pitanjaZaTezinu = Shuffle(svaPitanja.Where(p => p.Tezina == quota.Tezina))
+                    .Take(quota.Broj)
+                    .ToList();
+
+                foreach (var pitanje in pitanjaZaTezinu)
+                {
+                    if (selectedIds.Add(pitanje.Id))
+                    {
+                        selected.Add(pitanje);
+                    }
+                }
             }
 
-            if (selected.Count < maxBrojPitanja)
+            if (selected.Count < SistemskiBrojPitanja)
             {
-                var selectedIds = selected.Select(p => p.Id).ToHashSet();
+                var preostalaPitanja = Shuffle(svaPitanja.Where(p => !selectedIds.Contains(p.Id)))
+                    .Take(SistemskiBrojPitanja - selected.Count)
+                    .ToList();
 
-                var remaining = Shuffle(svaPitanja.Where(p => !selectedIds.Contains(p.Id)))
-                    .Take(maxBrojPitanja - selected.Count);
-
-                selected.AddRange(remaining);
+                foreach (var pitanje in preostalaPitanja)
+                {
+                    if (selectedIds.Add(pitanje.Id))
+                    {
+                        selected.Add(pitanje);
+                    }
+                }
             }
 
-            return Shuffle(selected).Take(maxBrojPitanja).ToList();
+            return Shuffle(selected).Take(SistemskiBrojPitanja).ToList();
         }
 
         private static List<T> Shuffle<T>(IEnumerable<T> source)
@@ -294,7 +316,7 @@ namespace ezZkvi.Controllers
                 .GroupBy(o => o.PitanjeId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            var pocetniIndex = stavke.FindIndex(x => !x.OdgovorId.HasValue);
+            var pocetniIndex = stavke.FindIndex(x => !JePitanjeZakljucano(x));
 
             if (pocetniIndex < 0)
             {
@@ -322,6 +344,8 @@ namespace ezZkvi.Controllers
                     Tezina = x.Pitanje?.Tezina ?? Tezina.LAKO,
                     OdabraniOdgovorId = x.OdgovorId,
                     JeOdgovoreno = x.OdgovorId.HasValue,
+                    JePreskoceno = x.Tacno == OznakaPreskocenogPitanja,
+                    JeZakljucano = JePitanjeZakljucano(x),
                     Odgovori = odgovoriPoPitanju.TryGetValue(x.PitanjeId, out var ods)
                         ? ods.Select(o => new SimulacijaOdgovorViewModel { Id = o.Id, Tekst = o.Tekst }).ToList()
                         : new List<SimulacijaOdgovorViewModel>()
@@ -412,18 +436,22 @@ namespace ezZkvi.Controllers
                     KorisnickiOdgovor = stavka.Odgovor?.Tekst,
                     TacanOdgovor = tacanOdgovor?.Tekst ?? "Nije definisan tačan odgovor",
                     JeTacno = stavka.Tacno == 1,
-                    JeOdgovoreno = stavka.OdgovorId.HasValue
+                    JeOdgovoreno = stavka.OdgovorId.HasValue,
+                    JePreskoceno = !stavka.OdgovorId.HasValue,
+                    OsvojeniPoeni = stavka.BrojBodova
                 });
             }
 
             var ukupno = stavke.Count;
             var tacno = stavke.Count(x => x.Tacno == 1);
+            var netacno = stavke.Count(x => x.OdgovorId.HasValue && x.Tacno == 0);
             var neodgovoreno = stavke.Count(x => !x.OdgovorId.HasValue);
-            var netacno = ukupno - tacno; // neodgovorena pitanja se računaju kao netačna
+            var ostvareniPoeni = Math.Max(0, Math.Round(stavke.Sum(x => x.BrojBodova), 2));
+            var maksimalniPoeniZaSesiju = Math.Round(ukupno * PoeniZaTacanOdgovor, 2);
 
-            var procenat = ukupno == 0
+            var procenat = maksimalniPoeniZaSesiju == 0
                 ? 0
-                : (int)Math.Round((double)tacno / ukupno * 100);
+                : (int)Math.Round(ostvareniPoeni / maksimalniPoeniZaSesiju * 100);
 
             var rezultat = new SimulacijaRezultatViewModel
             {
@@ -432,6 +460,8 @@ namespace ezZkvi.Controllers
                 NetacnihOdgovora = netacno,
                 Neodgovorenih = neodgovoreno,
                 Procenat = procenat,
+                OsvojeniPoeni = ostvareniPoeni,
+                MaksimalniPoeni = maksimalniPoeniZaSesiju,
                 UtrosenoSekundi = CalculateElapsedSeconds(
                     sesija.DatumPocetka.Ticks,
                     sesija.VremenskoOgranicenje * 60
@@ -457,6 +487,80 @@ namespace ezZkvi.Controllers
             }
 
             return rezultat;
+        }
+
+        private async Task SpasiOdgovoreIzFormeAsync(SimulacijaSubmitViewModel submitModel)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var sesija = await _context.KvizSesije
+                .FirstOrDefaultAsync(s =>
+                    s.ID == submitModel.KvizSesijaId &&
+                    s.StudentId == userId &&
+                    s.Status == StatusSesije.U_TOKU);
+
+            if (sesija == null || submitModel.Odgovori == null || submitModel.Odgovori.Count == 0)
+            {
+                return;
+            }
+
+            var deadline = sesija.DatumPocetka.AddMinutes(sesija.VremenskoOgranicenje);
+
+            if (DateTime.UtcNow >= deadline)
+            {
+                await FinishSimulationAndBuildResultAsync(sesija.ID);
+                return;
+            }
+
+            var validniOdgovori = submitModel.Odgovori
+                .Where(o => o.OdgovorId.HasValue)
+                .GroupBy(o => o.PitanjeId)
+                .Select(g => g.Last())
+                .ToList();
+
+            if (validniOdgovori.Count == 0)
+            {
+                return;
+            }
+
+            var stavke = await _context.KvizSesijaPitanja
+                .Where(x => x.KvizSesijaId == sesija.ID)
+                .OrderBy(x => x.RedniBroj)
+                .ToListAsync();
+
+            foreach (var item in validniOdgovori)
+            {
+                var sesijaPitanje = stavke.FirstOrDefault(x => x.PitanjeId == item.PitanjeId);
+
+                if (sesijaPitanje == null || JePitanjeZakljucano(sesijaPitanje))
+                {
+                    continue;
+                }
+
+                var prvoOtvorenoPitanje = stavke.FirstOrDefault(x => !JePitanjeZakljucano(x));
+
+                if (prvoOtvorenoPitanje == null || prvoOtvorenoPitanje.PitanjeId != item.PitanjeId)
+                {
+                    continue;
+                }
+
+                var odgovor = await _context.Odgovor
+                    .FirstOrDefaultAsync(o =>
+                        o.Id == item.OdgovorId.Value &&
+                        o.PitanjeId == item.PitanjeId);
+
+                if (odgovor == null)
+                {
+                    continue;
+                }
+
+                sesijaPitanje.OdgovorId = odgovor.Id;
+                sesijaPitanje.Tacno = odgovor.IsTacan ? 1 : 0;
+                sesijaPitanje.BrojBodova = odgovor.IsTacan ? PoeniZaTacanOdgovor : PoeniZaNetacanOdgovor;
+                break;
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         // GET: /Student/Dashboard
@@ -753,62 +857,6 @@ namespace ezZkvi.Controllers
             return View("Simulate", model);
         }
 
-        private async Task SpasiOdgovoreIzFormeAsync(SimulacijaSubmitViewModel submitModel)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var sesija = await _context.KvizSesije
-                .FirstOrDefaultAsync(s =>
-                    s.ID == submitModel.KvizSesijaId &&
-                    s.StudentId == userId &&
-                    s.Status == StatusSesije.U_TOKU);
-
-            if (sesija == null || submitModel.Odgovori == null || submitModel.Odgovori.Count == 0)
-            {
-                return;
-            }
-
-            var validniOdgovori = submitModel.Odgovori
-                .Where(o => o.OdgovorId.HasValue)
-                .GroupBy(o => o.PitanjeId)
-                .Select(g => g.Last())
-                .ToList();
-
-            if (validniOdgovori.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var item in validniOdgovori)
-            {
-                var sesijaPitanje = await _context.KvizSesijaPitanja
-                    .FirstOrDefaultAsync(x =>
-                        x.KvizSesijaId == sesija.ID &&
-                        x.PitanjeId == item.PitanjeId);
-
-                if (sesijaPitanje == null || sesijaPitanje.OdgovorId.HasValue)
-                {
-                    continue;
-                }
-
-                var odgovor = await _context.Odgovor
-                    .FirstOrDefaultAsync(o =>
-                        o.Id == item.OdgovorId.Value &&
-                        o.PitanjeId == item.PitanjeId);
-
-                if (odgovor == null)
-                {
-                    continue;
-                }
-
-                sesijaPitanje.OdgovorId = odgovor.Id;
-                sesijaPitanje.Tacno = odgovor.IsTacan ? 1 : 0;
-                sesijaPitanje.BrojBodova = odgovor.IsTacan ? 1 : 0;
-            }
-
-            await _context.SaveChangesAsync();
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitSimulation(SimulacijaSubmitViewModel submitModel)
@@ -876,24 +924,44 @@ namespace ezZkvi.Controllers
                 return BadRequest("Vrijeme je isteklo.");
             }
 
-            var sesijaPitanje = await _context.KvizSesijaPitanja
-                .FirstOrDefaultAsync(x =>
-                    x.KvizSesijaId == sesija.ID &&
-                    x.PitanjeId == answerModel.PitanjeId);
+            var stavke = await _context.KvizSesijaPitanja
+                .Where(x => x.KvizSesijaId == sesija.ID)
+                .OrderBy(x => x.RedniBroj)
+                .ToListAsync();
+
+            var sesijaPitanje = stavke.FirstOrDefault(x => x.PitanjeId == answerModel.PitanjeId);
 
             if (sesijaPitanje == null)
             {
                 return BadRequest("Pitanje nije dio ove sesije.");
             }
 
-            if (sesijaPitanje.OdgovorId.HasValue)
+            if (JePitanjeZakljucano(sesijaPitanje))
             {
-                return BadRequest("Odgovor je već potvrđen.");
+                return BadRequest("Pitanje je već potvrđeno ili preskočeno.");
+            }
+
+            var prvoOtvorenoPitanje = stavke.FirstOrDefault(x => !JePitanjeZakljucano(x));
+
+            if (prvoOtvorenoPitanje == null || prvoOtvorenoPitanje.PitanjeId != answerModel.PitanjeId)
+            {
+                return BadRequest("Navigacija je sekvencijalna. Nije dozvoljen povratak ili preskakanje redoslijeda pitanja.");
+            }
+
+            if (!answerModel.OdgovorId.HasValue)
+            {
+                sesijaPitanje.OdgovorId = null;
+                sesijaPitanje.Tacno = OznakaPreskocenogPitanja;
+                sesijaPitanje.BrojBodova = 0;
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { saved = true, skipped = true });
             }
 
             var odgovor = await _context.Odgovor
                 .FirstOrDefaultAsync(o =>
-                    o.Id == answerModel.OdgovorId &&
+                    o.Id == answerModel.OdgovorId.Value &&
                     o.PitanjeId == answerModel.PitanjeId);
 
             if (odgovor == null)
@@ -903,11 +971,11 @@ namespace ezZkvi.Controllers
 
             sesijaPitanje.OdgovorId = odgovor.Id;
             sesijaPitanje.Tacno = odgovor.IsTacan ? 1 : 0;
-            sesijaPitanje.BrojBodova = odgovor.IsTacan ? 1 : 0;
+            sesijaPitanje.BrojBodova = odgovor.IsTacan ? PoeniZaTacanOdgovor : PoeniZaNetacanOdgovor;
 
             await _context.SaveChangesAsync();
 
-            return Json(new { saved = true });
+            return Json(new { saved = true, skipped = false });
         }
 
         public IActionResult Index()

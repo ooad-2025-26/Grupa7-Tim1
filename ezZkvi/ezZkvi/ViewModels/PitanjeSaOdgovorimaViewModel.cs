@@ -5,6 +5,8 @@ namespace ezZkvi.ViewModels
 {
     public class PitanjeSaOdgovorimaViewModel
     {
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "Tekst pitanja je obavezan.")]
         [StringLength(1000, MinimumLength = 5, ErrorMessage = "Tekst pitanja mora imati između 5 i 1000 karaktera.")]
         public string TekstPitanja { get; set; } = string.Empty;
