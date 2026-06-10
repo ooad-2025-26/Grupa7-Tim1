@@ -1,4 +1,4 @@
-﻿@model ezZkvi.ViewModels.LeaderboardViewModel
+@model ezZkvi.ViewModels.LeaderboardViewModel
 @{
     ViewData["Title"] = "Leaderboard";
 
@@ -426,7 +426,7 @@
         }
         <a class="back-link" asp-controller="@backController" asp-action="Dashboard" style="margin-bottom:12px;display:inline-flex">← Nazad</a>
         <div class="page-title">🏆 Leader<span>board</span></div>
-        <div class="page-sub">Rang lista prema ostvarenim bodovima</div>
+        <div class="page-sub">Rang lista prema tačnosti</div>
     </div>
 </div>
 
@@ -455,8 +455,8 @@
 
 <div class="sort-bar">
     <span class="sort-label">Sortiraj:</span>
-    <button class="sort-btn active" onclick="sortBy('score', this)">Bodovi</button>
-    <button class="sort-btn" onclick="sortBy('pct', this)">Tačnost</button>
+    <button class="sort-btn active" onclick="sortBy('pct', this)">Tačnost</button>
+    <button class="sort-btn" onclick="sortBy('score', this)">Bodovi</button>
     <button class="sort-btn" onclick="sortBy('quizzes', this)">Kvizovi</button>
 </div>
 
@@ -524,7 +524,7 @@
 
 @section Scripts {
     <script>
-        let currentSort = 'score';
+        let currentSort = 'pct';
         let lastEntries = [];
         let currentPredmetId = '';
 
@@ -537,9 +537,10 @@
         function applySort(entries) {
           var arr = entries.slice();
           arr.sort(function (a, b) {
-            if (currentSort === 'pct') return (b.tacnost - a.tacnost) || (b.bodovi - a.bodovi);
-            if (currentSort === 'quizzes') return (b.kvizovi - a.kvizovi) || (b.bodovi - a.bodovi);
-            return (b.bodovi - a.bodovi) || (b.tacnost - a.tacnost); // bodovi (zadano)
+            if (currentSort === 'pct') return (b.tacnost - a.tacnost) || (b.bodovi - a.bodovi) || (b.kvizovi - a.kvizovi);
+            if (currentSort === 'score') return (b.bodovi - a.bodovi) || (b.tacnost - a.tacnost) || (b.kvizovi - a.kvizovi);
+            if (currentSort === 'quizzes') return (b.kvizovi - a.kvizovi) || (b.tacnost - a.tacnost) || (b.bodovi - a.bodovi);
+            return (b.tacnost - a.tacnost) || (b.bodovi - a.bodovi) || (b.kvizovi - a.kvizovi);
           });
           return arr;
         }

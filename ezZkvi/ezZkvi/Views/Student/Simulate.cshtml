@@ -411,19 +411,6 @@
             line-height: 1.5;
         }
 
-        .difficulty {
-            flex-shrink: 0;
-            color: var(--orange);
-            border: 1px solid rgba(245, 158, 11, 0.35);
-            background: rgba(245, 158, 11, 0.08);
-            border-radius: 999px;
-            padding: 5px 9px;
-            font-size: 0.68rem;
-            font-weight: 800;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-        }
-
         .answers {
             display: grid;
             gap: 9px;
@@ -794,7 +781,6 @@
                                 <div class="question-text">@pitanje.TekstPitanja</div>
                             </div>
 
-                            <div class="difficulty">@pitanje.Tezina</div>
                         </div>
 
                         <div class="answers">
@@ -1096,30 +1082,35 @@
         const timer = document.getElementById('timer');
 
         if (timer && quizForm) {
-            let remaining = parseInt(timer.dataset.seconds || '600');
+            const initialSeconds = parseInt(timer.dataset.seconds || '600', 10);
+            const deadline = Date.now() + Math.max(initialSeconds, 0) * 1000;
+            let timerSubmitted = false;
+            let interval = null;
 
             function renderTimer() {
+                const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
                 const minutes = Math.floor(remaining / 60);
                 const seconds = remaining % 60;
 
                 timer.textContent =
                     minutes.toString().padStart(2, '0') + ':' +
                     seconds.toString().padStart(2, '0');
+
+                if (remaining <= 0 && !timerSubmitted) {
+                    timerSubmitted = true;
+
+                    if (interval) {
+                        clearInterval(interval);
+                    }
+
+                    quizForm.submit();
+                }
             }
 
             renderTimer();
-
-            const interval = setInterval(function () {
-                remaining--;
-
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    quizForm.submit();
-                    return;
-                }
-
-                renderTimer();
-            }, 1000);
+            interval = setInterval(renderTimer, 1000);
+            document.addEventListener('visibilitychange', renderTimer);
+            window.addEventListener('focus', renderTimer);
         }
 
         function formatRemainingTime(totalSeconds) {

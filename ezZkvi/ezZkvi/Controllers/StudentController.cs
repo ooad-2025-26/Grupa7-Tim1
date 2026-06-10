@@ -329,6 +329,35 @@ namespace ezZkvi.Controllers
             };
         }
 
+
+        private async Task AzurirajStudentStatistikuAsync(KvizSesija sesija, int ukupnoPitanja, int tacno)
+        {
+            if (string.IsNullOrWhiteSpace(sesija.StudentId) || !sesija.PredmetId.HasValue)
+            {
+                return;
+            }
+
+            var statistika = await _context.StudentStatistike
+                .FirstOrDefaultAsync(s =>
+                    s.KorisnikId == sesija.StudentId &&
+                    s.PredmetId == sesija.PredmetId.Value);
+
+            if (statistika == null)
+            {
+                statistika = new StudentStatistika
+                {
+                    KorisnikId = sesija.StudentId,
+                    PredmetId = sesija.PredmetId.Value
+                };
+
+                _context.StudentStatistike.Add(statistika);
+            }
+
+            statistika.BrojKvizova += 1;
+            statistika.UkupnoPitanja += ukupnoPitanja;
+            statistika.TacniOdgovori += tacno;
+        }
+
         private async Task<SimulacijaRezultatViewModel?> FinishSimulationAndBuildResultAsync(int kvizSesijaId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -419,6 +448,10 @@ namespace ezZkvi.Controllers
                 sesija.BrojTacnih = tacno;
                 sesija.Procenat = procenat;
                 sesija.DatumZavrsetka = DateTime.UtcNow;
+
+                await AzurirajStudentStatistikuAsync(sesija, ukupno, tacno);
+
+                _context.KvizSesijaPitanja.RemoveRange(stavke);
 
                 await _context.SaveChangesAsync();
             }

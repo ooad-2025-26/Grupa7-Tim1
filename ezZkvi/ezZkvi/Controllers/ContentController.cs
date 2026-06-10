@@ -65,11 +65,6 @@ namespace ezZkvi.Controllers
                 pitanjaQuery = pitanjaQuery.Where(p => p.PredmetId == predmetId.Value);
             }
 
-            if (oblastId.HasValue)
-            {
-                pitanjaQuery = pitanjaQuery.Where(p => p.OblastId == oblastId.Value);
-            }
-
             if (tezina.HasValue)
             {
                 pitanjaQuery = pitanjaQuery.Where(p => p.Tezina == tezina.Value);
@@ -91,7 +86,28 @@ namespace ezZkvi.Controllers
                 .ThenBy(o => o.Naziv)
                 .ToListAsync();
 
-            var oblastiSelect = oblasti
+            if (predmetId.HasValue && oblastId.HasValue)
+            {
+                var oblastPripadaPredmetu = oblasti.Any(o =>
+                    o.Id == oblastId.Value &&
+                    o.PredmetId == predmetId.Value);
+
+                if (!oblastPripadaPredmetu)
+                {
+                    oblastId = null;
+                }
+            }
+
+            var oblastiZaPrikaz = predmetId.HasValue
+                ? oblasti.Where(o => o.PredmetId == predmetId.Value).ToList()
+                : oblasti;
+
+            if (oblastId.HasValue)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.OblastId == oblastId.Value);
+            }
+
+            var oblastiSelect = oblastiZaPrikaz
                 .Select(o => new
                 {
                     o.Id,
@@ -134,7 +150,7 @@ namespace ezZkvi.Controllers
                 .Select(g => new { OblastId = g.Key, Broj = g.Count() })
                 .ToDictionaryAsync(x => x.OblastId, x => x.Broj);
 
-            ViewBag.OblastiLista = oblasti
+            ViewBag.OblastiLista = oblastiZaPrikaz
                 .Select(o => new OblastAktivnostItem
                 {
                     Id = o.Id,

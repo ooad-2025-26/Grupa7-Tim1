@@ -61,10 +61,7 @@ namespace ezZkvi.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var query = _context.KvizSesije
-                .Where(s =>
-                    (s.Status == StatusSesije.ZAVRSEN || s.Status == StatusSesije.ISTEKAO) &&
-                    s.StudentId != null);
+            var query = _context.StudentStatistike.AsQueryable();
 
             if (predmetId.HasValue)
             {
@@ -72,14 +69,15 @@ namespace ezZkvi.Controllers
             }
 
             var statistika = await query
-                .GroupBy(s => s.StudentId!)
+                .GroupBy(s => s.KorisnikId)
                 .Select(g => new
                 {
                     StudentId = g.Key,
-                    Kvizovi = g.Count(),
-                    UkupnoTacnih = g.Sum(x => x.BrojTacnih),
-                    UkupnoPitanja = g.Sum(x => x.TraziBrojPitanja)
+                    Kvizovi = g.Sum(x => x.BrojKvizova),
+                    UkupnoTacnih = g.Sum(x => x.TacniOdgovori),
+                    UkupnoPitanja = g.Sum(x => x.UkupnoPitanja)
                 })
+                .Where(s => s.Kvizovi > 0 && s.UkupnoPitanja > 0)
                 .ToListAsync();
 
             var ids = statistika.Select(s => s.StudentId).ToList();
@@ -115,8 +113,9 @@ namespace ezZkvi.Controllers
                         JeTrenutni = s.StudentId == userId
                     };
                 })
-                .OrderByDescending(e => e.Bodovi)
-                .ThenByDescending(e => e.Tacnost)
+                .OrderByDescending(e => e.Tacnost)
+                .ThenByDescending(e => e.Bodovi)
+                .ThenByDescending(e => e.Kvizovi)
                 .ToList();
         }
     }
