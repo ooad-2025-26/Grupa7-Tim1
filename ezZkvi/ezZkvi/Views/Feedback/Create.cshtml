@@ -191,20 +191,6 @@
     <textarea id="rpOpis" placeholder="Detaljno opiši grešku: šta si vidio/la, šta si očekivao/la..."></textarea>
     <div class="field-error" id="errRpOpis">Opiši grešku.</div>
   </div>
-  <div class="form-group">
-    <label>Screenshot (opciono — ne sprema se)</label>
-    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-      <div class="upload-icon">📎</div>
-      <div class="upload-text">Klikni za dodavanje screenshota</div>
-      <div class="upload-sub">PNG, JPG do 5MB</div>
-    </div>
-    <input type="file" id="fileInput" accept="image/*" onchange="previewFile(this)">
-    <div class="file-preview" id="filePreview">
-      <img id="fileThumb" src="" alt="">
-      <span id="fileName"></span>
-      <span class="file-remove" onclick="removeFile()">✕</span>
-    </div>
-  </div>
   <div class="btn-row">
     <button type="button" class="btn btn-secondary" onclick="resetForm()">Otkaži</button>
     <button type="submit" class="btn btn-primary" style="background:var(--amber)">Pošalji prijavu</button>
@@ -237,19 +223,6 @@
     el.classList.add('selected');
   }
 
-  function previewFile(input) {
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      if (file.size > 5*1024*1024) { alert('Datoteka je prevelika. Max 5MB.'); input.value = ''; return; }
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('fileThumb').src = e.target.result;
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('filePreview').classList.add('show');
-      };
-      reader.readAsDataURL(file);
-    }
-  }
   function removeFile() {
     document.getElementById('fileInput').value = '';
     document.getElementById('filePreview').classList.remove('show');
