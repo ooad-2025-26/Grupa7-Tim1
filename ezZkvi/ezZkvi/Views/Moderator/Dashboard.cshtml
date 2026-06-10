@@ -111,8 +111,9 @@
     <nav class="nav">
       <a class="nav-item active" asp-controller="Moderator" asp-action="Dashboard"><span class="ico">⊞</span> Dashboard</a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Content"><span class="ico">📝</span> Sadržaj</a>
+      <a class="nav-item" asp-controller="Leaderboard" asp-action="Index"><span class="ico">🏆</span> Leaderboard</a>
       <a class="nav-item" asp-controller="Moderator" asp-action="Feedback"><span class="ico">💬</span> Feedback @if (ViewBag.NeobradeniFeedback > 0) { <span class="badge">@ViewBag.NeobradeniFeedback</span> }</a>
-    </nav>
+  </nav>
     <form asp-controller="Account" asp-action="Logout" method="post" class="user-card-logout-form">
       @Html.AntiForgeryToken()
       <button type="submit" class="user-card user-card-logout-btn">
