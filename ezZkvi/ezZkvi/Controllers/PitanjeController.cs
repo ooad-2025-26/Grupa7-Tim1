@@ -224,6 +224,15 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
+            var koristenoUKvizu = await _context.KvizSesijaPitanja
+                .AnyAsync(ksp => ksp.PitanjeId == id);
+
+            if (koristenoUKvizu)
+            {
+                TempData["Error"] = "Pitanje se ne može obrisati jer je već korišteno u simulaciji kviza.";
+                return RedirectToAction("Index", "Content");
+            }
+
             var odgovori = await _context.Odgovor
                 .Where(o => o.PitanjeId == id)
                 .ToListAsync();

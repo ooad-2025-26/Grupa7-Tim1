@@ -95,8 +95,12 @@ app.Use(async (context, next) =>
         var user = await userManager.GetUserAsync(context.User);
         if (user != null)
         {
-            user.LastActivity = DateTime.UtcNow;
-            await userManager.UpdateAsync(user);
+            var now = DateTime.UtcNow;
+            if (!user.LastActivity.HasValue || now - user.LastActivity.Value > TimeSpan.FromMinutes(1))
+            {
+                user.LastActivity = now;
+                await userManager.UpdateAsync(user);
+            }
         }
     }
     await next();

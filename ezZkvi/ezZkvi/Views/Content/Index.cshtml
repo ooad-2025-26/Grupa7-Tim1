@@ -589,8 +589,8 @@
     <div class="table-wrap" id="questionTable">
         <div class="t-header">
             <span>Pitanje</span>
-            <span>Predmet</span>
             <span>Oblast</span>
+            <span>Predmet</span>
             <span>Težina</span>
             <span>Akcije</span>
         </div>
@@ -617,14 +617,14 @@
                     </div>
 
                     <span>
-                        <span class="tag">
-                            @(pitanje.Predmet != null ? pitanje.Predmet.Naziv : "Bez predmeta")
+                        <span class="tag" style="background:rgba(255,179,0,0.1);color:var(--amber);">
+                            @(pitanje.Oblast != null ? pitanje.Oblast.Naziv : "Bez oblasti")
                         </span>
                     </span>
 
                     <span>
-                        <span class="tag" style="background:rgba(255,179,0,0.1);color:var(--amber);">
-                            @(pitanje.Oblast != null ? pitanje.Oblast.Naziv : "Bez oblasti")
+                        <span class="tag">
+                            @(pitanje.Predmet != null ? pitanje.Predmet.Naziv : "Bez predmeta")
                         </span>
                     </span>
 

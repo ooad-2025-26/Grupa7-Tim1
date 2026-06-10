@@ -420,14 +420,6 @@ namespace ezZkvi.Controllers
                 sesija.Procenat = procenat;
                 sesija.DatumZavrsetka = DateTime.UtcNow;
 
-                var student = await _context.Student.FirstOrDefaultAsync(s => s.Id == userId);
-
-                if (student != null)
-                {
-                    student.BrojOdgovorenihPitanja += ukupno;
-                    student.BrojTacnihOdgovora += tacno;
-                }
-
                 await _context.SaveChangesAsync();
             }
 
@@ -728,6 +720,62 @@ namespace ezZkvi.Controllers
             return View("Simulate", model);
         }
 
+        private async Task SpasiOdgovoreIzFormeAsync(SimulacijaSubmitViewModel submitModel)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var sesija = await _context.KvizSesije
+                .FirstOrDefaultAsync(s =>
+                    s.ID == submitModel.KvizSesijaId &&
+                    s.StudentId == userId &&
+                    s.Status == StatusSesije.U_TOKU);
+
+            if (sesija == null || submitModel.Odgovori == null || submitModel.Odgovori.Count == 0)
+            {
+                return;
+            }
+
+            var validniOdgovori = submitModel.Odgovori
+                .Where(o => o.OdgovorId.HasValue)
+                .GroupBy(o => o.PitanjeId)
+                .Select(g => g.Last())
+                .ToList();
+
+            if (validniOdgovori.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var item in validniOdgovori)
+            {
+                var sesijaPitanje = await _context.KvizSesijaPitanja
+                    .FirstOrDefaultAsync(x =>
+                        x.KvizSesijaId == sesija.ID &&
+                        x.PitanjeId == item.PitanjeId);
+
+                if (sesijaPitanje == null || sesijaPitanje.OdgovorId.HasValue)
+                {
+                    continue;
+                }
+
+                var odgovor = await _context.Odgovor
+                    .FirstOrDefaultAsync(o =>
+                        o.Id == item.OdgovorId.Value &&
+                        o.PitanjeId == item.PitanjeId);
+
+                if (odgovor == null)
+                {
+                    continue;
+                }
+
+                sesijaPitanje.OdgovorId = odgovor.Id;
+                sesijaPitanje.Tacno = odgovor.IsTacan ? 1 : 0;
+                sesijaPitanje.BrojBodova = odgovor.IsTacan ? 1 : 0;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitSimulation(SimulacijaSubmitViewModel submitModel)
@@ -737,6 +785,8 @@ namespace ezZkvi.Controllers
                 TempData["SimulationError"] = "Simulacija nije validna.";
                 return RedirectToAction(nameof(Simulate));
             }
+
+            await SpasiOdgovoreIzFormeAsync(submitModel);
 
             var rezultat = await FinishSimulationAndBuildResultAsync(submitModel.KvizSesijaId);
 

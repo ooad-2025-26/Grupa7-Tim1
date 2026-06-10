@@ -63,6 +63,7 @@ namespace ezZkvi.Controllers
             var pitanjeIds = pitanja.Select(p => p.Id).ToList();
             var sviOdgovori = await _context.Odgovor
                 .Where(o => pitanjeIds.Contains(o.PitanjeId))
+                .OrderBy(o => o.Id)
                 .ToListAsync();
 
             var odgovoriPoPitanju = sviOdgovori
@@ -326,6 +327,15 @@ namespace ezZkvi.Controllers
             if (imaPitanja)
             {
                 TempData["Error"] = "Predmet se ne može obrisati dok ima pitanja.";
+                return RedirectToAction("Index", "Content");
+            }
+
+            var imaSesija = await _context.KvizSesije.AnyAsync(s => s.PredmetId == id);
+            var imaFeedback = await _context.Feedback.AnyAsync(f => f.PredmetId == id);
+
+            if (imaSesija || imaFeedback)
+            {
+                TempData["Error"] = "Predmet se ne može obrisati jer ima historiju kvizova ili feedback.";
                 return RedirectToAction("Index", "Content");
             }
 

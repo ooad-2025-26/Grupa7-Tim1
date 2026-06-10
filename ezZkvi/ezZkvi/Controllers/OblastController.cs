@@ -120,6 +120,18 @@ namespace ezZkvi.Controllers
                 return RedirectToAction("Index", "Content");
             }
 
+            if (oblast.PredmetId != predmetId)
+            {
+                var imaPitanja = await _context.Pitanje.AnyAsync(p => p.OblastId == id);
+                var imaSesija = await _context.KvizSesije.AnyAsync(s => s.OblastId == id);
+
+                if (imaPitanja || imaSesija)
+                {
+                    TempData["Error"] = "Oblast se ne može prebaciti na drugi predmet jer ima pitanja ili historiju kvizova.";
+                    return RedirectToAction("Index", "Content");
+                }
+            }
+
             oblast.Naziv = naziv.Trim();
             oblast.PredmetId = predmetId;
             await _context.SaveChangesAsync();
@@ -151,6 +163,13 @@ namespace ezZkvi.Controllers
             if (imaPitanja)
             {
                 TempData["Error"] = "Oblast se ne može obrisati dok ima pitanja.";
+                return RedirectToAction("Index", "Content");
+            }
+
+            var imaSesija = await _context.KvizSesije.AnyAsync(s => s.OblastId == id);
+            if (imaSesija)
+            {
+                TempData["Error"] = "Oblast se ne može obrisati jer ima historiju kvizova.";
                 return RedirectToAction("Index", "Content");
             }
 
