@@ -119,6 +119,60 @@ namespace ezZkvi.Controllers
 
             if (existingUser != null)
             {
+                if (!existingUser.EmailConfirmed)
+                {
+                    try
+                    {
+                        var token = await _userManager.GenerateEmailConfirmationTokenAsync(existingUser);
+                        var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+                        var confirmationUrl = Url.Action(
+                            "ConfirmEmail",
+                            "Account",
+                            new
+                            {
+                                userId = existingUser.Id,
+                                token = encodedToken
+                            },
+                            Request.Scheme
+                        );
+
+                        if (string.IsNullOrWhiteSpace(confirmationUrl))
+                        {
+                            throw new InvalidOperationException("Verifikacijski link nije mogao biti kreiran.");
+                        }
+
+                        var subject = "Potvrda email adrese za eZkvi";
+
+                        var body = $@"
+                                                    Poštovani,
+
+                                                    Za završetak registracije potvrdite svoju email adresu putem ovog linka:
+
+                                                    {confirmationUrl}
+
+                                                    Nakon potvrde emaila, vaš nalog će biti poslan administratoru na odobrenje.";
+
+                        await _emailService.SendEmailAsync(existingUser.Email!, subject, body);
+
+                        TempData["Message"] = "Novi verifikacijski link je poslan na email adresu.";
+                        return RedirectToAction("Login", "Account");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("EMAIL VERIFICATION RESEND ERROR: " + ex.ToString());
+
+                        ModelState.AddModelError("", "Novi verifikacijski email nije poslan. Pokušajte ponovo kasnije.");
+                        return View("Login", model);
+                    }
+                }
+
+                if (!existingUser.IsApproved)
+                {
+                    ModelState.AddModelError("", "Korisnik sa ovom email adresom je već registrovan i čeka odobrenje administratora.");
+                    return View("Login", model);
+                }
+
                 ModelState.AddModelError("", "Korisnik sa ovom email adresom već postoji.");
                 return View("Login", model);
             }
