@@ -28,7 +28,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
 
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(7);
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
     options.SlidingExpiration = true;
 
     options.Events.OnRedirectToLogin = context =>

@@ -8,6 +8,7 @@
     var roleText = User.IsInRole("Admin") ? "Admin" : "Moderator";
     var backController = User.IsInRole("Admin") ? "Administrator" : "Moderator";
     var selectedTezina = ViewData["Tezina"]?.ToString();
+    var activeTab = (ViewData["ActiveTab"]?.ToString() ?? "questions").ToLowerInvariant();
     var odgovoriPoPitanju = ViewBag.OdgovoriPoPitanju as Dictionary<int, List<Odgovor>> ?? new Dictionary<int, List<Odgovor>>();
 }
 
@@ -211,7 +212,7 @@
 
         .t-header {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 170px 170px 100px 120px;
+            grid-template-columns: minmax(0, 1.8fr) minmax(150px, 220px) minmax(170px, 260px) 100px 120px;
             padding: 12px 20px;
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -223,7 +224,7 @@
 
         .t-row {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 170px 170px 100px 120px;
+            grid-template-columns: minmax(0, 1.8fr) minmax(150px, 220px) minmax(170px, 260px) 100px 120px;
             padding: 14px 20px;
             border-bottom: 1px solid var(--border);
             align-items: center;
@@ -250,7 +251,8 @@
         .tag {
             display: inline-flex;
             align-items: center;
-            max-width: 150px;
+            justify-content: center;
+            max-width: 100%;
             padding: 4px 10px;
             border-radius: 10px;
             font-size: 0.68rem;
@@ -261,6 +263,21 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .center-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            padding-right: 12px;
+        }
+
+        .subject-tag {
+            width: fit-content;
+            max-width: min(100%, 260px);
         }
 
         .diff {
@@ -552,27 +569,31 @@
 </div>
 
 <div class="tabs">
-    <button type="button" class="tab active" data-tab="questions" onclick="switchTab('questions')">Pitanja</button>
-    <button type="button" class="tab" data-tab="areas" onclick="switchTab('areas')">Oblasti</button>
-    <button type="button" class="tab" data-tab="subjects" onclick="switchTab('subjects')">Predmeti</button>
+    <button type="button" class="tab @(activeTab == "questions" ? "active" : "")" data-tab="questions" onclick="switchTab('questions')">Pitanja</button>
+    <button type="button" class="tab @(activeTab == "areas" ? "active" : "")" data-tab="areas" onclick="switchTab('areas')">Oblasti</button>
+    <button type="button" class="tab @(activeTab == "subjects" ? "active" : "")" data-tab="subjects" onclick="switchTab('subjects')">Predmeti</button>
 </div>
 
-<div class="panel active" id="questions">
-    <form asp-controller="Content" asp-action="Index" method="get" class="toolbar" id="filterForm">
+<div class="panel @(activeTab == "questions" ? "active" : "")" id="questions">
+    <form class="toolbar" id="filterForm" onsubmit="return false;">
         <div class="search-wrap">
             <span class="search-icon">⌕</span>
-            <input type="text" name="search" value="@ViewData["Search"]" placeholder="Pretraži pitanja...">
+            <input type="text" id="questionSearchInput" placeholder="Pretraži pitanja..." autocomplete="off">
         </div>
 
-        <select name="predmetId" asp-items="ViewBag.Predmeti" onchange="document.getElementById('filterForm').submit()">
+        <select id="questionPredmetFilter" asp-items="ViewBag.Predmeti">
             <option value="">Svi predmeti</option>
         </select>
 
-        <select name="oblastId" asp-items="ViewBag.OblastiFilter" onchange="document.getElementById('filterForm').submit()">
+        <select id="questionOblastFilter">
             <option value="">Sve oblasti</option>
+            @foreach (var o in ViewBag.OblastiListaZaSelect)
+            {
+                <option value="@o.Id" data-predmet-id="@o.PredmetId">@o.PredmetNaziv / @o.Naziv</option>
+            }
         </select>
 
-        <select name="tezina" id="tezinaFilter" data-selected="@selectedTezina" onchange="document.getElementById('filterForm').submit()">
+        <select id="tezinaFilter">
             <option value="">Sve težine</option>
             <option value="LAKO">Lako</option>
             <option value="SREDNJE">Srednje</option>
@@ -625,19 +646,23 @@
                     : odgovor4?.IsTacan == true ? 4
                     : 1;
 
-                <div class="t-row">
+                <div class="t-row question-row"
+                     data-search="@((pitanje.TekstPitanja + " " + (pitanje.Oblast != null ? pitanje.Oblast.Naziv : "") + " " + (pitanje.Predmet != null ? pitanje.Predmet.Naziv : "")).ToLowerInvariant())"
+                     data-predmet-id="@pitanje.PredmetId"
+                     data-oblast-id="@pitanje.OblastId"
+                     data-tezina="@pitanje.Tezina">
                     <div>
                         <div class="q-text-cell">@pitanje.TekstPitanja</div>
                     </div>
 
-                    <span>
-                        <span class="tag" style="background:rgba(255,179,0,0.1);color:var(--amber);">
+                    <span class="center-cell">
+                        <span class="tag subject-tag" title='@(pitanje.Oblast != null ? pitanje.Oblast.Naziv : "Bez oblasti")' style="background:rgba(255,179,0,0.1);color:var(--amber);">
                             @(pitanje.Oblast != null ? pitanje.Oblast.Naziv : "Bez oblasti")
                         </span>
                     </span>
 
-                    <span>
-                        <span class="tag">
+                    <span class="center-cell">
+                        <span class="tag subject-tag" title='@(pitanje.Predmet != null ? pitanje.Predmet.Naziv : "Bez predmeta")'>
                             @(pitanje.Predmet != null ? pitanje.Predmet.Naziv : "Bez predmeta")
                         </span>
                     </span>
@@ -679,17 +704,18 @@
     </div>
 </div>
 
-<div class="panel" id="subjects">
-    <div class="toolbar">
+<div class="panel @(activeTab == "subjects" ? "active" : "")" id="subjects">
+    <form class="toolbar" id="subjectFilterForm" onsubmit="return false;">
         <div class="search-wrap">
             <span class="search-icon">⌕</span>
-            <input type="text" id="subjectSearch" oninput="filterSubjects()" placeholder="Pretraži predmete...">
+            <input type="text" id="subjectSearchInput" placeholder="Pretraži predmete..." autocomplete="off">
         </div>
+
 
         <button type="button" class="btn-add" onclick="openSubjectModal()">
             + Novi predmet
         </button>
-    </div>
+    </form>
 
     <div class="table-wrap">
         <div class="t-header" style="grid-template-columns:1fr 90px 140px">
@@ -708,13 +734,13 @@
         {
             @foreach (var p in ViewBag.PredmetiLista)
             {
-                <div class="t-row subject-row" data-naziv="@p.Naziv.ToLower()" style="grid-template-columns:1fr 90px 140px">
+                <div class="t-row subject-row" data-search="@p.Naziv.ToLowerInvariant()" style="grid-template-columns:1fr 90px 140px">
                     <div><div class="q-text-cell">@p.Naziv</div></div>
                     <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">@p.BrojPitanja</span>
                     <div class="actions-cell">
                         <button type="button" class="act-btn edit" data-id="@p.Id" data-naziv="@p.Naziv" onclick="openEditSubject(this)">Uredi</button>
                         <form asp-controller="Predmet" asp-action="DeleteFromContent" asp-route-id="@p.Id" method="post" style="display:inline;"
-                              onsubmit="return confirm('Obrisati ovaj predmet? (moguće samo ako nema pitanja)');">
+                              onsubmit="return confirm('Obrisati predmet? Time se brišu povezane oblasti, pitanja, kviz sesije i leaderboard/statistika za taj predmet.');">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="act-btn del">Obriši</button>
                         </form>
@@ -725,20 +751,25 @@
     </div>
 </div>
 
-<div class="panel" id="areas">
-    <div class="toolbar">
+<div class="panel @(activeTab == "areas" ? "active" : "")" id="areas">
+    <form class="toolbar" id="areaFilterForm" onsubmit="return false;">
         <div class="search-wrap">
             <span class="search-icon">⌕</span>
-            <input type="text" id="areaSearch" oninput="filterAreas()" placeholder="Pretraži oblasti...">
+            <input type="text" id="areaSearchInput" placeholder="Pretraži oblasti..." autocomplete="off">
         </div>
+
+        <select id="areaPredmetFilter" asp-items="ViewBag.AreaPredmeti">
+            <option value="">Svi predmeti</option>
+        </select>
+
 
         <button type="button" class="btn-add" onclick="openAreaModal()">
             + Nova oblast
         </button>
-    </div>
+    </form>
 
     <div class="table-wrap">
-        <div class="t-header" style="grid-template-columns:1fr 220px 90px 140px">
+        <div class="t-header" style="grid-template-columns:minmax(0, 1fr) minmax(170px, 260px) 90px 140px">
             <span>Naziv oblasti</span>
             <span>Predmet</span>
             <span>Pitanja</span>
@@ -755,9 +786,9 @@
         {
             @foreach (var o in ViewBag.OblastiLista)
             {
-                <div class="t-row area-row" data-naziv="@((o.Naziv + " " + o.PredmetNaziv).ToLower())" style="grid-template-columns:1fr 220px 90px 140px">
+                <div class="t-row area-row" data-search="@((o.Naziv + " " + o.PredmetNaziv).ToLowerInvariant())" data-predmet-id="@o.PredmetId" style="grid-template-columns:minmax(0, 1fr) minmax(170px, 260px) 90px 140px">
                     <div><div class="q-text-cell">@o.Naziv</div></div>
-                    <span><span class="tag">@o.PredmetNaziv</span></span>
+                    <span class="center-cell"><span class="tag subject-tag" title="@o.PredmetNaziv">@o.PredmetNaziv</span></span>
                     <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent)">@o.BrojPitanja</span>
                     <div class="actions-cell">
                         <button type="button"
@@ -767,7 +798,7 @@
                                 data-predmet-id="@o.PredmetId"
                                 onclick="openEditArea(this)">Uredi</button>
                         <form asp-controller="Oblast" asp-action="DeleteFromContent" asp-route-id="@o.Id" method="post" style="display:inline;"
-                              onsubmit="return confirm('Obrisati ovu oblast? (moguće samo ako nema pitanja)');">
+                              onsubmit="return confirm('Obrisati oblast? Time se brišu povezana pitanja i kviz sesije.');">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="act-btn del">Obriši</button>
                         </form>
@@ -937,7 +968,7 @@
 
             <div class="form-group">
                 <label>Naziv predmeta</label>
-                <input name="Naziv" class="form-control-dark" placeholder="npr. Operativni sistemi" required />
+                <input name="Naziv" class="form-control-dark" placeholder="npr. Operativni sistemi" maxlength="100" required />
             </div>
 
             <div class="modal-actions">
@@ -961,7 +992,7 @@
 
             <div class="form-group">
                 <label>Naziv predmeta</label>
-                <input name="Naziv" id="editSubjectNaziv" class="form-control-dark" required />
+                <input name="Naziv" id="editSubjectNaziv" class="form-control-dark" maxlength="100" required />
             </div>
 
             <div class="modal-actions">
@@ -991,7 +1022,7 @@
 
             <div class="form-group">
                 <label>Naziv oblasti</label>
-                <input name="Naziv" class="form-control-dark" placeholder="npr. Klase i objekti" required />
+                <input name="Naziv" class="form-control-dark" placeholder="npr. Klase i objekti" maxlength="100" required />
             </div>
 
             <div class="modal-actions">
@@ -1020,7 +1051,7 @@
 
             <div class="form-group">
                 <label>Naziv oblasti</label>
-                <input name="Naziv" id="editAreaNaziv" class="form-control-dark" required />
+                <input name="Naziv" id="editAreaNaziv" class="form-control-dark" maxlength="100" required />
             </div>
 
             <div class="modal-actions">
@@ -1097,7 +1128,13 @@
 
 @section Scripts {
     <script>
-        function switchTab(t) {
+        const contentTabs = ['questions', 'areas', 'subjects'];
+
+        function switchTab(t, updateUrl = true) {
+            if (!contentTabs.includes(t)) {
+                t = 'questions';
+            }
+
             document.querySelectorAll('.tab').forEach(function (el) {
                 el.classList.toggle('active', el.getAttribute('data-tab') === t);
             });
@@ -1107,6 +1144,90 @@
             });
 
             document.getElementById(t).classList.add('active');
+
+            if (updateUrl) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', t);
+                url.hash = '';
+                history.replaceState(null, '', url.pathname + '?' + url.searchParams.toString());
+            }
+        }
+
+        function normalizeFilterValue(value) {
+            return (value || '').toString().trim().toLowerCase();
+        }
+
+        function setRowVisible(row, visible) {
+            row.style.display = visible ? '' : 'none';
+        }
+
+        function updateQuestionOblastFilterOptions() {
+            const predmetFilter = document.getElementById('questionPredmetFilter');
+            const oblastFilter = document.getElementById('questionOblastFilter');
+            if (!predmetFilter || !oblastFilter) return;
+
+            const predmetId = predmetFilter.value;
+
+            Array.from(oblastFilter.options).forEach(function (opt) {
+                const optionPredmetId = opt.getAttribute('data-predmet-id');
+                const visible = !optionPredmetId || !predmetId || optionPredmetId === predmetId;
+                opt.hidden = !visible;
+                opt.disabled = !visible;
+            });
+
+            if (oblastFilter.selectedOptions.length && oblastFilter.selectedOptions[0].disabled) {
+                oblastFilter.value = '';
+            }
+        }
+
+        function applyQuestionFilter() {
+            updateQuestionOblastFilterOptions();
+
+            const search = normalizeFilterValue(document.getElementById('questionSearchInput')?.value);
+            const predmetId = document.getElementById('questionPredmetFilter')?.value || '';
+            const oblastId = document.getElementById('questionOblastFilter')?.value || '';
+            const tezina = document.getElementById('tezinaFilter')?.value || '';
+
+            document.querySelectorAll('.question-row').forEach(function (row) {
+                const matchesSearch = !search || (row.getAttribute('data-search') || '').includes(search);
+                const matchesPredmet = !predmetId || row.getAttribute('data-predmet-id') === predmetId;
+                const matchesOblast = !oblastId || row.getAttribute('data-oblast-id') === oblastId;
+                const matchesTezina = !tezina || row.getAttribute('data-tezina') === tezina;
+
+                setRowVisible(row, matchesSearch && matchesPredmet && matchesOblast && matchesTezina);
+            });
+        }
+
+        function applySubjectFilter() {
+            const search = normalizeFilterValue(document.getElementById('subjectSearchInput')?.value);
+
+            document.querySelectorAll('.subject-row').forEach(function (row) {
+                const matchesSearch = !search || (row.getAttribute('data-search') || '').includes(search);
+                setRowVisible(row, matchesSearch);
+            });
+        }
+
+        function applyAreaFilter() {
+            const search = normalizeFilterValue(document.getElementById('areaSearchInput')?.value);
+            const predmetId = document.getElementById('areaPredmetFilter')?.value || '';
+
+            document.querySelectorAll('.area-row').forEach(function (row) {
+                const matchesSearch = !search || (row.getAttribute('data-search') || '').includes(search);
+                const matchesPredmet = !predmetId || row.getAttribute('data-predmet-id') === predmetId;
+                setRowVisible(row, matchesSearch && matchesPredmet);
+            });
+        }
+
+        function setupClientSideFilters() {
+            document.getElementById('questionSearchInput')?.addEventListener('input', applyQuestionFilter);
+            document.getElementById('questionPredmetFilter')?.addEventListener('change', applyQuestionFilter);
+            document.getElementById('questionOblastFilter')?.addEventListener('change', applyQuestionFilter);
+            document.getElementById('tezinaFilter')?.addEventListener('change', applyQuestionFilter);
+
+            document.getElementById('subjectSearchInput')?.addEventListener('input', applySubjectFilter);
+
+            document.getElementById('areaSearchInput')?.addEventListener('input', applyAreaFilter);
+            document.getElementById('areaPredmetFilter')?.addEventListener('change', applyAreaFilter);
         }
 
         function toggleOptionsByPredmet(selectId, predmetId) {
@@ -1223,22 +1344,6 @@
             document.getElementById('areaEditModal').classList.remove('open');
         }
 
-        function filterSubjects() {
-            var q = document.getElementById('subjectSearch').value.toLowerCase();
-            document.querySelectorAll('.subject-row').forEach(function (row) {
-                var naziv = row.getAttribute('data-naziv') || '';
-                row.style.display = (!q || naziv.includes(q)) ? '' : 'none';
-            });
-        }
-
-        function filterAreas() {
-            var q = document.getElementById('areaSearch').value.toLowerCase();
-            document.querySelectorAll('.area-row').forEach(function (row) {
-                var naziv = row.getAttribute('data-naziv') || '';
-                row.style.display = (!q || naziv.includes(q)) ? '' : 'none';
-            });
-        }
-
         ['csvModal', 'questionModal', 'questionEditModal', 'subjectModal', 'subjectEditModal', 'areaModal', 'areaEditModal'].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;
@@ -1258,12 +1363,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            const tezinaFilter = document.getElementById('tezinaFilter');
-            const selectedTezina = tezinaFilter.getAttribute('data-selected');
-
-            if (selectedTezina) {
-                tezinaFilter.value = selectedTezina;
-            }
+            setupClientSideFilters();
+            applyQuestionFilter();
+            applySubjectFilter();
+            applyAreaFilter();
 
             filterQuestionOblasti();
             filterEditQuestionOblasti();

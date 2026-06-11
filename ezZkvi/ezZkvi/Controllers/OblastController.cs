@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using ezZkvi.Data;
 using ezZkvi.Models;
+using ezZkvi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,22 @@ namespace ezZkvi.Controllers
             return oblast != null && oblast.Predmet != null && SmijePredmet(oblast.Predmet);
         }
 
+        private IActionResult RedirectNaContentOblasti()
+        {
+            return RedirectToAction("Index", "Content", new { tab = "areas" });
+        }
+
+        private async Task<bool> PostojiOblastSaNazivomAsync(int predmetId, string naziv, int? ignorisiId = null)
+        {
+            var kljuc = ContentValidation.KljucZaPoredjenje(naziv);
+
+            return await _context.Oblast
+                .AnyAsync(o =>
+                    o.PredmetId == predmetId &&
+                    (!ignorisiId.HasValue || o.Id != ignorisiId.Value) &&
+                    o.Naziv.Trim().ToLower() == kljuc);
+        }
+
         public async Task<IActionResult> ByPredmet(int predmetId)
         {
             var predmet = await _context.Predmet.FindAsync(predmetId);
@@ -52,7 +69,7 @@ namespace ezZkvi.Controllers
 
         public IActionResult Index()
         {
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentOblasti();
         }
 
         [Authorize(Roles = "Admin,Moderator")]
@@ -64,7 +81,7 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Predmet za oblast nije pronađen.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentOblasti();
             }
 
             if (!SmijePredmet(predmet))
@@ -72,21 +89,35 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            if (string.IsNullOrWhiteSpace(naziv) || naziv.Trim().Length < 2)
+            var nazivOblasti = ContentValidation.NormalizujUnos(naziv);
+
+            if (nazivOblasti.Length < 2 || nazivOblasti.Length > 100)
             {
-                TempData["Error"] = "Naziv oblasti je obavezan.";
-                return RedirectToAction("Index", "Content");
+                TempData["Error"] = "Naziv oblasti mora imati između 2 i 100 karaktera.";
+                return RedirectNaContentOblasti();
+            }
+
+            if (!ContentValidation.NazivImaDozvoljeneZnakove(nazivOblasti))
+            {
+                TempData["Error"] = "Naziv oblasti smije sadržavati samo slova, brojeve i razmake.";
+                return RedirectNaContentOblasti();
+            }
+
+            if (await PostojiOblastSaNazivomAsync(predmetId, nazivOblasti))
+            {
+                TempData["Error"] = "Oblast sa istim nazivom već postoji u ovom predmetu.";
+                return RedirectNaContentOblasti();
             }
 
             _context.Oblast.Add(new Oblast
             {
-                Naziv = naziv.Trim(),
+                Naziv = nazivOblasti,
                 PredmetId = predmetId
             });
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Oblast je uspješno dodana.";
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentOblasti();
         }
 
         [Authorize(Roles = "Admin,Moderator")]
@@ -114,10 +145,24 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            if (string.IsNullOrWhiteSpace(naziv) || naziv.Trim().Length < 2)
+            var nazivOblasti = ContentValidation.NormalizujUnos(naziv);
+
+            if (nazivOblasti.Length < 2 || nazivOblasti.Length > 100)
             {
-                TempData["Error"] = "Naziv oblasti je obavezan.";
-                return RedirectToAction("Index", "Content");
+                TempData["Error"] = "Naziv oblasti mora imati između 2 i 100 karaktera.";
+                return RedirectNaContentOblasti();
+            }
+
+            if (!ContentValidation.NazivImaDozvoljeneZnakove(nazivOblasti))
+            {
+                TempData["Error"] = "Naziv oblasti smije sadržavati samo slova, brojeve i razmake.";
+                return RedirectNaContentOblasti();
+            }
+
+            if (await PostojiOblastSaNazivomAsync(predmetId, nazivOblasti, oblast.Id))
+            {
+                TempData["Error"] = "Oblast sa istim nazivom već postoji u ovom predmetu.";
+                return RedirectNaContentOblasti();
             }
 
             if (oblast.PredmetId != predmetId)
@@ -128,16 +173,16 @@ namespace ezZkvi.Controllers
                 if (imaPitanja || imaSesija)
                 {
                     TempData["Error"] = "Oblast se ne može prebaciti na drugi predmet jer ima pitanja ili historiju kvizova.";
-                    return RedirectToAction("Index", "Content");
+                    return RedirectNaContentOblasti();
                 }
             }
 
-            oblast.Naziv = naziv.Trim();
+            oblast.Naziv = nazivOblasti;
             oblast.PredmetId = predmetId;
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Oblast je ažurirana.";
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentOblasti();
         }
 
         [Authorize(Roles = "Admin,Moderator")]
@@ -159,25 +204,12 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            var imaPitanja = await _context.Pitanje.AnyAsync(p => p.OblastId == id);
-            if (imaPitanja)
-            {
-                TempData["Error"] = "Oblast se ne može obrisati dok ima pitanja.";
-                return RedirectToAction("Index", "Content");
-            }
-
-            var imaSesija = await _context.KvizSesije.AnyAsync(s => s.OblastId == id);
-            if (imaSesija)
-            {
-                TempData["Error"] = "Oblast se ne može obrisati jer ima historiju kvizova.";
-                return RedirectToAction("Index", "Content");
-            }
-
+            await ContentDeletionService.ObrisiOblastSaSadrzajemAsync(_context, id);
             _context.Oblast.Remove(oblast);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Oblast je obrisana.";
-            return RedirectToAction("Index", "Content");
+            TempData["Success"] = "Oblast je obrisana zajedno sa povezanim pitanjima i kviz sesijama.";
+            return RedirectNaContentOblasti();
         }
     }
 }

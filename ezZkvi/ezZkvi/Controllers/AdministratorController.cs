@@ -145,7 +145,20 @@ namespace ezZkvi.Controllers
             if (user.IsApproved)
                 return RedirectToAction(nameof(Users));
 
-            await _userManager.DeleteAsync(user);
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            await UserDeletionService.ObrisiKorisnikaSaSadrzajemAsync(_context, user.Id);
+            await _context.SaveChangesAsync();
+
+            var result = await _userManager.DeleteAsync(user);
+
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = "Greška prilikom brisanja korisnika.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            await transaction.CommitAsync();
 
             return RedirectToAction(nameof(Users));
         }

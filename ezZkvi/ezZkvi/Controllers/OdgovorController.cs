@@ -9,7 +9,7 @@ namespace ezZkvi.Controllers
     {
         public IActionResult Index()
         {
-            return RedirectToAction("Index", "Content");
+            return RedirectToAction("Index", "Content", new { tab = "questions" });
         }
 
         public IActionResult Details(int? id)

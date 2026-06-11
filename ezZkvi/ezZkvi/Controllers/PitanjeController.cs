@@ -1,6 +1,7 @@
 using ezZkvi.Data;
 using ezZkvi.Models;
 using ezZkvi.ViewModels;
+using ezZkvi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -92,6 +93,21 @@ namespace ezZkvi.Controllers
             return query.OrderBy(o => o.Predmet!.Naziv).ThenBy(o => o.Naziv);
         }
 
+        private IActionResult RedirectNaContentPitanja()
+        {
+            return RedirectToAction("Index", "Content", new { tab = "questions" });
+        }
+
+        private async Task<bool> PostojiPitanjeSaTekstomAsync(string tekstPitanja, int? ignorisiId = null)
+        {
+            var kljuc = ContentValidation.KljucZaPoredjenje(tekstPitanja);
+
+            return await _context.Pitanje
+                .AnyAsync(p =>
+                    (!ignorisiId.HasValue || p.Id != ignorisiId.Value) &&
+                    p.TekstPitanja.Trim().ToLower() == kljuc);
+        }
+
         private async Task NapuniSelectListeAsync(int? predmetId = null, int? oblastId = null)
         {
             ViewData["PredmetId"] = new SelectList(
@@ -114,7 +130,7 @@ namespace ezZkvi.Controllers
 
         public IActionResult Index()
         {
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPitanja();
         }
 
         public IActionResult Details(int? id)
@@ -192,7 +208,23 @@ namespace ezZkvi.Controllers
                 return View(pitanje);
             }
 
-            postojeci.TekstPitanja = pitanje.TekstPitanja;
+            var tekstPitanja = ContentValidation.NormalizujUnos(pitanje.TekstPitanja);
+
+            if (tekstPitanja.Length < 5 || tekstPitanja.Length > 1000)
+            {
+                ModelState.AddModelError(nameof(Pitanje.TekstPitanja), "Tekst pitanja mora imati između 5 i 1000 karaktera.");
+                await NapuniSelectListeAsync(pitanje.PredmetId, pitanje.OblastId);
+                return View(pitanje);
+            }
+
+            if (await PostojiPitanjeSaTekstomAsync(tekstPitanja, postojeci.Id))
+            {
+                ModelState.AddModelError(nameof(Pitanje.TekstPitanja), "Pitanje sa istim tekstom već postoji.");
+                await NapuniSelectListeAsync(pitanje.PredmetId, pitanje.OblastId);
+                return View(pitanje);
+            }
+
+            postojeci.TekstPitanja = tekstPitanja;
             postojeci.Tezina = pitanje.Tezina;
             postojeci.PredmetId = pitanje.PredmetId;
             postojeci.OblastId = pitanje.OblastId;
@@ -200,7 +232,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je ažurirano.";
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPitanja();
         }
 
         public IActionResult Delete(int? id)
@@ -224,36 +256,11 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            var koristiSeUAktivnojSesiji = await _context.KvizSesijaPitanja
-                .Include(ksp => ksp.KvizSesija)
-                .AnyAsync(ksp =>
-                    ksp.PitanjeId == id &&
-                    ksp.KvizSesija != null &&
-                    ksp.KvizSesija.Status == StatusSesije.U_TOKU);
-
-            if (koristiSeUAktivnojSesiji)
-            {
-                TempData["Error"] = "Pitanje se ne može obrisati jer se trenutno koristi u aktivnoj simulaciji.";
-                return RedirectToAction("Index", "Content");
-            }
-
-            var preostaleVezeSesije = await _context.KvizSesijaPitanja
-                .Where(ksp => ksp.PitanjeId == id)
-                .ToListAsync();
-
-            _context.KvizSesijaPitanja.RemoveRange(preostaleVezeSesije);
-
-            var odgovori = await _context.Odgovor
-                .Where(o => o.PitanjeId == id)
-                .ToListAsync();
-
-            _context.Odgovor.RemoveRange(odgovori);
-            _context.Pitanje.Remove(pitanje);
-
+            await ContentDeletionService.ObrisiPitanjeSaSadrzajemAsync(_context, id);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Pitanje je obrisano.";
-            return RedirectToAction("Index", "Content");
+            TempData["Success"] = "Pitanje je obrisano zajedno sa povezanim odgovorima i stavkama kviz sesija.";
+            return RedirectNaContentPitanja();
         }
 
         [HttpPost]
@@ -280,7 +287,7 @@ namespace ezZkvi.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Pitanje nije ažurirano. Provjerite unesene podatke.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             if (!await SmijePredmetAsync(model.PredmetId) || !await SmijeOblastAsync(model.OblastId, model.PredmetId))
@@ -288,18 +295,38 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            postojeci.TekstPitanja = model.TekstPitanja.Trim();
+            var tekstPitanja = ContentValidation.NormalizujUnos(model.TekstPitanja);
+
+            if (tekstPitanja.Length < 5 || tekstPitanja.Length > 1000)
+            {
+                TempData["Error"] = "Tekst pitanja mora imati između 5 i 1000 karaktera.";
+                return RedirectNaContentPitanja();
+            }
+
+            if (await PostojiPitanjeSaTekstomAsync(tekstPitanja, postojeci.Id))
+            {
+                TempData["Error"] = "Pitanje sa istim tekstom već postoji.";
+                return RedirectNaContentPitanja();
+            }
+
+            postojeci.TekstPitanja = tekstPitanja;
             postojeci.Tezina = model.Tezina;
             postojeci.PredmetId = model.PredmetId;
             postojeci.OblastId = model.OblastId;
 
             var tekstoviOdgovora = new[]
             {
-                model.Odgovor1.Trim(),
-                model.Odgovor2.Trim(),
-                model.Odgovor3.Trim(),
-                model.Odgovor4.Trim()
+                ContentValidation.NormalizujUnos(model.Odgovor1),
+                ContentValidation.NormalizujUnos(model.Odgovor2),
+                ContentValidation.NormalizujUnos(model.Odgovor3),
+                ContentValidation.NormalizujUnos(model.Odgovor4)
             };
+
+            if (tekstoviOdgovora.Any(o => o.Length < 1 || o.Length > 500))
+            {
+                TempData["Error"] = "Svaki odgovor mora imati između 1 i 500 karaktera.";
+                return RedirectNaContentPitanja();
+            }
 
             var odgovori = await _context.Odgovor
                 .Where(o => o.PitanjeId == postojeci.Id)
@@ -334,7 +361,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je ažurirano.";
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPitanja();
         }
 
         [HttpPost]
@@ -344,7 +371,7 @@ namespace ezZkvi.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Pitanje nije sačuvano. Provjerite unesene podatke.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             if (!await SmijePredmetAsync(model.PredmetId) || !await SmijeOblastAsync(model.OblastId, model.PredmetId))
@@ -352,9 +379,37 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
+            var tekstPitanja = ContentValidation.NormalizujUnos(model.TekstPitanja);
+
+            if (tekstPitanja.Length < 5 || tekstPitanja.Length > 1000)
+            {
+                TempData["Error"] = "Tekst pitanja mora imati između 5 i 1000 karaktera.";
+                return RedirectNaContentPitanja();
+            }
+
+            if (await PostojiPitanjeSaTekstomAsync(tekstPitanja))
+            {
+                TempData["Error"] = "Pitanje sa istim tekstom već postoji.";
+                return RedirectNaContentPitanja();
+            }
+
+            var tekstoviOdgovora = new[]
+            {
+                ContentValidation.NormalizujUnos(model.Odgovor1),
+                ContentValidation.NormalizujUnos(model.Odgovor2),
+                ContentValidation.NormalizujUnos(model.Odgovor3),
+                ContentValidation.NormalizujUnos(model.Odgovor4)
+            };
+
+            if (tekstoviOdgovora.Any(o => o.Length < 1 || o.Length > 500))
+            {
+                TempData["Error"] = "Svaki odgovor mora imati između 1 i 500 karaktera.";
+                return RedirectNaContentPitanja();
+            }
+
             var pitanje = new Pitanje
             {
-                TekstPitanja = model.TekstPitanja,
+                TekstPitanja = tekstPitanja,
                 PredmetId = model.PredmetId,
                 OblastId = model.OblastId,
                 Tezina = model.Tezina
@@ -365,17 +420,17 @@ namespace ezZkvi.Controllers
 
             var odgovori = new List<Odgovor>
             {
-                new Odgovor { Tekst = model.Odgovor1, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 1 },
-                new Odgovor { Tekst = model.Odgovor2, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 2 },
-                new Odgovor { Tekst = model.Odgovor3, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 3 },
-                new Odgovor { Tekst = model.Odgovor4, PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 4 }
+                new Odgovor { Tekst = tekstoviOdgovora[0], PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 1 },
+                new Odgovor { Tekst = tekstoviOdgovora[1], PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 2 },
+                new Odgovor { Tekst = tekstoviOdgovora[2], PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 3 },
+                new Odgovor { Tekst = tekstoviOdgovora[3], PitanjeId = pitanje.Id, IsTacan = model.TacanOdgovor == 4 }
             };
 
             _context.Odgovor.AddRange(odgovori);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Pitanje je uspješno dodano.";
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPitanja();
         }
     }
 }

@@ -41,8 +41,16 @@ namespace ezZkvi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? search, int? predmetId, int? oblastId, Tezina? tezina)
+        public async Task<IActionResult> Index(string? search, int? predmetId, int? oblastId, Tezina? tezina, string? areaSearch, int? areaPredmetId, string? subjectSearch, string? tab)
         {
+            var activeTab = (tab ?? "questions").Trim().ToLowerInvariant();
+            if (activeTab != "questions" && activeTab != "areas" && activeTab != "subjects")
+            {
+                activeTab = "questions";
+            }
+
+            ViewData["ActiveTab"] = activeTab;
+
             var dozvoljeni = await DozvoljeniPredmetiIdAsync();
 
             var pitanjaQuery = _context.Pitanje
@@ -55,20 +63,6 @@ namespace ezZkvi.Controllers
                 pitanjaQuery = pitanjaQuery.Where(p => dozvoljeni.Contains(p.PredmetId));
             }
 
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                pitanjaQuery = pitanjaQuery.Where(p => p.TekstPitanja.Contains(search));
-            }
-
-            if (predmetId.HasValue)
-            {
-                pitanjaQuery = pitanjaQuery.Where(p => p.PredmetId == predmetId.Value);
-            }
-
-            if (tezina.HasValue)
-            {
-                pitanjaQuery = pitanjaQuery.Where(p => p.Tezina == tezina.Value);
-            }
 
             var predmetiQuery = _context.Predmet.AsQueryable();
             if (dozvoljeni != null)
@@ -86,28 +80,7 @@ namespace ezZkvi.Controllers
                 .ThenBy(o => o.Naziv)
                 .ToListAsync();
 
-            if (predmetId.HasValue && oblastId.HasValue)
-            {
-                var oblastPripadaPredmetu = oblasti.Any(o =>
-                    o.Id == oblastId.Value &&
-                    o.PredmetId == predmetId.Value);
-
-                if (!oblastPripadaPredmetu)
-                {
-                    oblastId = null;
-                }
-            }
-
-            var oblastiZaPrikaz = predmetId.HasValue
-                ? oblasti.Where(o => o.PredmetId == predmetId.Value).ToList()
-                : oblasti;
-
-            if (oblastId.HasValue)
-            {
-                pitanjaQuery = pitanjaQuery.Where(p => p.OblastId == oblastId.Value);
-            }
-
-            var oblastiSelect = oblastiZaPrikaz
+            var oblastiSelect = oblasti
                 .Select(o => new
                 {
                     o.Id,
@@ -115,11 +88,15 @@ namespace ezZkvi.Controllers
                 })
                 .ToList();
 
-            ViewData["Predmeti"] = new SelectList(predmeti, "Id", "Naziv", predmetId);
-            ViewData["OblastiFilter"] = new SelectList(oblastiSelect, "Id", "Naziv", oblastId);
-            ViewData["Search"] = search;
-            ViewData["Tezina"] = tezina;
-            ViewData["OblastId"] = oblastId;
+            ViewData["Predmeti"] = new SelectList(predmeti, "Id", "Naziv");
+            ViewData["AreaPredmeti"] = new SelectList(predmeti, "Id", "Naziv");
+            ViewData["OblastiFilter"] = new SelectList(oblastiSelect, "Id", "Naziv");
+            ViewData["Search"] = string.Empty;
+            ViewData["AreaSearch"] = string.Empty;
+            ViewData["AreaPredmetId"] = null;
+            ViewData["SubjectSearch"] = string.Empty;
+            ViewData["Tezina"] = null;
+            ViewData["OblastId"] = null;
 
             ViewBag.OblastiListaZaSelect = oblasti.Select(o => new
             {
@@ -135,7 +112,10 @@ namespace ezZkvi.Controllers
                 .Select(g => new { PredmetId = g.Key, Broj = g.Count() })
                 .ToDictionaryAsync(x => x.PredmetId, x => x.Broj);
 
-            ViewBag.PredmetiLista = predmeti
+            var predmetiZaPrikaz = predmeti.AsEnumerable();
+
+
+            ViewBag.PredmetiLista = predmetiZaPrikaz
                 .Select(p => new PredmetAktivnostItem
                 {
                     Id = p.Id,
@@ -149,6 +129,9 @@ namespace ezZkvi.Controllers
                 .GroupBy(p => p.OblastId)
                 .Select(g => new { OblastId = g.Key, Broj = g.Count() })
                 .ToDictionaryAsync(x => x.OblastId, x => x.Broj);
+
+            var oblastiZaPrikaz = oblasti.AsEnumerable();
+
 
             ViewBag.OblastiLista = oblastiZaPrikaz
                 .Select(o => new OblastAktivnostItem

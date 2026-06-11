@@ -98,9 +98,13 @@ namespace ezZkvi.Controllers
             return View();
         }
 
-        public IActionResult Content(string? search, int? predmetId, int? oblastId, Tezina? tezina)
+        public IActionResult Content(string? search, int? predmetId, int? oblastId, Tezina? tezina, string? areaSearch, int? areaPredmetId, string? subjectSearch, string? tab)
         {
-            return RedirectToAction("Index", "Content", new { search, predmetId, oblastId, tezina });
+            var activeTab = string.IsNullOrWhiteSpace(tab)
+                ? (!string.IsNullOrWhiteSpace(subjectSearch) ? "subjects" : (!string.IsNullOrWhiteSpace(areaSearch) || areaPredmetId.HasValue ? "areas" : "questions"))
+                : tab;
+
+            return RedirectToAction("Index", "Content", new { search, predmetId, oblastId, tezina, areaSearch, areaPredmetId, subjectSearch, tab = activeTab });
         }
 
         public IActionResult Feedback()
@@ -112,7 +116,7 @@ namespace ezZkvi.Controllers
         {
             if (User.IsInRole("Admin"))
             {
-                return RedirectToAction("Index", "Content");
+                return RedirectToAction("Index", "Content", new { tab = "questions" });
             }
 
             return RedirectToAction(nameof(Dashboard));

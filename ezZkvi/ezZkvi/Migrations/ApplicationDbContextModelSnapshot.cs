@@ -365,7 +365,7 @@ namespace ezZkvi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("PredmetId")
+                    b.Property<int?>("PredmetId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -412,7 +412,7 @@ namespace ezZkvi.Migrations
                     b.Property<int>("OblastId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("PredmetId")
+                    b.Property<int?>("PredmetId")
                         .HasColumnType("integer");
 
                     b.Property<string>("TekstPitanja")

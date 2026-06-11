@@ -125,7 +125,7 @@
     <div class="field-error" id="errSgPredmet">Odaberi predmet.</div>
   </div>
   <div class="form-group">
-    <label>Oblast / Kategorija</label>
+    <label>Oblast (opciono)</label>
     <input type="text" id="sgOblast" placeholder="npr. UML dijagrami">
   </div>
   <div class="form-group">
@@ -134,24 +134,22 @@
     <div class="field-error" id="errSgPitanje">Unesi tekst pitanja.</div>
   </div>
   <div class="form-group">
-    <label>Ponuđeni odgovori</label>
+    <label>Ponuđeni odgovori (opciono)</label>
     <div class="opts-grid">
       <div class="opt-input"><span class="opt-label-abs">A</span><input type="text" id="sgA" placeholder="Odgovor A"></div>
       <div class="opt-input"><span class="opt-label-abs">B</span><input type="text" id="sgB" placeholder="Odgovor B"></div>
       <div class="opt-input"><span class="opt-label-abs">C</span><input type="text" id="sgC" placeholder="Odgovor C"></div>
       <div class="opt-input"><span class="opt-label-abs">D</span><input type="text" id="sgD" placeholder="Odgovor D"></div>
     </div>
-    <div class="field-error" id="errSgOdgovori">Popuni sva četiri odgovora (A, B, C i D).</div>
   </div>
   <div class="form-group">
-    <label>Tačan odgovor</label>
+    <label>Tačan odgovor (opciono)</label>
     <div class="correct-row">
       <div class="correct-opt" onclick="selCorrect(this)">A</div>
       <div class="correct-opt" onclick="selCorrect(this)">B</div>
       <div class="correct-opt" onclick="selCorrect(this)">C</div>
       <div class="correct-opt" onclick="selCorrect(this)">D</div>
     </div>
-    <div class="field-error" id="errSgTacan">Označi koji je odgovor tačan.</div>
   </div>
   <div class="form-group">
     <label>Pojašnjenje (opciono)</label>
@@ -224,8 +222,10 @@
   }
 
   function removeFile() {
-    document.getElementById('fileInput').value = '';
-    document.getElementById('filePreview').classList.remove('show');
+    var fileInput = document.getElementById('fileInput');
+    var filePreview = document.getElementById('filePreview');
+    if (fileInput) fileInput.value = '';
+    if (filePreview) filePreview.classList.remove('show');
   }
 
   // Prikaže/sakrije poruku greške ispod polja; vrati true ako je polje OK
@@ -245,11 +245,9 @@
 
     var okPredmet = postaviGresku('errSgPredmet', !predmetSelect.value);
     var okPitanje = postaviGresku('errSgPitanje', !pitanje);
-    var okOdgovori = postaviGresku('errSgOdgovori', !a || !b || !c || !d);
-    var okTacan = postaviGresku('errSgTacan', !correctEl);
-    if (!okPredmet || !okPitanje || !okOdgovori || !okTacan) return false;
+    if (!okPredmet || !okPitanje) return false;
 
-    var tacan = correctEl.textContent.trim();
+    var tacan = correctEl ? correctEl.textContent.trim() : '-';
     var predmetNaziv = predmetSelect.options[predmetSelect.selectedIndex] ? predmetSelect.options[predmetSelect.selectedIndex].text : '';
     document.getElementById('sgPredmetId').value = predmetSelect.value;
 
@@ -258,10 +256,10 @@
       + 'Predmet: ' + predmetNaziv + '\n'
       + 'Oblast: ' + (document.getElementById('sgOblast').value || '-') + '\n'
       + 'Pitanje: ' + pitanje + '\n'
-      + 'A) ' + a + '\n'
-      + 'B) ' + b + '\n'
-      + 'C) ' + c + '\n'
-      + 'D) ' + d + '\n'
+      + 'A) ' + (a || '-') + '\n'
+      + 'B) ' + (b || '-') + '\n'
+      + 'C) ' + (c || '-') + '\n'
+      + 'D) ' + (d || '-') + '\n'
       + 'Tačan: ' + tacan + '\n'
       + 'Pojašnjenje: ' + (document.getElementById('sgObjasnjenje').value || '-');
     return true;

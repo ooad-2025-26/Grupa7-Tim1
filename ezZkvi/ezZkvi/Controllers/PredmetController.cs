@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ezZkvi.Data;
 using ezZkvi.Models;
+using ezZkvi.Services;
 
 namespace ezZkvi.Controllers
 {
@@ -36,6 +37,34 @@ namespace ezZkvi.Controllers
             return oblast != null && oblast.Predmet != null && SmijePredmet(oblast.Predmet);
         }
 
+        private IActionResult RedirectNaContentPredmete()
+        {
+            return RedirectToAction("Index", "Content", new { tab = "subjects" });
+        }
+
+        private IActionResult RedirectNaContentPitanja()
+        {
+            return RedirectToAction("Index", "Content", new { tab = "questions" });
+        }
+
+        private async Task<bool> PostojiPredmetSaNazivomAsync(string naziv, int? ignorisiId = null)
+        {
+            var kljuc = ContentValidation.KljucZaPoredjenje(naziv);
+
+            return await _context.Predmet
+                .AnyAsync(p =>
+                    (!ignorisiId.HasValue || p.Id != ignorisiId.Value) &&
+                    p.Naziv.Trim().ToLower() == kljuc);
+        }
+
+        private async Task<bool> PostojiPitanjeSaTekstomAsync(string tekstPitanja)
+        {
+            var kljuc = ContentValidation.KljucZaPoredjenje(tekstPitanja);
+
+            return await _context.Pitanje
+                .AnyAsync(p => p.TekstPitanja.Trim().ToLower() == kljuc);
+        }
+
         // GET: /Predmet/ExportCsv/5  — skine sva pitanja predmeta kao CSV
         [Authorize(Roles = "Admin,Moderator")]
         public async Task<IActionResult> ExportCsv(int id)
@@ -44,13 +73,13 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Odaberi predmet za preuzimanje CSV-a.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             if (!SmijePredmet(predmet))
             {
                 TempData["Error"] = "Nemaš pristup ovom predmetu.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             var pitanja = await _context.Pitanje
@@ -116,25 +145,25 @@ namespace ezZkvi.Controllers
             if (predmet == null)
             {
                 TempData["Error"] = "Odaberi predmet za uvoz.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             if (!SmijePredmet(predmet))
             {
                 TempData["Error"] = "Nemaš pristup ovom predmetu.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             if (!await SmijeOblastAsync(oblastId, predmetId))
             {
                 TempData["Error"] = "Odabrana oblast ne pripada predmetu ili nemaš pristup.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = "Odaberi CSV fajl.";
-                return RedirectToAction("Index", "Content");
+                return RedirectNaContentPitanja();
             }
 
             var dodano = 0;
@@ -152,7 +181,7 @@ namespace ezZkvi.Controllers
                 var polja = ParsirajCsvLiniju(linija);
                 if (polja.Count < 7) { preskoceno++; continue; }
 
-                var tekst = polja[0].Trim();
+                var tekst = ContentValidation.NormalizujUnos(polja[0]);
                 var tacan = polja[5].Trim().ToUpper();
                 var tezinaStr = polja[6].Trim().ToUpper();
 
@@ -166,7 +195,13 @@ namespace ezZkvi.Controllers
                 var validni = kandidati.Where(k => !string.IsNullOrWhiteSpace(k.Item2)).ToList();
 
                 // mora imati tekst, bar 2 odgovora i tačan odgovor koji postoji
-                if (string.IsNullOrWhiteSpace(tekst) || validni.Count < 2 || !validni.Any(k => k.Item1 == tacan))
+                if (tekst.Length < 5 || tekst.Length > 1000 || validni.Count < 2 || !validni.Any(k => k.Item1 == tacan))
+                {
+                    preskoceno++;
+                    continue;
+                }
+
+                if (validni.Any(k => ContentValidation.NormalizujUnos(k.Item2).Length < 1 || ContentValidation.NormalizujUnos(k.Item2).Length > 500))
                 {
                     preskoceno++;
                     continue;
@@ -175,6 +210,12 @@ namespace ezZkvi.Controllers
                 if (!Enum.TryParse<Tezina>(tezinaStr, out var tezina))
                 {
                     tezina = Tezina.SREDNJE;
+                }
+
+                if (await PostojiPitanjeSaTekstomAsync(tekst))
+                {
+                    preskoceno++;
+                    continue;
                 }
 
                 var pitanje = new Pitanje
@@ -189,7 +230,7 @@ namespace ezZkvi.Controllers
 
                 var odgovori = validni.Select(k => new Odgovor
                 {
-                    Tekst = k.Item2,
+                    Tekst = ContentValidation.NormalizujUnos(k.Item2),
                     PitanjeId = pitanje.Id,
                     IsTacan = k.Item1 == tacan
                 });
@@ -201,7 +242,7 @@ namespace ezZkvi.Controllers
 
             TempData["Success"] = $"Uvezeno {dodano} pitanja."
                 + (preskoceno > 0 ? $" Preskočeno {preskoceno} neispravnih redova." : "");
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPitanja();
         }
 
         // Pretvori vrijednost u sigurno CSV polje (navodnici ako ima zarez/navodnik)
@@ -250,11 +291,27 @@ namespace ezZkvi.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateFromContent([Bind("Naziv")] Predmet predmet)
         {
-            if (!ModelState.IsValid)
+            var naziv = ContentValidation.NormalizujUnos(predmet.Naziv);
+
+            if (!ModelState.IsValid || naziv.Length < 2 || naziv.Length > 100)
             {
-                TempData["Error"] = "Predmet nije sačuvan. Provjeri naziv.";
-                return RedirectToAction("Index", "Content");
+                TempData["Error"] = "Predmet nije sačuvan. Naziv mora imati između 2 i 100 karaktera.";
+                return RedirectNaContentPredmete();
             }
+
+            if (!ContentValidation.NazivImaDozvoljeneZnakove(naziv))
+            {
+                TempData["Error"] = "Naziv predmeta smije sadržavati samo slova, brojeve i razmake.";
+                return RedirectNaContentPredmete();
+            }
+
+            if (await PostojiPredmetSaNazivomAsync(naziv))
+            {
+                TempData["Error"] = "Predmet sa istim nazivom već postoji.";
+                return RedirectNaContentPredmete();
+            }
+
+            predmet.Naziv = naziv;
 
             if (!User.IsInRole("Admin"))
             {
@@ -272,7 +329,7 @@ namespace ezZkvi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Predmet je uspješno dodan.";
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPredmete();
         }
 
         [HttpPost]
@@ -295,17 +352,31 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            if (string.IsNullOrWhiteSpace(predmet.Naziv))
+            var naziv = ContentValidation.NormalizujUnos(predmet.Naziv);
+
+            if (naziv.Length < 2 || naziv.Length > 100)
             {
-                TempData["Error"] = "Naziv predmeta je obavezan.";
-                return RedirectToAction("Index", "Content");
+                TempData["Error"] = "Naziv predmeta mora imati između 2 i 100 karaktera.";
+                return RedirectNaContentPredmete();
             }
 
-            postojeci.Naziv = predmet.Naziv.Trim();
+            if (!ContentValidation.NazivImaDozvoljeneZnakove(naziv))
+            {
+                TempData["Error"] = "Naziv predmeta smije sadržavati samo slova, brojeve i razmake.";
+                return RedirectNaContentPredmete();
+            }
+
+            if (await PostojiPredmetSaNazivomAsync(naziv, postojeci.Id))
+            {
+                TempData["Error"] = "Predmet sa istim nazivom već postoji.";
+                return RedirectNaContentPredmete();
+            }
+
+            postojeci.Naziv = naziv;
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Predmet je ažuriran.";
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPredmete();
         }
 
         [HttpPost]
@@ -323,34 +394,17 @@ namespace ezZkvi.Controllers
                 return Forbid();
             }
 
-            var imaPitanja = await _context.Pitanje.AnyAsync(p => p.PredmetId == id);
-            if (imaPitanja)
-            {
-                TempData["Error"] = "Predmet se ne može obrisati dok ima pitanja.";
-                return RedirectToAction("Index", "Content");
-            }
-
-            var imaSesija = await _context.KvizSesije.AnyAsync(s => s.PredmetId == id);
-            var imaFeedback = await _context.Feedback.AnyAsync(f => f.PredmetId == id);
-
-            if (imaSesija || imaFeedback)
-            {
-                TempData["Error"] = "Predmet se ne može obrisati jer ima historiju kvizova ili feedback.";
-                return RedirectToAction("Index", "Content");
-            }
-
-            var oblasti = await _context.Oblast.Where(o => o.PredmetId == id).ToListAsync();
-            _context.Oblast.RemoveRange(oblasti);
+            await ContentDeletionService.ObrisiPredmetSaSadrzajemAsync(_context, id);
             _context.Predmet.Remove(predmet);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Predmet je obrisan.";
-            return RedirectToAction("Index", "Content");
+            TempData["Success"] = "Predmet je obrisan zajedno sa povezanim oblastima, pitanjima, kviz sesijama, feedbackom i leaderboard/statistikom za taj predmet.";
+            return RedirectNaContentPredmete();
         }
 
         public IActionResult Index()
         {
-            return RedirectToAction("Index", "Content");
+            return RedirectNaContentPredmete();
         }
 
         public IActionResult Details(int? id)
