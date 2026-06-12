@@ -22,6 +22,9 @@ Aplikacija je izgrađena na **.NET (C#)** backendu uz **HTML/CSS** frontend, org
 ## Sadržaj repozitorija
 
 Pored izvornog koda, repozitorij sadrži kompletnu projektnu dokumentaciju, specifikaciju zahtjeva, dijagrame klasa, sekvence i aktivnosti, scenarije slučajeva upotrebe, analizu strukturnih paterna i UI dizajn.
+## Link stranice
+
+https://grupa7-tim1-zs9c.onrender.com/
 
 ## Testni nalozi
 
